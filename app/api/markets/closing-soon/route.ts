@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     searchParams.get("event") ??
     searchParams.get("eventSlug") ??
     searchParams.get("eventUrl");
-  const sort = (searchParams.get("sort") as MarketSort | null) ?? "soonest";
+  const sort = (searchParams.get("sort") as MarketSort | null) ?? (eventInput ? "soonest" : "signal");
   const category = eventInput ? searchParams.get("category") ?? "all" : "sports";
   const limit = parseNumber(searchParams.get("limit"));
   const onlyLive = parseBoolean(searchParams.get("onlyLive"), eventInput ? false : true);
@@ -43,6 +43,7 @@ export async function GET(request: Request) {
   const minVolume = parseNumber(searchParams.get("minVolume"));
   const minYesPrice = parseNumber(searchParams.get("minYesPrice"));
   const minNoPrice = parseNumber(searchParams.get("minNoPrice"));
+  const tradeable = searchParams.get("tradeable") === "true" ? true : searchParams.get("tradeable") === "false" ? false : null;
   const forceRefresh = searchParams.get("refresh") === "1";
   const parsedPlatform = platformSchema.safeParse(searchParams.get("platform"));
   const platform = parsedPlatform.success
@@ -62,7 +63,8 @@ export async function GET(request: Request) {
     searchParams.has("minYesPrice") ||
     searchParams.has("minNoPrice") ||
     searchParams.has("onlyLive") ||
-    searchParams.has("sort");
+    searchParams.has("sort") ||
+    searchParams.has("tradeable");
   const markets =
     eventInput && !hasExplicitEventFilters
       ? snapshot.markets
@@ -74,7 +76,8 @@ export async function GET(request: Request) {
           minYesPrice,
           minNoPrice,
           onlyLive,
-          sort
+          sort,
+          tradeable
         });
 
   const response = {

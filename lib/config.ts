@@ -12,7 +12,14 @@ const envSchema = z.object({
   MARKET_SCAN_WINDOW_HOURS: z.coerce.number().int().min(1).max(720).default(1),
   REQUEST_SPACING_MS: z.coerce.number().int().min(100).default(120),
   PRICE_ENRICH_MARKETS: z.coerce.number().int().min(0).max(200).default(20),
-  CACHE_FILE_PATH: z.string().optional()
+  CACHE_FILE_PATH: z.string().optional(),
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_ANON_KEY: z.string().default(""),
+  GROQ_API_KEY: z.string().default(""),
+  MINIMAX_API_KEY: z.string().default(""),
+  AI_SIGNAL_CACHE_MINUTES: z.coerce.number().int().min(1).default(5),
+  AI_MAX_MARKETS_PER_SCAN: z.coerce.number().int().min(1).max(500).default(200),
+  AI_CONCURRENCY: z.coerce.number().int().min(1).max(20).default(8)
 });
 
 const parsedEnv = envSchema.parse({
@@ -26,7 +33,14 @@ const parsedEnv = envSchema.parse({
   MARKET_SCAN_WINDOW_HOURS: process.env.MARKET_SCAN_WINDOW_HOURS,
   REQUEST_SPACING_MS: process.env.REQUEST_SPACING_MS,
   PRICE_ENRICH_MARKETS: process.env.PRICE_ENRICH_MARKETS,
-  CACHE_FILE_PATH: process.env.CACHE_FILE_PATH
+  CACHE_FILE_PATH: process.env.CACHE_FILE_PATH,
+  SUPABASE_URL: process.env.SUPABASE_URL,
+  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+  GROQ_API_KEY: process.env.GROQ_API_KEY,
+  MINIMAX_API_KEY: process.env.MINIMAX_API_KEY,
+  AI_SIGNAL_CACHE_MINUTES: process.env.AI_SIGNAL_CACHE_MINUTES,
+  AI_MAX_MARKETS_PER_SCAN: process.env.AI_MAX_MARKETS_PER_SCAN,
+  AI_CONCURRENCY: process.env.AI_CONCURRENCY
 });
 
 const defaultCachePath = process.env.VERCEL
@@ -44,5 +58,11 @@ export const appConfig = {
   marketScanWindowHours: parsedEnv.MARKET_SCAN_WINDOW_HOURS,
   requestSpacingMs: parsedEnv.REQUEST_SPACING_MS,
   priceEnrichMarkets: parsedEnv.PRICE_ENRICH_MARKETS,
-  cacheFilePath: parsedEnv.CACHE_FILE_PATH ?? defaultCachePath
+  cacheFilePath: parsedEnv.CACHE_FILE_PATH ?? defaultCachePath,
+  supabaseUrl: parsedEnv.SUPABASE_URL ?? "",
+  supabaseAnonKey: parsedEnv.SUPABASE_ANON_KEY,
+  groqApiKey: parsedEnv.GROQ_API_KEY || parsedEnv.MINIMAX_API_KEY,
+  aiSignalCacheMinutes: parsedEnv.AI_SIGNAL_CACHE_MINUTES,
+  aiMaxMarketsPerScan: parsedEnv.AI_MAX_MARKETS_PER_SCAN,
+  aiConcurrency: parsedEnv.AI_CONCURRENCY
 };

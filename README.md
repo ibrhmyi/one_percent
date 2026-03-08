@@ -1,88 +1,98 @@
 # OnePercent
 
-OnePercent is a minimal Next.js dashboard for scanning Polymarket markets that are about to close. The current v1 uses Polymarket's Gamma API for market discovery and Polymarket's websocket feed for live price updates on visible cards.
+OnePercent is an AI-powered intelligence layer for prediction markets. It identifies short-term market biases to surface tradeable signals with repeatable +1% returns. The platform scans markets approaching resolution, enriches them with AI-driven analysis, and ranks opportunities by confidence and expected resolution timing.
 
-## Stack
+Built for the Rishi Hackathon.
 
-- Next.js App Router
+## Features
+
+- **AI Signal Engine**: Near-resolution market analysis using Groq's LLaMA models to estimate resolution windows and confidence levels
+- **Multi-Platform Support**: Scans Polymarket with real-time price updates via WebSocket
+- **Smart Filtering**: Filters by volume, liquidity, spread, and tradeability scores
+- **Signal Sorting**: Rank opportunities by soonest resolution, liquidity, volume, or AI signal strength
+- **Live Updates**: Real-time price streaming for active monitoring
+
+## Tech Stack
+
+- Next.js 15 (App Router)
 - TypeScript
 - Tailwind CSS
-- Server-side fetch helpers and a route handler
-- JSON-file cache with a `MarketStore` interface for later KV or Redis replacement
+- Groq API (LLaMA 3.3 70B)
+- Supabase (signal caching)
+- Polymarket API & WebSocket
 
-## Setup
+## Getting Started
 
 1. Install dependencies:
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-2. Copy the example env file and add your API key:
+2. Configure environment:
 
-   ```bash
-   cp .env.example .env.local
-   ```
+```bash
+cp .env.example .env.local
+```
 
-3. Start the development server:
+3. Add your API keys:
 
-   ```bash
-   npm run dev
-   ```
+- `GROQ_API_KEY` - Get one at [groq.com](https://groq.com)
+- `SUPABASE_URL` & `SUPABASE_ANON_KEY` - Optional, for signal caching
 
-4. Open [http://localhost:3000](http://localhost:3000)
+4. Start the server:
 
-## Environment variables
+```bash
+npm run dev
+```
 
-- `CACHE_TTL_SECONDS`: freshness window before the app refreshes the cache
-- `MARKET_SCAN_WINDOW_HOURS`: server-side scan/cache window in hours (default `1`)
-- `REQUEST_SPACING_MS`: throttle spacing between Polymarket Gamma page calls
-- `CACHE_FILE_PATH`: optional custom path for the JSON cache file
+5. Open [http://localhost:3000](http://localhost:3000)
 
-## How caching works
+## Environment Variables
 
-- The app reads from a `MarketStore` interface with `getMarkets()`, `saveMarkets()`, and `getLastUpdated()`.
-- The default implementation is `JsonMarketStore` in [lib/store.ts](/Users/ibrahimyildiz/Documents/trae_projects/onepercent.markets/lib/store.ts).
-- In local development, the cache is written to `.cache/onepercent-markets.json`.
-- On Vercel, the fallback path is `/tmp/onepercent-markets.json` so the app can still run, but that storage is ephemeral.
-- If the live Polymarket refresh fails, the API falls back to stale cached data when available.
-- Expired markets are pruned before each cache write and scrubbed again on cache reads.
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CACHE_TTL_SECONDS` | Cache freshness window | 45 |
+| `MARKET_SCAN_WINDOW_HOURS` | Scan window in hours | 1 |
+| `GROQ_API_KEY` | Groq API key for AI analysis | - |
+| `SUPABASE_URL` | Supabase project URL | - |
+| `SUPABASE_ANON_KEY` | Supabase anon key | - |
+| `AI_SIGNAL_CACHE_MINUTES` | AI signal cache threshold | 5 |
+| `AI_MAX_MARKETS_PER_SCAN` | Max AI analyses per refresh | 10 |
+| `AI_CONCURRENCY` | Parallel AI requests | 8 |
 
-## Polymarket assumptions
+## API
 
-- Market discovery uses `https://gamma-api.polymarket.com/markets` with pagination.
-- The scanner keeps only open/non-archived markets with a valid `endDate`.
-- The board shows all markets closing within the configured scan window (default 1 hour).
-- Initial YES/NO and volume/liquidity come from Gamma market fields; visible cards then update from Polymarket's websocket.
-- Visible cards update directly from Polymarket's market websocket.
+`GET /api/markets/closing-soon`
 
-## API route
+Query parameters:
 
-- `GET /api/markets/closing-soon`
-- Optional query params:
-  - `platform=polymarket|kalshi|unknown`
-  - `maxHours=72`
-  - `minLiquidity=1000`
-  - `sort=soonest|liquidity|volume`
-  - `limit=20`
-  - `refresh=1`
+- `platform` - Filter by platform (polymarket, kalshi)
+- `maxHours` - Hours ahead to scan (default: 24)
+- `minVolume` - Minimum volume filter
+- `minYesPrice` - Minimum YES price
+- `sort` - Sort by: soonest, liquidity, volume, signal
+- `limit` - Result limit
+- `refresh` - Force cache refresh (1)
 
-## Deploying to Vercel
+## Supabase Setup
 
-1. Push the repo to GitHub.
-2. Import the project into Vercel.
-3. Add the same environment variables in the Vercel project settings.
-4. Deploy.
+Run the SQL migrations to enable AI signal caching:
 
-For production persistence, replace the JSON store with a KV-backed implementation and keep the rest of the app unchanged.
+- `supabase/signals.sql` - AI signal cache table
+- `supabase/bot-trades.sql` - Bot trade history
 
-## Swapping the cache later
+## How It Works
 
-1. Implement a new `MarketStore` in place of `JsonMarketStore`.
-2. Keep the same method surface:
-   - `getMarkets()`
-   - `saveMarkets()`
-   - `getLastUpdated()`
-3. Replace the exported store in [lib/store.ts](/Users/ibrahimyildiz/Documents/trae_projects/onepercent.markets/lib/store.ts) or inject it from a provider module.
+1. **Market Discovery**: Fetches markets closing within the scan window from Polymarket
+2. **Filtering**: Applies volume, spread, and price filters
+3. **AI Enrichment**: Analyzes each market with Groq LLaMA to estimate:
+   - Resolution window (minutes from now)
+   - Confidence level (low/medium/high)
+   - Tradeability score
+4. **Ranking**: Sorts by AI signal strength or traditional metrics
+5. **Live Updates**: Streams real-time prices via WebSocket
 
-Vercel KV, Upstash Redis, or a hosted Redis instance can slot in here without touching the normalization, API route, or dashboard components.
+## Deploy
+
+Deploy to Vercel with the same environment variables. For production, replace the JSON cache with a KV store (Redis/Vercel KV).

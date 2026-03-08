@@ -21,6 +21,7 @@ function firstParam(value: string | string[] | undefined) {
 
 export default async function Home({ searchParams }: HomeProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const initialNow = Date.now();
   const eventInput =
     firstParam(resolvedSearchParams?.event) ??
     firstParam(resolvedSearchParams?.eventSlug) ??
@@ -29,5 +30,11 @@ export default async function Home({ searchParams }: HomeProps) {
     ? await getEventFamilyMarkets(eventInput)
     : await getClosingSoonMarkets();
 
-  return <MarketDashboard initialResponse={snapshot} eventInput={eventInput} />;
+  return (
+    <MarketDashboard
+      initialResponse={snapshot}
+      eventInput={eventInput}
+      initialNow={initialNow}
+    />
+  );
 }

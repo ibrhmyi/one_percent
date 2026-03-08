@@ -156,6 +156,41 @@ export function sortMarkets(markets: NormalizedMarket[], sort: MarketSort = "soo
       return new Date(left.closeTime).getTime() - new Date(right.closeTime).getTime();
     }
 
+    if (sort === "signal") {
+      const leftMid = left.resolutionWindowMin != null && left.resolutionWindowMax != null
+        ? (left.resolutionWindowMin + left.resolutionWindowMax) / 2
+        : Infinity;
+      const rightMid = right.resolutionWindowMin != null && right.resolutionWindowMax != null
+        ? (right.resolutionWindowMin + right.resolutionWindowMax) / 2
+        : Infinity;
+
+      if (leftMid !== rightMid) {
+        return leftMid - rightMid;
+      }
+
+      const noPriceDelta = compareNullableNumberDesc(
+        normalizedNoPrice(left),
+        normalizedNoPrice(right)
+      );
+
+      if (noPriceDelta !== 0) {
+        return noPriceDelta;
+      }
+
+      const leftSpread = left.yesPrice !== null && left.noPrice !== null
+        ? Math.abs(left.yesPrice - left.noPrice)
+        : Infinity;
+      const rightSpread = right.yesPrice !== null && right.noPrice !== null
+        ? Math.abs(right.yesPrice - right.noPrice)
+        : Infinity;
+
+      if (leftSpread !== rightSpread) {
+        return leftSpread - rightSpread;
+      }
+
+      return compareNullableNumberDesc(getDisplayVolume(left), getDisplayVolume(right));
+    }
+
     if (sort === "liquidity") {
       return compareNullableNumberDesc(left.liquidity, right.liquidity);
     }
@@ -201,6 +236,12 @@ export function applyMarketQuery(markets: NormalizedMarket[], query: MarketQuery
       const volume = getDisplayVolume(market) ?? 0;
 
       if (volume < query.minVolume) {
+        return false;
+      }
+    }
+
+    if (query.tradeable !== null && query.tradeable !== undefined) {
+      if (market.tradeable !== query.tradeable) {
         return false;
       }
     }

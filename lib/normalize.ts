@@ -202,12 +202,11 @@ export function normalizeDomePolymarketMarket(
     // DOME does not currently expose a public URL field on the list response.
     // The market slug maps to the Polymarket event path in current payloads.
     url:
-      pickString(rawMarket.url) ??
       (pickString(rawMarket.event_slug) && pickString(rawMarket.market_slug)
         ? `https://polymarket.com/event/${pickString(rawMarket.event_slug)}/${pickString(rawMarket.market_slug)}`
         : pickString(rawMarket.market_slug)
           ? `https://polymarket.com/market/${pickString(rawMarket.market_slug)}`
-        : null),
+          : pickString(rawMarket.url)),
     status,
     ...(includeSourceRaw ? { sourceRaw: rawMarket } : {})
   };
@@ -310,12 +309,11 @@ export function normalizeGammaPolymarketMarket(
     yesTokenId: pickString(tokenIds[0]),
     noTokenId: pickString(tokenIds[1]),
     url:
-      pickString(rawMarket.url) ??
       (pickString(event?.slug) && pickString(rawMarket.slug)
         ? `https://polymarket.com/event/${pickString(event?.slug)}/${pickString(rawMarket.slug)}`
         : pickString(rawMarket.slug)
           ? `https://polymarket.com/event/${pickString(rawMarket.slug)}`
-          : null),
+          : pickString(rawMarket.url)),
     status: closed ? "closed" : "open",
     ...(includeSourceRaw ? { sourceRaw: rawMarket } : {})
   };

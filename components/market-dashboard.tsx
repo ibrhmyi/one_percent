@@ -12,15 +12,19 @@ import {
 } from "@/lib/format";
 import type { MarketApiResponse, NormalizedMarket } from "@/lib/types";
 
-const REFRESH_INTERVAL_MS = 60_000;
+const REFRESH_INTERVAL_MS = 15_000;
 const COUNTDOWN_TICK_MS = 1_000;
 const POLYMARKET_WSS_URL = "wss://ws-subscriptions-clob.polymarket.com/ws/market";
 const STREAM_ASSET_CHUNK_SIZE = 180;
-const MIN_VOLUME_USD = 10_000;
+const MIN_VOLUME_USD = 2_500;
+const MIN_PRICE_USD = 0.01;
+const MIN_TAIL_PRICE_USD = 0.7;
+const MAX_SPREAD_USD = 0.10;
 
 type DashboardProps = {
   initialResponse: MarketApiResponse;
   eventInput?: string | null;
+  initialNow: number;
 };
 
 type LiveSpreadByMarket = Record<
@@ -39,7 +43,7 @@ type LivePricePulseByMarket = Record<
     no: PriceDirection;
   }
 >;
-type SortMode = "tails" | "volume" | "spread";
+type SortMode = "tails" | "volume" | "spread" | "soon";
 
 const PRICE_PULSE_MS = 1_000;
 
@@ -61,6 +65,15 @@ function ArrowBoxIcon() {
 
 function formatCategoryLabel(category: string) {
   return category.replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function formatDurationHmsFromMs(milliseconds: number) {
+  const totalSeconds = Math.max(0, Math.floor(milliseconds / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const remainingSeconds = totalSeconds % 3600;
+  const mins = Math.floor(remainingSeconds / 60);
+  const seconds = remainingSeconds % 60;
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 function CardFrame({
@@ -116,6 +129,25 @@ function MarketCard({
       : pricePulse?.no === "down"
         ? "border-red-400/40 bg-red-500/10"
         : "border-line bg-black/20";
+  const hasResolutionWindow =
+    market.resolutionWindowMin != null && market.resolutionWindowMax != null;
+  const eventStartMs = new Date(market.closeTime).getTime();
+  const estimatedConclusionLabel = hasResolutionWindow
+    ? (() => {
+        if (Number.isNaN(eventStartMs)) {
+          return "Estimating...";
+        }
+
+        const minMinutes = market.resolutionWindowMin as number;
+        const maxMinutes = market.resolutionWindowMax as number;
+        const minTargetMs = eventStartMs + minMinutes * 60_000;
+        const maxTargetMs = eventStartMs + maxMinutes * 60_000;
+        const minRemainingMs = Math.max(1_000, minTargetMs - now);
+        const maxRemainingMs = Math.max(minRemainingMs, maxTargetMs - now);
+
+        return `${formatDurationHmsFromMs(minRemainingMs)} - ${formatDurationHmsFromMs(maxRemainingMs)}`;
+      })()
+    : "Estimating...";
 
   return (
     <CardFrame href={market.url}>
@@ -185,17 +217,23 @@ function MarketCard({
             <p className="mt-2 text-lg text-white">{formatCompactCurrency(volume)}</p>
           </div>
         </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-violet-500/30 bg-violet-500/10 p-4">
+          <span className="text-[0.65rem] uppercase tracking-[0.15em] text-violet-300">
+            AI estimated conclusion: {estimatedConclusionLabel}
+          </span>
+        </div>
       </article>
     </CardFrame>
   );
 }
 
-export function MarketDashboard({ initialResponse, eventInput = null }: DashboardProps) {
+export function MarketDashboard({ initialResponse, eventInput = null, initialNow }: DashboardProps) {
   const [response, setResponse] = useState(initialResponse);
   const [liveSpreadByMarket, setLiveSpreadByMarket] = useState<LiveSpreadByMarket>({});
   const [livePricePulseByMarket, setLivePricePulseByMarket] = useState<LivePricePulseByMarket>({});
-  const [sortMode, setSortMode] = useState<SortMode>("tails");
-  const [now, setNow] = useState(Date.now());
+  const [sortMode, setSortMode] = useState<SortMode>("soon");
+  const [now, setNow] = useState(initialNow);
   const seenTradeKeys = useRef<Set<string>>(new Set());
   const previousPricesByMarketRef = useRef<Map<string, { yes: number | null; no: number | null }>>(
     new Map()
@@ -210,8 +248,8 @@ export function MarketDashboard({ initialResponse, eventInput = null }: Dashboar
     const refresh = async () => {
       try {
         const query = eventInput
-          ? `?event=${encodeURIComponent(eventInput)}`
-          : "?onlyLive=1&maxHours=24";
+          ? `?event=${encodeURIComponent(eventInput)}&refresh=1`
+          : "?onlyLive=1&maxHours=12&refresh=1";
         const result = await fetch(`/api/markets/closing-soon${query}`, {
           cache: "no-store"
         });
@@ -356,7 +394,7 @@ export function MarketDashboard({ initialResponse, eventInput = null }: Dashboar
     : applyMarketQuery(response.markets, {
         platform: "polymarket",
         category: "sports",
-        maxHours: 24,
+        maxHours: 12,
         minVolume: null,
         minYesPrice: null,
         minNoPrice: null,
@@ -370,20 +408,34 @@ export function MarketDashboard({ initialResponse, eventInput = null }: Dashboar
 
     return value > 1 ? value / 100 : value;
   };
-  const spreadByMarket = (market: NormalizedMarket) =>
-    liveSpreadByMarket[market.id]?.yes ?? liveSpreadByMarket[market.id]?.no ?? null;
+  const spreadByMarket = (market: NormalizedMarket) => {
+    const liveYesSpread = liveSpreadByMarket[market.id]?.yes;
+    const liveNoSpread = liveSpreadByMarket[market.id]?.no;
+
+    if (liveYesSpread !== null && liveYesSpread !== undefined) {
+      return liveYesSpread;
+    }
+
+    if (liveNoSpread !== null && liveNoSpread !== undefined) {
+      return liveNoSpread;
+    }
+    return null;
+  };
   const passesPriceAndSpreadFilter = (market: NormalizedMarket) => {
     const yes = normalizeProbability(market.yesPrice);
     const no = normalizeProbability(market.noPrice);
     const spread = spreadByMarket(market);
     const volume = market.volume;
     const normalizedSpread = spread === null ? null : spread > 1 ? spread / 100 : spread;
-    const hasMinimumTradablePrice = yes !== null && no !== null && yes >= 0.01 && no >= 0.01;
-    const hasStrongPrice = (yes !== null && yes >= 0.7) || (no !== null && no >= 0.7);
-    const hasTightSpread = normalizedSpread !== null && normalizedSpread < 0.1;
-    const hasMinimumVolume = volume !== null && volume >= MIN_VOLUME_USD;
+    const hasMinimumTradablePrice =
+      yes !== null && no !== null && yes >= MIN_PRICE_USD && no >= MIN_PRICE_USD;
+    const hasTailPrice =
+      yes !== null && no !== null && (yes >= MIN_TAIL_PRICE_USD || no >= MIN_TAIL_PRICE_USD);
+    const hasTightSpread =
+      normalizedSpread !== null && normalizedSpread < MAX_SPREAD_USD;
+    const hasMinimumVolume = volume !== null && volume > MIN_VOLUME_USD;
 
-    return hasMinimumTradablePrice && hasStrongPrice && hasTightSpread && hasMinimumVolume;
+    return hasMinimumTradablePrice && hasTailPrice && hasTightSpread && hasMinimumVolume;
   };
   const normalizedNoPrice = (market: NormalizedMarket) => {
     if (market.noPrice === null) {
@@ -409,8 +461,51 @@ export function MarketDashboard({ initialResponse, eventInput = null }: Dashboar
 
     return Math.max(yes ?? -1, no ?? -1);
   };
+  const displayVolume = (market: NormalizedMarket) => market.volume;
   const filteredMarkets = visibleMarkets.filter(passesPriceAndSpreadFilter);
+  const earliestAiEstimateMs = (market: NormalizedMarket) => {
+    if (market.resolutionWindowMin == null) {
+      return Number.POSITIVE_INFINITY;
+    }
+
+    const closeAtMs = Date.parse(market.closeTime);
+    if (Number.isNaN(closeAtMs)) {
+      return Number.POSITIVE_INFINITY;
+    }
+
+    return closeAtMs + market.resolutionWindowMin * 60_000;
+  };
+  const bySoonRanking = (left: NormalizedMarket, right: NormalizedMarket) => {
+    const leftSoonMs = earliestAiEstimateMs(left);
+    const rightSoonMs = earliestAiEstimateMs(right);
+
+    if (leftSoonMs !== rightSoonMs) {
+      return leftSoonMs - rightSoonMs;
+    }
+
+    const leftNo = normalizedNoPrice(left);
+    const rightNo = normalizedNoPrice(right);
+    const noDelta = (rightNo ?? -1) - (leftNo ?? -1);
+
+    if (noDelta !== 0) {
+      return noDelta;
+    }
+
+    const leftSpread = spreadByMarket(left);
+    const rightSpread = spreadByMarket(right);
+    const spreadDelta = (leftSpread ?? Number.POSITIVE_INFINITY) - (rightSpread ?? Number.POSITIVE_INFINITY);
+
+    if (spreadDelta !== 0) {
+      return spreadDelta;
+    }
+
+    return (displayVolume(right) ?? -1) - (displayVolume(left) ?? -1);
+  };
   const topMarkets = [...filteredMarkets].sort((left, right) => {
+    if (sortMode === "soon") {
+      return bySoonRanking(left, right);
+    }
+
     if (sortMode === "tails") {
       const leftTail = tailScore(left);
       const rightTail = tailScore(right);
@@ -422,7 +517,7 @@ export function MarketDashboard({ initialResponse, eventInput = null }: Dashboar
     }
 
     if (sortMode === "volume") {
-      const volumeDelta = (right.volume ?? -1) - (left.volume ?? -1);
+      const volumeDelta = (displayVolume(right) ?? -1) - (displayVolume(left) ?? -1);
 
       if (volumeDelta !== 0) {
         return volumeDelta;
@@ -704,7 +799,7 @@ export function MarketDashboard({ initialResponse, eventInput = null }: Dashboar
             <p className="mt-3 text-sm text-zinc-300">
               {isEventFocusMode
                 ? "All sub-markets for one event family."
-                : "AI detected near resolution sports markets on polymarket with spread < 0.1$, volume > 10K$, and prices near tail."}
+                : "AI detected near resolution sports markets on polymarket with spread < 0.1$, volume > 2.5K$, and prices near tail."}
             </p>
           </div>
 
@@ -725,7 +820,7 @@ export function MarketDashboard({ initialResponse, eventInput = null }: Dashboar
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Sort</p>
           <div className="flex items-center gap-2">
-            {(["tails", "volume", "spread"] as const).map((mode) => (
+            {(["soon", "tails", "volume", "spread"] as const).map((mode) => (
               <button
                 key={mode}
                 type="button"
@@ -736,8 +831,7 @@ export function MarketDashboard({ initialResponse, eventInput = null }: Dashboar
                     : "border-white/10 bg-white/5 text-zinc-300 hover:border-white/20"
                 }`}
               >
-                {mode[0].toUpperCase()}
-                {mode.slice(1)}
+                {mode === "soon" ? "Time" : `${mode[0].toUpperCase()}${mode.slice(1)}`}
               </button>
             ))}
           </div>
@@ -753,8 +847,8 @@ export function MarketDashboard({ initialResponse, eventInput = null }: Dashboar
       {topMarkets.length === 0 ? (
         <p className="mt-6 text-sm text-zinc-400">
           {isEventFocusMode
-            ? "No markets in this event match YES/NO >= $0.70, spread < $0.10, and volume >= $10k."
-            : "No live/upcoming sports markets match YES/NO >= $0.70, spread < $0.10, and volume >= $10k."}
+            ? "No markets in this event match the current filters (including volume > $2.5k)."
+            : "No markets match the current filters (including volume > $2.5k)."}
         </p>
       ) : (
         <section className="mt-6 grid gap-4 xl:grid-cols-2">
