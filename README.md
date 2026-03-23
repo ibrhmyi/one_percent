@@ -93,6 +93,10 @@ Run the SQL migrations to enable AI signal caching:
 4. **Ranking**: Sorts by AI signal strength or traditional metrics
 5. **Live Updates**: Streams real-time prices via WebSocket
 
+## Live Demo
+
+**https://onepercentmarkets.vercel.app**
+
 ## Deploy
 
 Deploy to Vercel with the same environment variables. For production, replace the JSON cache with a KV store (Redis/Vercel KV).
