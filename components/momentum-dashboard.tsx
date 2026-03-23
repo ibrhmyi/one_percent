@@ -126,11 +126,15 @@ export function MomentumDashboard({ confidence = "all" }: Props) {
       {/* No signals yet */}
       {!loading && !error && signals.length === 0 && (
         <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-10 text-center space-y-2">
-          <p className="text-sm font-medium text-zinc-400">No signals yet</p>
+          <p className="text-sm font-medium text-zinc-400">
+            {data?.tableReady === false ? "⏳ Run SQL migration first" : "No signals yet"}
+          </p>
           <p className="text-xs text-zinc-600">
-            {data?.supabaseConfigured
-              ? "Bot is running — signals will appear here within seconds of firing."
-              : "Add SUPABASE_URL and SUPABASE_ANON_KEY to momentum-bot/.env, then restart the bot."}
+            {!data?.supabaseConfigured
+              ? "Add MOMENTUM_SUPABASE_URL and MOMENTUM_SUPABASE_ANON_KEY to .env.local, then restart."
+              : data?.tableReady === false
+              ? "Paste supabase/momentum-signals.sql into your Supabase SQL Editor and run it."
+              : "Bot is running — signals will appear here within seconds of firing."}
           </p>
         </div>
       )}

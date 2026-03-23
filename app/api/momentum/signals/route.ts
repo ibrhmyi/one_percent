@@ -25,6 +25,7 @@ export interface MomentumSignalsResponse {
   total: number;
   generatedAt: string;
   supabaseConfigured: boolean;
+  tableReady?: boolean;
 }
 
 export async function GET(request: Request) {
@@ -32,8 +33,8 @@ export async function GET(request: Request) {
   const limit = Math.min(Number(searchParams.get("limit") ?? 50), 200);
   const confidence = searchParams.get("confidence"); // low | medium | high | null=all
 
-  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = process.env.MOMENTUM_SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const key = process.env.MOMENTUM_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
 
   if (!url || !key) {
     const response: MomentumSignalsResponse = {
@@ -60,6 +61,18 @@ export async function GET(request: Request) {
   const { data, error, count } = await query;
 
   if (error) {
+    const isTableMissing = error.message.includes("schema cache") || error.message.includes("does not exist");
+    if (isTableMissing) {
+      // Supabase is connected but table hasn't been created yet
+      const response: MomentumSignalsResponse = {
+        signals: [],
+        total: 0,
+        generatedAt: new Date().toISOString(),
+        supabaseConfigured: true,
+        tableReady: false,
+      };
+      return Response.json(response);
+    }
     return Response.json({ error: error.message }, { status: 500 });
   }
 
