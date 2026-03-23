@@ -1,8 +1,11 @@
 .next
 node_modules
+.env
 .env.local
 .env.*.local
 .cache
 coverage
 npm-debug.log*
 *.tsbuildinfo
+momentum-bot/dist
+momentum-bot/node_modules
