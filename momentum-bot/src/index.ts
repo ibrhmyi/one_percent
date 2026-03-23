@@ -2,6 +2,7 @@ import { loadBotConfig } from './config.js';
 import { MomentumDetector } from './momentum-detector.js';
 import { createPolymarketClobSocket } from './polymarket-clob.js';
 import { loadWatchlistFromPolymarket } from './market-loader.js';
+import { persistSignal } from './supabase-client.js';
 import {
   logBotStartup,
   logMarketLoaded,
@@ -19,7 +20,6 @@ let executeOnKalshi:
 
 async function initializeKalshiExecutor(): Promise<void> {
   try {
-    // Dynamic import - will fail if module doesn't exist, which is expected during initial dev
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const mod = await (import('./kalshi-executor.js') as Promise<any>);
     if (mod?.executeOnKalshi) {
@@ -35,21 +35,6 @@ async function initializeKalshiExecutor(): Promise<void> {
   }
 }
 
-async function handleMomentumSignal(signal: MomentumSignal): Promise<void> {
-  logSignal(signal);
-
-  if (!executeOnKalshi) {
-    return;
-  }
-
-  try {
-    const result = await executeOnKalshi(signal);
-    logOrderResult(result);
-  } catch (error) {
-    logError('Failed to execute order on Kalshi', error);
-  }
-}
-
 async function main(): Promise<void> {
   const config = loadBotConfig();
 
@@ -61,10 +46,30 @@ async function main(): Promise<void> {
 
   await initializeKalshiExecutor();
 
+  // Signal handler — closed over config so it can read dryRun
+  async function handleMomentumSignal(signal: MomentumSignal): Promise<void> {
+    logSignal(signal);
+
+    let result: OrderResult | undefined;
+
+    if (executeOnKalshi) {
+      try {
+        result = await executeOnKalshi(signal);
+        logOrderResult(result);
+      } catch (error) {
+        logError('Failed to execute order on Kalshi', error);
+      }
+    }
+
+    // Persist every signal to Supabase (fire-and-forget, never blocks trading)
+    persistSignal(signal, config.dryRun, result).catch((err) => {
+      logError('Failed to persist signal to Supabase', err);
+    });
+  }
+
   // Load initial watchlist
   let watchedMarkets: WatchedMarket[] = await loadWatchlistFromPolymarket();
 
-  // Mutable lookup map — rebuilt whenever watchedMarkets changes
   const marketByConditionId = new Map<string, WatchedMarket>();
   const marketByTokenId = new Map<string, WatchedMarket>();
 
@@ -79,17 +84,15 @@ async function main(): Promise<void> {
 
   rebuildMarketMaps(watchedMarkets);
 
-  // Set up market refresh every 5 minutes — also rebuilds lookup maps
+  // Refresh market list every 5 minutes
   const refreshInterval = setInterval(async () => {
     logInfo('Refreshing market watchlist...');
     watchedMarkets = await loadWatchlistFromPolymarket();
     rebuildMarketMaps(watchedMarkets);
   }, 5 * 60 * 1000);
 
-  // Create momentum detector
   const detector = new MomentumDetector(config, handleMomentumSignal);
 
-  // Create Polymarket CLOB socket
   const tokenIds = watchedMarkets.map((m) => m.polyTokenId);
 
   if (tokenIds.length === 0) {
@@ -105,7 +108,6 @@ async function main(): Promise<void> {
       logInfo('Subscribed to Polymarket CLOB book updates');
     },
     onBook: (snapshot) => {
-      // CLOB identifies by tokenId (asset_id) primarily; conditionId (market field) is secondary
       const market =
         marketByTokenId.get(snapshot.tokenId) ??
         marketByConditionId.get(snapshot.conditionId);
@@ -129,7 +131,6 @@ async function main(): Promise<void> {
     },
   });
 
-  // Handle graceful shutdown
   process.on('SIGINT', () => {
     logInfo('SIGINT received, shutting down gracefully...');
     clearInterval(refreshInterval);
@@ -144,7 +145,7 @@ async function main(): Promise<void> {
     process.exit(0);
   });
 
-  process.on('unhandledRejection', (reason, promise) => {
+  process.on('unhandledRejection', (reason) => {
     logError('Unhandled rejection', reason);
   });
 }
