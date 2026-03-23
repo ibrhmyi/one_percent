@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Next.js Dashboard",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "Momentum Bot",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["--env-file=.env", "--import", "tsx/esm", "--watch", "src/index.ts"],
+      "cwd": "momentum-bot",
+      "port": 3001
+    }
+  ]
+}
