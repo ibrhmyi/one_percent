@@ -1,4 +1,4 @@
-# OnePercent — Full Project Context & Decision History
+# OnePercent (1%) — Full Project Context & Decision History
 
 > This document captures the complete evolution of the OnePercent project across all sessions.
 > Claude Code should read this before making any architectural decisions.
@@ -8,11 +8,64 @@
 
 ## WHAT IS ONEPERCENT
 
-OnePercent is an **AI-orchestrated prediction market momentum trader** for Polymarket. It exploits information asymmetry — knowing outcomes faster than the market — to catch one-directional price movements (e.g., 20¢ → 99¢ when news confirms an outcome).
+OnePercent (1%) is an **AI-powered momentum trading platform for Polymarket**. It's a skill-based AI orchestrator that watches all live Polymarket markets, identifies which ones are about to make a drastic move, then deploys the right "skill" (detection engine) to catch that momentum faster than anyone else.
 
+**Platform:** Polymarket (chosen over Kalshi — see Platform Decision below)
 **Starting capital:** $400
 **Founder:** İbrahim Yıldız
-**Origin:** Built initially as a hackathon project (Rishi Hackathon) — a web dashboard scanning near-resolution Polymarket markets. Now pivoting to an autonomous trading bot.
+**Origin:** Built initially as a hackathon project (Rishi Hackathon) — a web dashboard scanning near-resolution Polymarket markets. Now building into a full autonomous trading platform.
+
+---
+
+## PLATFORM ARCHITECTURE: AI BRAIN + PLUGGABLE SKILLS
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    1% PLATFORM                       │
+│                                                      │
+│  ┌─────────────────────────────────────────────┐    │
+│  │         DASHBOARD (Next.js UI)               │    │
+│  │  Live markets • AI decisions • Trade log     │    │
+│  └─────────────────────────────────────────────┘    │
+│                                                      │
+│  ┌─────────────────────────────────────────────┐    │
+│  │         AI ORCHESTRATOR (brain)              │    │
+│  │  Sees ALL markets → classifies each one →    │    │
+│  │  predicts which will move → picks best →     │    │
+│  │  deploys the right skill → trades            │    │
+│  └────┬────────┬────────┬────────┬─────────────┘    │
+│       │        │        │        │                   │
+│  ┌────▼───┐┌───▼───┐┌───▼───┐┌──▼────┐             │
+│  │ Sports ││ News  ││Crypto ││Politi │  ← Skills    │
+│  │ ESPN   ││ Grok  ││Binance││Twitter│  (pluggable) │
+│  └────────┘└───────┘└───────┘└───────┘              │
+│                                                      │
+│  ┌─────────────────────────────────────────────┐    │
+│  │         EXECUTION ENGINE                     │    │
+│  │  Polymarket CLOB • Position mgmt • Exits     │    │
+│  └─────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────┘
+```
+
+The AI brain does two things:
+1. **PRIORITIZE** — Which market is about to make a drastic move? Focus $400 there.
+2. **SKILL SELECT** — For that market, which skill/engine detects the momentum fastest?
+
+Skills are modular. Each one has its own data source, detection logic, and edge model. You keep adding skills over time — the platform stays the same.
+
+---
+
+## PLATFORM DECISION: POLYMARKET (NOT KALSHI)
+
+Decided March 24, 2026 after fee research. Reasons:
+
+1. **Lower fees at our price points:** Polymarket dynamic taker fee at 90% prob = ~0.13%. Kalshi at same = ~0.63%. We trade at high probabilities after score changes, so Polymarket is 5x cheaper.
+2. **500ms taker delay removed (Feb 18, 2026):** Our taker orders now execute instantly on Polymarket.
+3. **We already built the integration:** Working CLOB WebSocket, Gamma API loader, all TypeScript.
+4. **Global access:** Polymarket = crypto, anyone can use it. Kalshi = US only.
+5. **Dynamic fee formula:** `fee = C × 0.25 × (p × (1-p))^2` — peaks at 0.44% at 50/50, drops to 0.13% at extremes. Our sports edge trades happen at 80-95% probability where fees are minimal.
+
+Note: Polymarket expanded taker fees to sports markets on Feb 18, 2026. Maker fees remain 0% with rebates. Our strategy is TAKER (speed > cost), and the fees at our price points are acceptable.
 
 ---
 
@@ -89,16 +142,19 @@ OnePercent is an **AI-orchestrated prediction market momentum trader** for Polym
   - NHL: `site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard`
   - Soccer: `site.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard`
 
-### v2 — News Hunter (Week 3-4)
-- **Data source:** Grok API (xAI) with native Twitter/X awareness
+### v2 — News Hunter Skill + Dashboard UI (Week 3-4)
+- **New skill:** Grok API (xAI) with native Twitter/X awareness
 - **Edge:** Grok has real-time Twitter access built-in. Batch-classify 20 markets every 15s: "Is there breaking news affecting these markets?"
 - **Cost:** ~$28.30/month (Grok API credits: $25 free signup + $150/month for data sharing = $175 free credits. Grok 4.1 Fast: $0.20/M input, $0.50/M output → ~$0.000045 per classification call)
-- **New files:** `news-plugin.ts`, `rss-stream.ts`
+- **New skill files:** `skills/news-skill.ts`, `skills/rss-stream.ts`
+- **Dashboard:** Next.js web UI showing live markets, AI decisions, active skill, trade log, P&L
+- **AI brain upgrade:** Now picks between Sports Skill and News Skill per market
 
-### v3 — Full Brain (Week 5-8)
-- **What:** Bayesian learning loop, Half-Kelly position sizing, cross-market correlation, additional plugins (crypto exchange signals, earnings reports, scheduled events)
+### v3 — Full Brain + More Skills (Week 5-8)
+- **New skills:** Crypto Exchange (Binance feed), Politics (RSS + sentiment), Scheduled Events (earnings, speeches)
+- **Brain upgrade:** Bayesian learning loop — learns from past trades, adjusts model confidence
+- **Platform features:** Skill performance analytics, cross-market correlation detection
 - **Cost:** ~$38.30/month
-- **New capabilities:** Learn from past trades, adjust model confidence, detect cross-market correlation patterns
 
 ---
 
@@ -146,6 +202,31 @@ OnePercent is an **AI-orchestrated prediction market momentum trader** for Polym
 - FIFA World Cup 2026: upcoming (massive expected volume)
 - Total sports: $713M+ across all sports markets
 - There's enough liquidity for a $400 bot to find fills easily
+
+---
+
+## UI / DASHBOARD (v2+)
+
+v1 is backend-only (CLI bot, logs to terminal). Starting v2, we add a Next.js dashboard.
+
+### Dashboard Pages:
+1. **Live Markets** — All Polymarket markets the AI is watching, with real-time prices streaming via WebSocket. Color-coded by category (sports=green, politics=blue, crypto=orange, etc.)
+2. **AI Focus** — Which market the AI currently prioritizes, why (edge calculation shown), which skill is active, countdown to expected move
+3. **Trade Log** — Every trade: entry/exit price, P&L, skill used, edge at entry, time held
+4. **Skills Panel** — All available skills, their status (active/idle), hit rate, avg return per trade
+5. **Portfolio** — Current bankroll, open positions, total P&L, equity curve chart
+
+### Tech Stack (matches hackathon project):
+- Next.js 15 (App Router)
+- TypeScript
+- Tailwind CSS
+- Real-time updates via WebSocket or Server-Sent Events
+- The bot backend runs as a separate process, dashboard connects via API/WebSocket
+
+### UI Priority:
+- v1: No UI, CLI only. Focus on making the trading engine work.
+- v2: Basic dashboard — live markets + trade log + P&L
+- v3: Full dashboard with skills panel, AI reasoning view, analytics
 
 ---
 
