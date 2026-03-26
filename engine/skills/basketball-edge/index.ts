@@ -83,6 +83,74 @@ export class PreGameEdgeSkill implements Skill {
     return false;
   }
 
+  /**
+   * Lightweight scan — only checks if any new Polymarket markets match
+   * our cached odds. No API calls, no orderbook fetches, no allocation.
+   * Called every ~10s by brain.ts even when no live games.
+   */
+  async quickScan(markets: WatchedMarket[]): Promise<void> {
+    if (this.status === 'paused' || this.cachedOdds.length === 0) return;
+
+    const bankroll = parseFloat(process.env.BANKROLL || '400');
+
+    for (const market of markets) {
+      if (!isNewMarket(market.conditionId)) continue;
+      markMarketSeen(market.conditionId, market.yesPrice);
+
+      // Try to match with cached odds
+      const matchedOdds = this.cachedOdds.find(game => {
+        const m = matchOddsGameToMarket(game, [market]);
+        return m !== null;
+      });
+
+      if (!matchedOdds) continue;
+
+      const consensus = calculateConsensus(matchedOdds);
+      if (!consensus) continue;
+
+      const { homeIsYes } = resolveTokenSides(market, matchedOdds.home_team, matchedOdds.away_team);
+      const fairValue = homeIsYes ? consensus.homeWinProb : consensus.awayWinProb;
+      const marketPrice = homeIsYes ? market.yesPrice : market.noPrice;
+      const edge = fairValue - marketPrice;
+
+      const config = getEarlyMarketConfig();
+      if (edge < config.minEdge) continue;
+
+      const targetPrice = marketPrice + 0.03;
+      const kellySize = calculateKellySize(fairValue, targetPrice, bankroll);
+      const adjustedSize = Math.min(kellySize * (config.kellyFraction / 0.25), bankroll * config.maxBetPct);
+
+      if (adjustedSize < 5) continue;
+
+      const tokenId = (homeIsYes ? market.yesTokenId : market.noTokenId) || '';
+      const order = await placeOrder({
+        conditionId: market.conditionId,
+        tokenId,
+        price: targetPrice,
+        size: adjustedSize,
+        sportKey: matchedOdds.sport_key,
+        homeTeam: matchedOdds.home_team,
+        awayTeam: matchedOdds.away_team,
+        commenceTime: matchedOdds.commence_time,
+        fairValue,
+        edge,
+      });
+
+      if (order) {
+        addMessage({
+          text: `[INSTANT ENTRY] NEW MARKET: ${matchedOdds.home_team} vs ${matchedOdds.away_team} | Consensus: ${(fairValue * 100).toFixed(0)}% | Poly: ${(marketPrice * 100).toFixed(0)}c | EDGE: +${(edge * 100).toFixed(0)}% | BUY @ ${targetPrice} ($${adjustedSize.toFixed(0)})`,
+          type: 'action',
+        });
+        this.stats.trades++;
+      }
+    }
+
+    // Also refresh the watchlist if we have cached odds (no API call, just recomputes)
+    if (this.cachedOdds.length > 0) {
+      this.lastWatchlist = buildWatchlist(this.cachedOdds, markets);
+    }
+  }
+
   async detect(markets: WatchedMarket[]): Promise<Opportunity[]> {
     // ── Step 1: Check for NEW markets (Gamma is free, always check) ──
     const bankroll = parseFloat(process.env.BANKROLL || '400');

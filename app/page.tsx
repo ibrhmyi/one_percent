@@ -9,6 +9,8 @@ import { MarketsTable } from '@/components/terminal/markets-table';
 import { TradesPanel } from '@/components/terminal/trades-panel';
 import { AccountPanel } from '@/components/terminal/account-panel';
 import { SkillsPanel } from '@/components/terminal/skills-panel';
+import { OddsRanker } from '@/components/terminal/odds-ranker';
+import { PositionsPanel } from '@/components/terminal/positions-panel';
 
 const DEFAULT_STATE = {
   isRunning: false,
@@ -27,6 +29,9 @@ const DEFAULT_STATE = {
   scoringEvents: [] as any[],
   gameSchedule: [] as any[],
   latestMessage: null as any,
+  preGameWatchlist: [] as any[],
+  preGameOrders: [] as any[],
+  preGameSummary: null as any,
 };
 
 export default function Home() {
@@ -84,15 +89,17 @@ export default function Home() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <ScoreFeed events={state.scoringEvents} />
           <GameSchedule games={state.gameSchedule} />
+          <OddsRanker watchlist={state.preGameWatchlist} summary={state.preGameSummary} />
         </div>
 
-        {/* CENTER COLUMN — Markets + Trades */}
+        {/* CENTER COLUMN — Markets + Positions + Trades */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <MarketsTable markets={state.watchedMarkets} />
+          <PositionsPanel orders={state.preGameOrders} summary={state.preGameSummary} />
           <TradesPanel trades={state.trades} mode={state.account.mode} />
         </div>
 
-        {/* RIGHT COLUMN — Account + Skills + Log */}
+        {/* RIGHT COLUMN — Account + Skills */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <AccountPanel account={state.account} trades={state.trades} />
           <SkillsPanel skills={state.skills} />

@@ -274,6 +274,8 @@ export async function refreshMarkets(): Promise<void> {
 
 let lastNarrationAt = 0;
 const NARRATION_THROTTLE_MS = 5_000; // narrate at most once per 5s to avoid spam
+let lastQuickScanAt = 0;
+const QUICK_SCAN_INTERVAL_MS = 10_000; // quickScan every 10s when no live games
 
 export async function runCycle(): Promise<void> {
   const skills = getSkills();
@@ -285,11 +287,23 @@ export async function runCycle(): Promise<void> {
   );
   const openTrade = getOpenTrade();
 
-  // No live games and no open position — skip skill scanning entirely.
-  // refreshMarkets() runs every 15s and will flip market status to 'live' when games start.
+  // No live games and no open position — skip Basketball Spike (live skill),
+  // but still run Basketball Edge quickScan every 10s for new market detection.
   if (liveMarkets.length === 0 && !openTrade) {
-    const enabledSkills = skills.filter(s => s.status !== 'paused');
-    // Countdown shown in UI — no log spam needed
+    const now = Date.now();
+    if (now - lastQuickScanAt >= QUICK_SCAN_INTERVAL_MS) {
+      lastQuickScanAt = now;
+      for (const skill of skills) {
+        if (skill.status === 'paused') continue;
+        if (skill.id === 'basketball-edge' && 'quickScan' in skill) {
+          try {
+            await (skill as PreGameEdgeSkill).quickScan(markets);
+          } catch {
+            // Skill errors don't crash the brain
+          }
+        }
+      }
+    }
     return;
   }
 

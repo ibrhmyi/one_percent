@@ -1,6 +1,8 @@
 import { engineState } from '@/engine/state';
 import { startBrain } from '@/engine/brain';
 import { isPriceFeedConnected } from '@/engine/price-feed';
+import { getSkill } from '@/engine/skill-registry';
+import type { PreGameEdgeSkill } from '@/engine/skills/basketball-edge/index';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,6 +90,10 @@ export async function GET() {
     reason: log.reason,
   }));
 
+  // Extract pre-game data from Basketball Edge skill
+  const edgeSkill = getSkill('basketball-edge') as PreGameEdgeSkill | undefined;
+  const preGameInfo = edgeSkill && 'getInfo' in edgeSkill ? (edgeSkill.getInfo() as any).preGame : null;
+
   return Response.json({
     isRunning: engineState.isRunning,
     lastCycleAt: engineState.lastCycleAt,
@@ -117,5 +123,16 @@ export async function GET() {
     scoringEvents,
     gameSchedule,
     latestMessage,
+    preGameWatchlist: preGameInfo?.watchlist ?? [],
+    preGameOrders: preGameInfo?.orders ?? [],
+    preGameSummary: preGameInfo ? {
+      restingCount: preGameInfo.restingCount,
+      filledCount: preGameInfo.filledCount,
+      totalDeployed: preGameInfo.totalDeployed,
+      apiRequestsUsed: preGameInfo.apiRequestsUsed,
+      apiRequestsBudget: preGameInfo.apiRequestsBudget,
+      lastScanAt: preGameInfo.lastScanAt,
+      cachedGames: preGameInfo.cachedGames,
+    } : null,
   });
 }
