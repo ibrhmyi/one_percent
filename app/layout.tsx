@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OnePercent",
-  description: "Closing-soon prediction markets sourced through DOME."
+  title: "OnePercent — AI Trading Platform",
+  description: "AI-powered Polymarket trader. NBA Live Edge skill."
 };
 
 export default function RootLayout({

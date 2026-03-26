@@ -1,65 +1,164 @@
-import { z } from "zod";
+// ============================================================
+// OnePercent V1 — Core TypeScript Interfaces
+// ============================================================
 
-export const platformSchema = z.enum(["polymarket", "kalshi", "unknown"]);
-export type Platform = z.infer<typeof platformSchema>;
-
-export const normalizedMarketSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  slug: z.string().nullable(),
-  category: z.string().nullable().optional(),
-  eventSlug: z.string().nullable().optional(),
-  marketTicker: z.string().nullable().optional(),
-  eventTicker: z.string().nullable().optional(),
-  platform: platformSchema,
-  closeTime: z.string(),
-  isLive: z.boolean().optional(),
-  yesPrice: z.number().nullable(),
-  noPrice: z.number().nullable(),
-  volume: z.number().nullable(),
-  eventVolume: z.number().nullable().optional(),
-  liquidity: z.number().nullable(),
-  url: z.string().nullable(),
-  status: z.string().nullable(),
-  yesTokenId: z.string().nullable().optional(),
-  noTokenId: z.string().nullable().optional(),
-  resolutionWindowMin: z.number().nullable().optional(),
-  resolutionWindowMax: z.number().nullable().optional(),
-  confidence: z.enum(["low", "medium", "high"]).nullable().optional(),
-  tradeable: z.boolean().nullable().optional(),
-  aiReason: z.string().nullable().optional()
-});
-
-export type NormalizedMarket = z.infer<typeof normalizedMarketSchema> & {
-  sourceRaw?: unknown;
-};
-
-export type MarketSort = "urgency" | "soonest" | "liquidity" | "volume" | "signal";
-export type MarketBadge = "Active" | "Closing Soon" | "Missing data";
-
-export interface MarketStore {
-  getMarkets(): Promise<NormalizedMarket[]>;
-  saveMarkets(markets: NormalizedMarket[]): Promise<void>;
-  getLastUpdated(): Promise<string | null>;
+export interface BrainMessage {
+  id: string;
+  text: string;
+  type: 'info' | 'warning' | 'action' | 'success' | 'idle';
+  timestamp: string;
 }
 
-export interface MarketQuery {
-  platform?: Platform | "all";
-  category?: string | "all";
-  maxHours?: number | null;
-  minVolume?: number | null;
-  minYesPrice?: number | null;
-  minNoPrice?: number | null;
-  onlyLive?: boolean;
-  sort?: MarketSort;
-  tradeable?: boolean | null;
+export interface AccountState {
+  bankroll: number;
+  pnlToday: number;
+  pnlTotal: number;
+  openPositions: number;
+  mode: 'dry_run' | 'live';
+  polymarketId: string;
 }
 
-export interface MarketApiResponse {
-  markets: NormalizedMarket[];
-  total: number;
-  filteredTotal: number;
-  lastUpdated: string | null;
-  source: "cache" | "live" | "stale-cache" | "error";
-  error: string | null;
+export interface GameData {
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number;
+  awayScore: number;
+  period: string;
+  clock: string;
+  league: string;
+}
+
+export interface WatchedMarket {
+  id: string;
+  conditionId: string;
+  title: string;
+  homeTeam: string;
+  awayTeam: string;
+  slug: string;
+  yesPrice: number;
+  noPrice: number;
+  volume: number;
+  category: string;
+  url: string;
+  yesTokenId: string;
+  noTokenId: string;
+  status: 'upcoming' | 'live' | 'edge_detected' | 'trading' | 'position_open';
+  edge: number | null;
+  aiEstimate: number | null;
+  spread: number | null;           // bid-ask spread in cents from CLOB
+  gameData: (GameData & { secondsRemaining?: number }) | null;
+  gameStartTime: string | null;    // ISO — actual scheduled game start
+  marketEndTime: string | null;    // ISO — market close time from Polymarket
+  lastUpdated: string;
+}
+
+export interface Opportunity {
+  marketId: string;
+  tokenId: string;
+  title: string;
+  side: 'yes' | 'no';
+  modelProbability: number;
+  marketPrice: number;
+  edge: number;
+  ev: number;
+  fee: number;
+  confidence: number;
+  skillId: string;
+  gameData: GameData & {
+    secondsRemaining: number;
+  };
+}
+
+export interface Trade {
+  id: string;
+  marketId: string;
+  marketTitle: string;
+  side: 'yes' | 'no';
+  entryPrice: number;
+  entryAmount: number;
+  exitPrice: number | null;
+  exitAmount: number | null;
+  pnl: number | null;
+  tokens: number;
+  skillId: string;
+  skillIcon: string;
+  enteredAt: string;
+  exitedAt: string | null;
+  exitReason: 'target' | 'reversal' | 'stall' | 'timeout' | 'game_over' | null;
+  status: 'open' | 'closed';
+  peakPrice: number;
+  yesTokenId: string;
+  noTokenId: string;
+  isDryRun: boolean;
+}
+
+export interface SkillStats {
+  trades: number;
+  wins: number;
+  losses: number;
+  totalPnl: number;
+}
+
+export interface SkillInfo {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  category: string;
+  status: 'active' | 'idle' | 'error';
+  pollIntervalMs: number;
+  stats: SkillStats;
+}
+
+export interface Skill extends SkillInfo {
+  detect(markets: WatchedMarket[]): Promise<Opportunity[]>;
+}
+
+export interface CycleLog {
+  timestamp: string;
+  gameId: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number;
+  awayScore: number;
+  period: string;
+  clock: string;
+  secondsRemaining: number;
+  modelProbability: number;
+  marketPrice: number;
+  edge: number;
+  ev: number;
+  fee: number;
+  kellySize: number;
+  action: 'skip' | 'enter' | 'hold' | 'exit';
+  reason: string;
+}
+
+export interface EngineState {
+  messages: BrainMessage[];
+  watchedMarkets: WatchedMarket[];
+  trades: Trade[];
+  skills: Skill[];
+  account: AccountState;
+  isRunning: boolean;
+  lastCycleAt: string | null;
+  focusedMarketId: string | null;
+  cycleLogs: CycleLog[];
+}
+
+// ESPN API types
+export interface ESPNGame {
+  id: string;
+  name: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeAbbr: string;
+  awayAbbr: string;
+  homeScore: number;
+  awayScore: number;
+  period: number;
+  clock: string;
+  state: 'pre' | 'in' | 'post';
+  secondsRemaining: number;
+  scheduledStart: string;  // ISO — actual scheduled tip-off time
 }

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "onepercent",
+      "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeArgs": ["/Users/ibrahimyildiz/Documents/trae_projects/onepercent.markets/node_modules/.bin/next", "dev"],
+      "port": 3000
+    }
+  ]
+}
