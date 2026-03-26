@@ -37,12 +37,14 @@ const DEFAULT_STATE = {
 export default function Home() {
   const [state, setState] = useState(DEFAULT_STATE);
   const [error, setError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   const fetchState = useCallback(async () => {
     try {
       const res = await fetch('/api/brain/state');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setState(await res.json());
+      setLoaded(true);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Connection error');
@@ -51,7 +53,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchState();
-    const id = setInterval(fetchState, 500);
+    const id = setInterval(fetchState, 2000);
     return () => clearInterval(id);
   }, [fetchState]);
 
@@ -75,10 +77,29 @@ export default function Home() {
         </div>
       )}
 
+      {/* Loading skeleton */}
+      {!loaded && !error && (
+        <div style={{
+          display: 'grid', gridTemplateColumns: '260px 1fr 280px',
+          gap: 8, padding: 8,
+        }}>
+          {[0, 1, 2].map(col => (
+            <div key={col} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[120, 200, 160].map((h, i) => (
+                <div key={i} className="panel" style={{
+                  height: h, background: 'var(--bg-card)',
+                  animation: 'pulse 1.5s ease-in-out infinite',
+                }} />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Main 3-column grid */}
       <div style={{
         flex: 1,
-        display: 'grid',
+        display: loaded ? 'grid' : 'none',
         gridTemplateColumns: '260px 1fr 280px',
         gap: 8,
         padding: 8,

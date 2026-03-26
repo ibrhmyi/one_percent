@@ -125,6 +125,18 @@ export async function GET() {
     latestMessage,
     preGameWatchlist: preGameInfo?.watchlist ?? [],
     preGameOrders: preGameInfo?.orders ?? [],
+    preGameOddsSummary: preGameInfo ? {
+      cachedGames: preGameInfo.cachedGames,
+      apiRequestsUsed: preGameInfo.apiRequestsUsed,
+      apiRequestsBudget: preGameInfo.apiRequestsBudget,
+      lastScanAt: preGameInfo.lastScanAt,
+    } : null,
+    preGamePositionsSummary: preGameInfo ? {
+      restingCount: preGameInfo.restingCount,
+      filledCount: preGameInfo.filledCount,
+      totalDeployed: preGameInfo.totalDeployed,
+    } : null,
+    // Keep backward compat
     preGameSummary: preGameInfo ? {
       restingCount: preGameInfo.restingCount,
       filledCount: preGameInfo.filledCount,

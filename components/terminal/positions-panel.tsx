@@ -91,7 +91,8 @@ export function PositionsPanel({ orders, summary }: Props) {
         {/* Filled positions first */}
         {filled.map(order => {
           const edgePct = (order.edge * 100).toFixed(1);
-          const pnl = order.avgFillPrice > 0 ? order.price - order.avgFillPrice : 0;
+          // P&L = fair value - fill price (unrealized, based on consensus)
+          const pnl = order.avgFillPrice > 0 ? order.fairValue - order.avgFillPrice : 0;
 
           return (
             <div key={order.orderId} style={{

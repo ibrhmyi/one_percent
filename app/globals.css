@@ -87,6 +87,12 @@ html, body {
 .flash-green { animation: flashGreen 300ms ease-out; }
 .flash-red   { animation: flashRed   300ms ease-out; }
 
+/* Loading skeleton pulse */
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.15; }
+}
+
 /* Pulse dot */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; }

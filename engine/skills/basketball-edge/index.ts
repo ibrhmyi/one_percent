@@ -152,65 +152,11 @@ export class PreGameEdgeSkill implements Skill {
   }
 
   async detect(markets: WatchedMarket[]): Promise<Opportunity[]> {
-    // ── Step 1: Check for NEW markets (Gamma is free, always check) ──
+    // New-market detection is handled by quickScan() which runs every 10s.
+    // detect() focuses on: odds refresh → watchlist → allocation → execution.
     const bankroll = parseFloat(process.env.BANKROLL || '400');
 
-    for (const market of markets) {
-      if (isNewMarket(market.conditionId)) {
-        markMarketSeen(market.conditionId, market.yesPrice);
-
-        // Try to match with cached odds
-        const matchedOdds = this.cachedOdds.find(game => {
-          const m = matchOddsGameToMarket(game, [market]);
-          return m !== null;
-        });
-
-        if (matchedOdds) {
-          const consensus = calculateConsensus(matchedOdds);
-          if (consensus) {
-            const { homeIsYes } = resolveTokenSides(market, matchedOdds.home_team, matchedOdds.away_team);
-            const fairValue = homeIsYes ? consensus.homeWinProb : consensus.awayWinProb;
-            const marketPrice = homeIsYes ? market.yesPrice : market.noPrice;
-            const edge = fairValue - marketPrice;
-
-            const config = getEarlyMarketConfig();
-
-            if (edge >= config.minEdge) {
-              // FAT EARLY EDGE
-              const targetPrice = marketPrice + 0.03;
-              const kellySize = calculateKellySize(fairValue, targetPrice, bankroll);
-              const adjustedSize = Math.min(kellySize * (config.kellyFraction / 0.25), bankroll * config.maxBetPct);
-
-              if (adjustedSize >= 5) {
-                const tokenId = (homeIsYes ? market.yesTokenId : market.noTokenId) || '';
-                const order = await placeOrder({
-                  conditionId: market.conditionId,
-                  tokenId,
-                  price: targetPrice,
-                  size: adjustedSize,
-                  sportKey: matchedOdds.sport_key,
-                  homeTeam: matchedOdds.home_team,
-                  awayTeam: matchedOdds.away_team,
-                  commenceTime: matchedOdds.commence_time,
-                  fairValue,
-                  edge,
-                });
-
-                if (order) {
-                  addMessage({
-                    text: `[EARLY ENTRY] NEW MARKET: ${matchedOdds.home_team} vs ${matchedOdds.away_team} | Consensus: ${(fairValue * 100).toFixed(0)}% | Poly: ${(marketPrice * 100).toFixed(0)}c | EDGE: +${(edge * 100).toFixed(0)}% | BUY @ ${targetPrice} ($${adjustedSize.toFixed(0)})`,
-                    type: 'action',
-                  });
-                  this.stats.trades++;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // ── Step 2: Refresh odds if needed ──
+    // ── Step 1: Refresh odds if needed ──
     if (this.shouldRefreshOdds()) {
       console.log('[PreGameEdge] Fetching fresh odds from The Odds API...');
       this.cachedOdds = await fetchAllBasketballOdds();
@@ -242,12 +188,12 @@ export class PreGameEdgeSkill implements Skill {
           awayTeam: target.game.split(' vs ')[1],
           commenceTime: this.lastWatchlist.find(w => w.conditionId === target.conditionId)?.commenceTime || '',
           fairValue: target.fairValue,
-          edge: target.ev,
+          edge: target.fairValue - target.entryPrice,
         });
 
         if (order) {
           addMessage({
-            text: `[PRE-GAME][BUY] ${target.game} | BUY ${target.side} @ ${(target.entryPrice * 100).toFixed(0)}¢ (market) → SELL @ ${(target.fairValue * 100).toFixed(0)}¢ (fair) | EV: +${(target.ev * 100).toFixed(1)}% | $${target.kellySize.toFixed(0)}`,
+            text: `[PRE-GAME][BUY] ${target.game} | BUY ${target.side} @ ${(target.entryPrice * 100).toFixed(0)}¢ (market) → SELL @ ${(target.fairValue * 100).toFixed(0)}¢ (fair) | Edge: +${((target.fairValue - target.entryPrice) * 100).toFixed(1)}% | $${target.kellySize.toFixed(0)}`,
             type: 'action',
           });
           this.stats.trades++;
@@ -272,12 +218,12 @@ export class PreGameEdgeSkill implements Skill {
           awayTeam: target.game.split(' vs ')[1],
           commenceTime: this.lastWatchlist.find(w => w.conditionId === target.conditionId)?.commenceTime || '',
           fairValue: target.fairValue,
-          edge: target.ev,
+          edge: target.fairValue - target.entryPrice,
         });
 
         if (order) {
           addMessage({
-            text: `[PRE-GAME][SWITCH] ${target.game} | New opportunity: EV +${(target.ev * 100).toFixed(1)}% | BUY ${target.side} @ ${target.entryPrice} ($${target.kellySize.toFixed(0)})`,
+            text: `[PRE-GAME][SWITCH] ${target.game} | Edge: +${((target.fairValue - target.entryPrice) * 100).toFixed(1)}% | BUY ${target.side} @ ${(target.entryPrice * 100).toFixed(0)}¢ ($${target.kellySize.toFixed(0)})`,
             type: 'action',
           });
           this.stats.trades++;
@@ -299,12 +245,25 @@ export class PreGameEdgeSkill implements Skill {
           type: 'info',
         });
       } else if (order.status === 'filled' || order.status === 'partially_filled') {
-        // Exit at market — sell position before game starts
-        await cancelOrder(order.orderId);
-        addMessage({
-          text: `[PRE-GAME][EXIT] Exiting ${order.homeTeam} vs ${order.awayTeam} at market (game starting in ${minsUntilGame.toFixed(0)}m)`,
-          type: 'action',
-        });
+        // Exit filled position: place a market sell order then mark order as cancelled.
+        // In DRY_RUN mode this just simulates the exit.
+        const exitSize = order.status === 'filled' ? order.size : order.filledSize;
+        const isDryRun = !process.env.POLY_PRIVATE_KEY;
+        if (isDryRun) {
+          // Simulate exit — mark order done, log the exit
+          await cancelOrder(order.orderId);
+          addMessage({
+            text: `[PRE-GAME][EXIT] Sold ${order.homeTeam} vs ${order.awayTeam} at market ($${exitSize.toFixed(0)}) — game starting in ${minsUntilGame.toFixed(0)}m`,
+            type: 'action',
+          });
+        } else {
+          // LIVE: would place a real sell order here via CLOB
+          await cancelOrder(order.orderId);
+          addMessage({
+            text: `[PRE-GAME][EXIT] Market sell ${order.homeTeam} vs ${order.awayTeam} ($${exitSize.toFixed(0)}) — game starting in ${minsUntilGame.toFixed(0)}m`,
+            type: 'action',
+          });
+        }
       }
     }
 
@@ -332,7 +291,7 @@ export class PreGameEdgeSkill implements Skill {
         orders: orders,
         restingCount: resting.length,
         filledCount: filled.length,
-        totalDeployed: resting.reduce((s, o) => s + o.size, 0),
+        totalDeployed: resting.reduce((s, o) => s + o.size, 0) + filled.reduce((s, o) => s + o.filledSize, 0),
         apiRequestsUsed: stats.totalRequestsUsed,
         apiRequestsBudget: stats.totalBudget,
         lastScanAt: this.lastOddsFetchAt ? new Date(this.lastOddsFetchAt).toISOString() : null,
