@@ -7,6 +7,7 @@ import { addMessage, engineState, addCycleLog } from '@/engine/state';
 import { logScoreEvent, logPriceSnapshot, logFoulEvent, scheduleReactionSnapshots } from '@/engine/data-logger';
 import { NBA_CONFIG } from './leagues/nba';
 import { NCAA_CONFIG } from './leagues/ncaa';
+import { WNBA_CONFIG } from './leagues/wnba';
 
 /**
  * UNIFIED BASKETBALL SKILL
@@ -29,7 +30,7 @@ export class BasketballSkill implements Skill {
   pollIntervalMs = 1000;
   stats = { trades: 0, wins: 0, losses: 0, totalPnl: 0 };
 
-  private leagues: LeagueConfig[] = [NBA_CONFIG, NCAA_CONFIG];
+  private leagues: LeagueConfig[] = [NBA_CONFIG, NCAA_CONFIG, WNBA_CONFIG];
 
   private lastNarrationTime = 0;
   private readonly narrationCooldownMs = 10000;

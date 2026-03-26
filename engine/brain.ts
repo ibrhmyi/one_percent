@@ -1,4 +1,4 @@
-import type { WatchedMarket, Opportunity } from '@/lib/types';
+import type { WatchedMarket, Opportunity, ESPNGame } from '@/lib/types';
 import { engineState, addMessage, getOpenTrade, updateAccount } from './state';
 import { registerSkill, getSkills } from './skill-registry';
 import { enterPosition } from './trade-manager';
@@ -11,14 +11,13 @@ import { startPriceFeed, resubscribePriceFeed } from './price-feed';
 const GAMMA_EVENTS_API = 'https://gamma-api.polymarket.com/events';
 
 // ─────────────────────────────────────────────
-// Market Discovery — NBA Events endpoint
+// Market Discovery — Basketball Events endpoint
 // ─────────────────────────────────────────────
-// Queries /events?tag_slug=nba which returns events WITH their nested markets.
-// Game events have slugs like nba-lal-ind-2026-03-25.
-// Each game event contains a moneyline market (question = "Team A vs. Team B")
-// plus spread/totals props. We only care about the moneyline.
+// Queries multiple tags (nba, ncaa, wnba) from Gamma API.
+// Game events have slugs like nba-lal-ind-2026-03-25 or ncaa-duke-vermont-2026-03-27.
 
-const GAME_SLUG_RE = /^nba-[a-z]{2,4}-[a-z]{2,4}-\d{4}-\d{2}-\d{2}$/;
+const BASKETBALL_TAGS = ['nba', 'ncaa-basketball', 'march-madness', 'wnba'];
+const GAME_SLUG_RE = /^(nba|ncaa|wnba|march-madness)-[a-z]+-[a-z]+-\d{4}-\d{2}-\d{2}$/;
 
 function estimateGameStart(marketEndTime: string): string {
   // Estimate game start = market close - 2.5 hours
@@ -38,33 +37,43 @@ function parseTeamNames(title: string): { homeTeam: string; awayTeam: string } {
 
 async function fetchNBAMarkets(): Promise<WatchedMarket[]> {
   const markets: WatchedMarket[] = [];
+  const seenIds = new Set<string>();
 
-  const url = new URL(GAMMA_EVENTS_API);
-  url.searchParams.set('active', 'true');
-  url.searchParams.set('closed', 'false');
-  url.searchParams.set('tag_slug', 'nba');
-  url.searchParams.set('limit', '100');
-  url.searchParams.set('order', 'endDate');
-  url.searchParams.set('ascending', 'true');
+  // Fetch from all basketball tags in parallel
+  const allEvents: Record<string, unknown>[] = [];
+  await Promise.all(BASKETBALL_TAGS.map(async (tag) => {
+    try {
+      const url = new URL(GAMMA_EVENTS_API);
+      url.searchParams.set('active', 'true');
+      url.searchParams.set('closed', 'false');
+      url.searchParams.set('tag_slug', tag);
+      url.searchParams.set('limit', '100');
+      url.searchParams.set('order', 'endDate');
+      url.searchParams.set('ascending', 'true');
 
-  let events: Record<string, unknown>[];
-  try {
-    const res = await fetch(url.toString(), { cache: 'no-store' });
-    if (!res.ok) return markets;
-    events = await res.json();
-  } catch {
-    return markets;
-  }
+      const res = await fetch(url.toString(), { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data)) allEvents.push(...data);
+    } catch {
+      // Skip failed tags
+    }
+  }));
 
-  if (!Array.isArray(events)) return markets;
-
-  // Filter to game events only (ending within next 7 days)
+  // Filter to game events only (ending within next 7 days), deduplicate
   const cutoff = Date.now() + 7 * 24 * 60 * 60 * 1000;
-  const gameEvents = events.filter(ev => {
+  const gameEvents = allEvents.filter(ev => {
     const slug = String(ev.slug ?? '');
     const endDate = String(ev.endDate ?? '');
     const endMs = new Date(endDate).getTime();
-    return GAME_SLUG_RE.test(slug) && endMs <= cutoff;
+    // Accept game slugs matching the pattern, or any event with "vs" in title
+    const title = String(ev.title ?? '').toLowerCase();
+    const isGameEvent = GAME_SLUG_RE.test(slug) || (title.includes(' vs') && endMs > Date.now());
+    if (!isGameEvent || endMs > cutoff) return false;
+    // Deduplicate by slug
+    if (seenIds.has(slug)) return false;
+    seenIds.add(slug);
+    return true;
   });
 
   for (const ev of gameEvents) {
@@ -115,7 +124,8 @@ async function fetchNBAMarkets(): Promise<WatchedMarket[]> {
       yesPrice,
       noPrice,
       volume,
-      category: 'NBA',
+      category: eventSlug.startsWith('ncaa') || eventSlug.startsWith('march-madness') ? 'NCAA'
+              : eventSlug.startsWith('wnba') ? 'WNBA' : 'NBA',
       url: `https://polymarket.com/event/${eventSlug}`,
       yesTokenId: tokenIds[0] ?? '',
       noTokenId: tokenIds[1] ?? '',
@@ -197,24 +207,44 @@ export async function refreshMarkets(): Promise<void> {
   try {
     const markets = await fetchNBAMarkets();
 
-    // Enrich with actual ESPN start times
+    // Enrich with actual ESPN start times — fetch all leagues
     try {
       const { fetchScoreboard } = await import('./skills/basketball/espn-api');
-      const games = await fetchScoreboard('basketball/nba', 'NBA');
+      const espnPaths = [
+        { path: 'basketball/nba', league: 'NBA', prefix: 'nba' },
+        { path: 'basketball/mens-college-basketball', league: 'NCAA', prefix: 'ncaa' },
+        { path: 'basketball/wnba', league: 'WNBA', prefix: 'wnba' },
+      ];
+      const allGames: ESPNGame[] = [];
+      for (const { path, league } of espnPaths) {
+        try {
+          const g = await fetchScoreboard(path, league);
+          allGames.push(...g);
+        } catch { /* skip failed league */ }
+      }
+
       for (const market of markets) {
-        // Match by abbrevs + date in slug, e.g. nba-lal-ind-2026-03-25
-        // Slug order is typically away-home, but we match both directions.
-        const slugParts = market.slug.replace(/^nba-/, '').split('-');
+        // Strip league prefix from slug: nba-lal-ind-2026-03-25 → lal-ind-2026-03-25
+        const slug = market.slug;
+        const prefixMatch = slug.match(/^(nba|ncaa|wnba|march-madness)-/);
+        const stripped = prefixMatch ? slug.slice(prefixMatch[0].length) : slug;
+        const slugParts = stripped.split('-');
         const abbrA = slugParts[0] ?? '';
         const abbrB = slugParts[1] ?? '';
-        // Extract date from slug: parts 2-4 = YYYY, MM, DD
         const slugDate = slugParts.length >= 5
           ? `${slugParts[2]}-${slugParts[3]}-${slugParts[4]}`
           : null;
-        const game = games.find(g => {
-          const gameAbbrs = new Set([g.homeAbbr, g.awayAbbr]);
-          if (!gameAbbrs.has(abbrA) || !gameAbbrs.has(abbrB)) return false;
-          // Also require the game date to match the slug date
+
+        // Match against all leagues
+        const game = allGames.find(g => {
+          const gameAbbrs = new Set([g.homeAbbr.toLowerCase(), g.awayAbbr.toLowerCase()]);
+          if (!gameAbbrs.has(abbrA) || !gameAbbrs.has(abbrB)) {
+            // Also try team name substring match for NCAA
+            const titleLower = market.title.toLowerCase();
+            const homeName = g.homeTeam.toLowerCase().split(' ').pop() ?? '';
+            const awayName = g.awayTeam.toLowerCase().split(' ').pop() ?? '';
+            if (!titleLower.includes(homeName) || !titleLower.includes(awayName)) return false;
+          }
           if (slugDate && g.scheduledStart) {
             return g.scheduledStart.substring(0, 10) === slugDate;
           }
@@ -223,7 +253,7 @@ export async function refreshMarkets(): Promise<void> {
         if (game?.scheduledStart) {
           market.gameStartTime = game.scheduledStart;
           if (game.state === 'in') market.status = 'live';
-          if (game.state === 'post') market.status = 'upcoming'; // resolved
+          if (game.state === 'post') market.status = 'upcoming';
         }
       }
     } catch { /* ESPN errors don't block market discovery */ }
@@ -276,6 +306,8 @@ let lastNarrationAt = 0;
 const NARRATION_THROTTLE_MS = 5_000; // narrate at most once per 5s to avoid spam
 let lastQuickScanAt = 0;
 const QUICK_SCAN_INTERVAL_MS = 10_000; // quickScan every 10s when no live games
+let lastPreGameDetectAt = 0;
+const PRE_GAME_DETECT_INTERVAL_MS = 60_000; // full detect() for pre-game skill every 60s
 
 export async function runCycle(): Promise<void> {
   const skills = getSkills();
@@ -287,20 +319,26 @@ export async function runCycle(): Promise<void> {
   );
   const openTrade = getOpenTrade();
 
-  // No live games and no open position — skip Basketball Spike (live skill),
-  // but still run Basketball Edge quickScan every 10s for new market detection.
+  // No live games and no open position — skip Basketball (live skill),
+  // but run Basketball Edge: quickScan every 10s, full detect() every 60s.
   if (liveMarkets.length === 0 && !openTrade) {
     const now = Date.now();
-    if (now - lastQuickScanAt >= QUICK_SCAN_INTERVAL_MS) {
-      lastQuickScanAt = now;
-      for (const skill of skills) {
-        if (skill.status === 'paused') continue;
-        if (skill.id === 'basketball-edge' && 'quickScan' in skill) {
-          try {
-            await (skill as PreGameEdgeSkill).quickScan(markets);
-          } catch {
-            // Skill errors don't crash the brain
+    for (const skill of skills) {
+      if (skill.status === 'paused') continue;
+      if (skill.id === 'basketball-edge' && 'quickScan' in skill) {
+        try {
+          // Full detect (odds fetch, watchlist, allocation) every 60s
+          if (now - lastPreGameDetectAt >= PRE_GAME_DETECT_INTERVAL_MS) {
+            lastPreGameDetectAt = now;
+            await skill.detect(markets);
           }
+          // Quick market scan every 10s
+          else if (now - lastQuickScanAt >= QUICK_SCAN_INTERVAL_MS) {
+            lastQuickScanAt = now;
+            await (skill as PreGameEdgeSkill).quickScan(markets);
+          }
+        } catch {
+          // Skill errors don't crash the brain
         }
       }
     }
