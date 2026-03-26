@@ -6,7 +6,6 @@ import { BottomBar } from '@/components/terminal/bottom-bar';
 import { ScoreFeed } from '@/components/terminal/score-feed';
 import { GameSchedule } from '@/components/terminal/game-schedule';
 import { MarketsTable } from '@/components/terminal/markets-table';
-import { BrainLog } from '@/components/terminal/brain-log';
 import { TradesPanel } from '@/components/terminal/trades-panel';
 import { AccountPanel } from '@/components/terminal/account-panel';
 import { SkillsPanel } from '@/components/terminal/skills-panel';
@@ -97,7 +96,6 @@ export default function Home() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <AccountPanel account={state.account} trades={state.trades} />
           <SkillsPanel skills={state.skills} />
-          <BrainLog messages={state.messages} />
         </div>
       </div>
 

@@ -60,7 +60,7 @@ export function GameSchedule({ games }: Props) {
             const polyUrl = g.slug ? `https://polymarket.com/event/${g.slug}` : undefined;
 
             const inner = (
-              <div style={{
+              <div className={polyUrl ? 'schedule-row-link' : ''} style={{
                 padding: '8px 6px',
                 borderBottom: '1px solid var(--border-default)',
                 borderLeft: isLive ? '2px solid var(--green)' : '2px solid transparent',
@@ -70,10 +70,13 @@ export function GameSchedule({ games }: Props) {
               }}>
                 {/* Row 1: teams + status */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <div style={{ fontSize: '0.73rem', fontWeight: 600 }}>
+                  <div style={{ fontSize: '0.73rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ color: 'var(--text-secondary)' }}>{g.awayTeam}</span>
-                    <span style={{ color: 'var(--text-dim)', margin: '0 5px' }}>@</span>
+                    <span style={{ color: 'var(--text-dim)', margin: '0 1px' }}>@</span>
                     <span style={{ color: 'var(--text-secondary)' }}>{g.homeTeam}</span>
+                    {polyUrl && (
+                      <span style={{ color: 'var(--text-dim)', fontSize: '0.6rem', opacity: 0.6 }}>↗</span>
+                    )}
                     {isLive && g.awayScore !== undefined && (
                       <span style={{ color: 'var(--text-primary)', marginLeft: 8, fontWeight: 700 }}>
                         {g.awayScore}–{g.homeScore}

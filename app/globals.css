@@ -99,6 +99,8 @@ html, body {
   from { transform: translateX(100%); }
   to   { transform: translateX(-100%); }
 }
+.schedule-row-link:hover { background: rgba(255,255,255,0.04) !important; }
+
 .ticker-tape {
   display: flex;
   animation: ticker 40s linear infinite;

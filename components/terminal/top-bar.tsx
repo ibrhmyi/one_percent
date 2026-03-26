@@ -60,11 +60,16 @@ export function TopBar({ latestMessage }: Props) {
         overflow: 'hidden',
         whiteSpace: 'nowrap',
         textOverflow: 'ellipsis',
-        color,
         opacity: fade ? 1 : 0,
         transition: 'opacity 0.15s ease',
+        display: 'flex', alignItems: 'center', gap: 10,
       }}>
-        {displayed}
+        {latestMessage?.timestamp && (
+          <span style={{ color: 'var(--text-dim)', flexShrink: 0 }}>
+            {new Date(latestMessage.timestamp).toLocaleTimeString('en-US', { hour12: false })}
+          </span>
+        )}
+        <span style={{ color, overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayed}</span>
       </div>
     </div>
   );

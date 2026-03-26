@@ -42,11 +42,7 @@ export function SkillsPanel({ skills }: Props) {
           : null;
 
         return (
-          <div key={skill.id} style={{
-            padding: '8px 0',
-            borderBottom: '1px solid var(--border-default)',
-          }}>
-            {/* Top row: icon + name + toggle */}
+          <div key={skill.id} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-default)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 5 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                 <span style={{ fontSize: '0.9rem', flexShrink: 0 }}>{skill.icon}</span>
@@ -60,33 +56,56 @@ export function SkillsPanel({ skills }: Props) {
                 </div>
               </div>
 
-              {/* Rectangle LIVE / OFF toggle */}
+              {/* Sliding rectangle toggle */}
               <button
                 onClick={() => toggle(skill)}
                 disabled={pending === skill.id}
+                title={isOn ? 'Click to disable' : 'Click to enable'}
                 style={{
                   flexShrink: 0,
-                  padding: '3px 10px',
+                  position: 'relative',
+                  width: 72,
+                  height: 24,
                   borderRadius: 3,
-                  border: 'none',
-                  fontFamily: 'var(--font-mono)',
-                  fontWeight: 700,
-                  fontSize: '0.65rem',
-                  letterSpacing: '0.06em',
+                  border: `1px solid ${isOn ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.35)'}`,
+                  background: isOn ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
                   cursor: pending === skill.id ? 'default' : 'pointer',
                   opacity: pending === skill.id ? 0.6 : 1,
-                  transition: 'background 0.15s, color 0.15s',
-                  background: isOn ? 'rgba(34,197,94,0.18)' : 'rgba(239,68,68,0.15)',
-                  color: isOn ? 'var(--green)' : '#f87171',
-                  outline: `1px solid ${isOn ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.3)'}`,
+                  overflow: 'hidden',
+                  padding: 0,
+                  transition: 'border-color 0.2s, background 0.2s',
                 }}
-                title={isOn ? 'Click to disable' : 'Click to enable'}
               >
-                {pending === skill.id ? '…' : isOn ? 'LIVE' : 'OFF'}
+                {/* Sliding fill block */}
+                <span style={{
+                  position: 'absolute',
+                  top: 2, bottom: 2,
+                  width: '50%',
+                  borderRadius: 2,
+                  background: isOn ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.22)',
+                  left: isOn ? 'calc(50% - 2px)' : '2px',
+                  transition: 'left 0.22s cubic-bezier(.4,0,.2,1), background 0.2s',
+                }} />
+                {/* Labels */}
+                <span style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', alignItems: 'center',
+                  fontFamily: 'var(--font-mono)', fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.06em',
+                }}>
+                  <span style={{
+                    flex: 1, textAlign: 'center',
+                    color: !isOn ? '#f87171' : 'var(--text-dim)',
+                    transition: 'color 0.2s',
+                  }}>OFF</span>
+                  <span style={{
+                    flex: 1, textAlign: 'center',
+                    color: isOn ? 'var(--green)' : 'var(--text-dim)',
+                    transition: 'color 0.2s',
+                  }}>LIVE</span>
+                </span>
               </button>
             </div>
 
-            {/* Stats row */}
             <div style={{ display: 'flex', gap: 12, fontSize: '0.6rem', color: 'var(--text-dim)', paddingLeft: 2 }}>
               <span>Trades <span style={{ color: 'var(--text-secondary)' }}>{skill.stats.trades}</span></span>
               {winRate && <span>Win <span style={{ color: 'var(--green)' }}>{winRate}%</span></span>}

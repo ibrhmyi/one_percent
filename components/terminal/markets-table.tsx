@@ -113,12 +113,15 @@ export function MarketsTable({ markets }: Props) {
             </div>
             {upcoming.length > 1 && (
               <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginTop: 4 }}>
-                +{upcoming.length - 1} more game{upcoming.length > 2 ? 's' : ''} today
+                {(() => {
+                  const nextDate = new Date(next.gameStartTime!);
+                  const today = new Date();
+                  const diffDays = Math.round((nextDate.setHours(0,0,0,0) - today.setHours(0,0,0,0)) / 86400000);
+                  const label = diffDays === 0 ? 'today' : diffDays === 1 ? 'tomorrow' : `in ${diffDays} days`;
+                  return `+${upcoming.length - 1} more game${upcoming.length > 2 ? 's' : ''} ${label}`;
+                })()}
               </div>
             )}
-            <div style={{ marginTop: 8, fontSize: '0.6rem', color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ color: 'var(--green)' }}>●</span> Brain paused · resumes at tip-off
-            </div>
           </div>
         ) : (
           <div style={{ padding: '20px 0', color: 'var(--text-dim)', fontSize: '0.75rem' }}>
