@@ -45,7 +45,9 @@ export function allocate(
   const totalClusterEV = cluster.reduce((s, o) => s + o.bestSideEV, 0);
   const targets = cluster.map(entry => {
     const weight = entry.bestSideEV / totalClusterEV;
-    const entryPrice = (entry.bestSide === 'YES' ? entry.currentYesPrice! : entry.currentNoPrice!) + 0.01;
+    // BUY at current market price (taker) — this is the actual entry
+    const marketPrice = entry.bestSide === 'YES' ? entry.currentYesPrice! : entry.currentNoPrice!;
+    // Fair value = where we'll place our SELL limit to take profit
     const fairValue = entry.bestSide === 'YES'
       ? (entry.homeIsYes ? entry.homeFairValue : entry.awayFairValue)
       : (entry.homeIsYes ? entry.awayFairValue : entry.homeFairValue);
@@ -55,7 +57,8 @@ export function allocate(
       tokenId: (entry.bestSide === 'YES' ? entry.yesTokenId : entry.noTokenId) || '',
       game: `${entry.homeTeam} vs ${entry.awayTeam}`,
       side: entry.bestSide as 'YES' | 'NO',
-      entryPrice,
+      entryPrice: marketPrice,  // Buy at market
+      exitPrice: fairValue,     // Sell limit at fair value
       fairValue,
       ev: entry.bestSideEV,
       kellySize: Math.max(5, Math.round(bankroll * weight * 0.40)),

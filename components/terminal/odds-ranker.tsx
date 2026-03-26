@@ -59,14 +59,6 @@ function Countdown({ target }: { target: string }) {
   return <>{formatTime(target)}</>;
 }
 
-function confidenceDots(confidence: string) {
-  const n = confidence === 'high' ? 3 : confidence === 'medium' ? 2 : 1;
-  return (
-    <span style={{ letterSpacing: 2 }}>
-      {'●'.repeat(n)}{'○'.repeat(3 - n)}
-    </span>
-  );
-}
 
 export function OddsRanker({ watchlist, summary }: Props) {
   if (watchlist.length === 0 && !summary) {
@@ -201,15 +193,15 @@ export function OddsRanker({ watchlist, summary }: Props) {
                 </span>
               </div>
 
-              {/* Row 3: Confidence */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, paddingLeft: 22 }}>
-                <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)' }}>
-                  {confidenceDots(entry.consensus.confidence)} {entry.consensus.confidence}
-                </span>
-                <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)' }}>
-                  spread {(entry.consensus.spread * 100).toFixed(1)}%
-                </span>
-              </div>
+              {/* Row 3: Best side info */}
+              {isMatched && isPositive && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, paddingLeft: 22 }}>
+                  <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)' }}>
+                    BUY {entry.bestSide} @ {((entry.bestSide === 'YES' ? entry.currentYesPrice : entry.currentNoPrice) ?? 0 * 100).toFixed(0)}¢
+                    → SELL @ {((entry.bestSide === 'YES' ? entry.consensus.homeWinProb : entry.consensus.awayWinProb) * 100).toFixed(0)}¢
+                  </span>
+                </div>
+              )}
             </div>
           );
         })}

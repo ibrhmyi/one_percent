@@ -150,6 +150,7 @@ export interface AllocationDecision {
     game: string;
     side: 'YES' | 'NO';
     entryPrice: number;
+    exitPrice?: number;
     fairValue: number;
     ev: number;
     kellySize: number;

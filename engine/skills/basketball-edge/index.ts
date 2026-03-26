@@ -247,7 +247,7 @@ export class PreGameEdgeSkill implements Skill {
 
         if (order) {
           addMessage({
-            text: `[PRE-GAME][ENTER] ${target.game} | Consensus: ${(target.fairValue * 100).toFixed(1)}% | Poly: ${(target.entryPrice * 100).toFixed(0)}c | EV: +${(target.ev * 100).toFixed(1)}% | BUY ${target.side} @ ${target.entryPrice} ($${target.kellySize.toFixed(0)})`,
+            text: `[PRE-GAME][BUY] ${target.game} | BUY ${target.side} @ ${(target.entryPrice * 100).toFixed(0)}¢ (market) → SELL @ ${(target.fairValue * 100).toFixed(0)}¢ (fair) | EV: +${(target.ev * 100).toFixed(1)}% | $${target.kellySize.toFixed(0)}`,
             type: 'action',
           });
           this.stats.trades++;
@@ -285,16 +285,25 @@ export class PreGameEdgeSkill implements Skill {
       }
     }
 
-    // ── Step 6: Cancel orders for games about to start ──
+    // ── Step 6: Auto-exit positions before game starts ──
+    // Cancel resting orders and exit filled positions within 5 min of tip-off.
+    // Pre-game strategy hands off to live score-reactive strategy at game start.
     for (const order of allOrders) {
-      if (order.status !== 'resting') continue;
-
       const minsUntilGame = (new Date(order.commenceTime).getTime() - Date.now()) / 60000;
-      if (minsUntilGame < 5) {
+      if (minsUntilGame >= 5) continue;
+
+      if (order.status === 'resting') {
         await cancelOrder(order.orderId);
         addMessage({
-          text: `[PRE-GAME] Cancelled unfilled order: ${order.homeTeam} vs ${order.awayTeam} (game starting)`,
+          text: `[PRE-GAME] Cancelled unfilled order: ${order.homeTeam} vs ${order.awayTeam} (game starting in ${minsUntilGame.toFixed(0)}m)`,
           type: 'info',
+        });
+      } else if (order.status === 'filled' || order.status === 'partially_filled') {
+        // Exit at market — sell position before game starts
+        await cancelOrder(order.orderId);
+        addMessage({
+          text: `[PRE-GAME][EXIT] Exiting ${order.homeTeam} vs ${order.awayTeam} at market (game starting in ${minsUntilGame.toFixed(0)}m)`,
+          type: 'action',
         });
       }
     }
