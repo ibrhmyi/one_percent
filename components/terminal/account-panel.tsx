@@ -7,14 +7,29 @@ interface AccountState {
   mode: 'dry_run' | 'live';
   polymarketId: string;
 }
-interface Trade { status: string; }
-interface Props { account: AccountState; trades: Trade[]; }
+interface Trade { status: string; pnl?: number; }
+interface SkillStats { trades: number; wins: number; losses: number; totalPnl: number; }
+interface Props {
+  account: AccountState;
+  trades: Trade[];
+  preGameOrderCount?: number;
+  skillStats?: SkillStats[];
+}
 
-export function AccountPanel({ account, trades }: Props) {
+export function AccountPanel({ account, trades, preGameOrderCount, skillStats }: Props) {
   const isLive = account.mode === 'live';
-  const todayTrades = trades.length;
-  const wins = trades.filter((t: any) => t.pnl > 0).length;
-  const winRate = todayTrades > 0 ? ((wins / todayTrades) * 100).toFixed(0) : '—';
+
+  // Combine live trades + skill stats for total trade/win count
+  const liveTrades = trades.length;
+  const skillTotalTrades = skillStats?.reduce((s, st) => s + st.trades, 0) ?? 0;
+  const totalTrades = liveTrades + skillTotalTrades;
+  const liveWins = trades.filter(t => (t.pnl ?? 0) > 0).length;
+  const skillWins = skillStats?.reduce((s, st) => s + st.wins, 0) ?? 0;
+  const totalWins = liveWins + skillWins;
+  const winRate = totalTrades > 0 ? ((totalWins / totalTrades) * 100).toFixed(0) : '—';
+
+  // Open positions = live engine positions + pre-game orders
+  const totalOpenPos = account.openPositions + (preGameOrderCount ?? 0);
 
   return (
     <div className="panel">
@@ -39,9 +54,9 @@ export function AccountPanel({ account, trades }: Props) {
       {[
         { label: 'P&L Today', value: account.pnlToday, isNum: true },
         { label: 'P&L Total', value: account.pnlTotal, isNum: true },
-        { label: 'Open Pos', value: account.openPositions, isNum: false },
+        { label: 'Open Pos', value: totalOpenPos, isNum: false },
         { label: 'Win Rate', value: winRate, isNum: false, suffix: '%' },
-        { label: 'Trades', value: todayTrades, isNum: false },
+        { label: 'Trades', value: totalTrades, isNum: false },
       ].map(({ label, value, isNum, suffix }) => (
         <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid var(--border-default)' }}>
           <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>{label}</span>

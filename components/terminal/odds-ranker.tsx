@@ -198,7 +198,10 @@ export function OddsRanker({ watchlist, summary }: Props) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, paddingLeft: 22 }}>
                   <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)' }}>
                     BUY {entry.bestSide} @ {(((entry.bestSide === 'YES' ? entry.currentYesPrice : entry.currentNoPrice) ?? 0) * 100).toFixed(0)}¢
-                    → SELL @ {(((entry.bestSide === 'YES' ? entry.consensus.homeWinProb : entry.consensus.awayWinProb)) * 100).toFixed(0)}¢
+                    → SELL @ {(((entry.bestSide === 'YES'
+                      ? (entry.homeIsYes ? entry.consensus.homeWinProb : entry.consensus.awayWinProb)
+                      : (entry.homeIsYes ? entry.consensus.awayWinProb : entry.consensus.homeWinProb)
+                    ) * 100)).toFixed(0)}¢
                   </span>
                 </div>
               )}

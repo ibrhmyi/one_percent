@@ -122,7 +122,12 @@ export default function Home() {
 
         {/* RIGHT COLUMN — Account + Skills */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <AccountPanel account={state.account} trades={state.trades} />
+          <AccountPanel
+            account={state.account}
+            trades={state.trades}
+            preGameOrderCount={state.preGameOrders?.length ?? 0}
+            skillStats={state.skills?.map((s: any) => s.stats) ?? []}
+          />
           <SkillsPanel skills={state.skills} />
         </div>
       </div>

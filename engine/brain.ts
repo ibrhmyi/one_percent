@@ -342,6 +342,8 @@ export async function runCycle(): Promise<void> {
         }
       }
     }
+    // Still count this as a cycle even when no live games
+    engineState.lastCycleAt = new Date().toISOString();
     return;
   }
 
