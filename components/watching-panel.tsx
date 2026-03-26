@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { WatchedMarket } from '@/lib/types';
 
 interface Props {
@@ -52,8 +52,8 @@ export function WatchingPanel({ markets, focusedMarketId }: Props) {
     return (
       <div className="card-border rounded-2xl p-10 text-center">
         <div className="text-2xl font-mono text-slate-700 mb-2">—</div>
-        <div className="text-slate-600 text-sm font-mono">No market to watch right now</div>
-        <div className="text-slate-700 text-xs font-mono mt-1">The brain will pick one as games approach</div>
+        <div className="text-slate-600 text-sm font-mono">No live games right now</div>
+        <div className="text-slate-700 text-xs font-mono mt-1">Check the Upcoming tab to see scheduled games</div>
       </div>
     );
   }
@@ -102,8 +102,8 @@ export function WatchingPanel({ markets, focusedMarketId }: Props) {
 
         {/* 4 metric boxes */}
         <div className="grid grid-cols-4 gap-2 mb-4">
-          <MetricBox label="YES PRICE" value={`${(market.yesPrice * 100).toFixed(1)}¢`} valueClass="text-emerald-400" bg="bg-emerald-500/5 border-emerald-500/15" />
-          <MetricBox label="NO PRICE"  value={`${(market.noPrice * 100).toFixed(1)}¢`}  valueClass="text-rose-400"    bg="bg-rose-500/5 border-rose-500/15" />
+          <MetricBox label="YES PRICE" value={`${(market.yesPrice * 100).toFixed(1)}¢`} valueClass="text-emerald-400" bg="bg-emerald-500/5 border-emerald-500/15" flash />
+          <MetricBox label="NO PRICE"  value={`${(market.noPrice * 100).toFixed(1)}¢`}  valueClass="text-rose-400"    bg="bg-rose-500/5 border-rose-500/15" flash />
           <MetricBox label="SPREAD"    value={market.spread !== null && market.spread !== undefined ? `${market.spread.toFixed(1)}¢` : '—'} valueClass="text-slate-200" bg="bg-white/[0.03] border-white/[0.06]" />
           <MetricBox label="VOLUME"    value={formatVolume(market.volume)} valueClass="text-slate-200" bg="bg-white/[0.03] border-white/[0.06]" />
         </div>
@@ -132,7 +132,7 @@ export function WatchingPanel({ markets, focusedMarketId }: Props) {
       {/* ── Other upcoming markets (mini list) ── */}
       {markets.length > 1 && (
         <div className="card-border rounded-2xl p-4">
-          <div className="text-[10px] font-mono text-slate-600 uppercase tracking-wider mb-3">Also upcoming</div>
+          <div className="text-[10px] font-mono text-slate-600 uppercase tracking-wider mb-3">Also live</div>
           <div className="space-y-2">
             {markets
               .filter(m => m.id !== market.id)
@@ -145,11 +145,34 @@ export function WatchingPanel({ markets, focusedMarketId }: Props) {
   );
 }
 
-function MetricBox({ label, value, valueClass, bg }: { label: string; value: string; valueClass: string; bg: string }) {
+function MetricBox({ label, value, valueClass, bg, flash = false }: {
+  label: string; value: string; valueClass: string; bg: string; flash?: boolean;
+}) {
+  const prevRef = useRef(value);
+  const [direction, setDirection] = useState<'up' | 'down' | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!flash || value === prevRef.current) { prevRef.current = value; return; }
+    const prev = parseFloat(prevRef.current);
+    const next = parseFloat(value);
+    if (!isNaN(prev) && !isNaN(next) && prev !== next) {
+      setDirection(next > prev ? 'up' : 'down');
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setDirection(null), 600);
+    }
+    prevRef.current = value;
+  }, [value, flash]);
+
   return (
-    <div className={`rounded-xl border px-3 py-2.5 ${bg}`}>
+    <div className={`rounded-xl border px-3 py-2.5 transition-colors duration-300 ${
+      direction === 'up' ? 'bg-emerald-400/20 border-emerald-400/40' :
+      direction === 'down' ? 'bg-rose-400/20 border-rose-400/40' : bg
+    }`}>
       <div className="text-[9px] font-mono text-slate-600 uppercase tracking-wider mb-1">{label}</div>
-      <div className={`text-base font-mono font-bold tabular-nums ${valueClass}`}>{value}</div>
+      <div className={`text-base font-mono font-bold tabular-nums transition-colors duration-300 ${
+        direction === 'up' ? 'text-emerald-300' : direction === 'down' ? 'text-rose-300' : valueClass
+      }`}>{value}</div>
     </div>
   );
 }

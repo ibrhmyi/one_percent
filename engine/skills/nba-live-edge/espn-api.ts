@@ -1,6 +1,6 @@
 import type { ESPNGame } from '@/lib/types';
 
-const ESPN_URL = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard';
+const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
 
 function parseClockToSeconds(displayClock: string): number {
   const parts = displayClock.split(':');
@@ -27,58 +27,135 @@ function calcSecondsRemaining(state: string, period: number, displayClock: strin
 }
 
 export async function fetchNBAScoreboard(): Promise<ESPNGame[]> {
-  const res = await fetch(ESPN_URL, {
-    next: { revalidate: 0 },
-    headers: { 'Accept': 'application/json' },
+  // Fetch the next 7 days so upcoming market start times are accurate.
+  // ESPN scoreboard returns both live and scheduled games for each date.
+  const now = new Date();
+  const dates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now.getTime() + i * 86_400_000);
+    return d.toISOString().substring(0, 10).replace(/-/g, '');
   });
 
-  if (!res.ok) throw new Error(`ESPN API error: ${res.status}`);
+  const allGames: ESPNGame[] = [];
+  const seenIds = new Set<string>();
 
-  const data = await res.json();
-  const events = data?.events ?? [];
-  const games: ESPNGame[] = [];
-
-  for (const event of events) {
+  for (const dateStr of dates) {
     try {
-      const competition = event.competitions?.[0];
-      if (!competition) continue;
-
-      const status = event.status;
-      const state = status?.type?.state ?? 'pre';
-      const period: number = status?.period ?? 1;
-      const displayClock: string = status?.displayClock ?? '12:00';
-
-      const competitors: Array<{ homeAway: string; team: { shortDisplayName: string; abbreviation: string }; score: string }> =
-        competition.competitors ?? [];
-
-      const home = competitors.find((c) => c.homeAway === 'home');
-      const away = competitors.find((c) => c.homeAway === 'away');
-
-      if (!home || !away) continue;
-
-      const homeScore = parseInt(home.score ?? '0', 10);
-      const awayScore = parseInt(away.score ?? '0', 10);
-      const secondsRemaining = calcSecondsRemaining(state, period, displayClock);
-
-      games.push({
-        id: event.id,
-        name: event.name,
-        homeTeam: home.team.shortDisplayName,
-        awayTeam: away.team.shortDisplayName,
-        homeAbbr: (home.team.abbreviation ?? '').toLowerCase(),
-        awayAbbr: (away.team.abbreviation ?? '').toLowerCase(),
-        homeScore,
-        awayScore,
-        period,
-        clock: displayClock,
-        state: state as 'pre' | 'in' | 'post',
-        secondsRemaining,
-        scheduledStart: String(event.date ?? new Date().toISOString()),
+      const res = await fetch(`${ESPN_BASE}/scoreboard?dates=${dateStr}`, {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(5000),
+        headers: { 'Accept': 'application/json' },
       });
+
+      if (!res.ok) continue;
+
+      const data = await res.json();
+      const events = data?.events ?? [];
+
+      for (const event of events) {
+        try {
+          const gameId = String(event.id ?? '');
+          if (seenIds.has(gameId)) continue;
+          seenIds.add(gameId);
+
+          const competition = event.competitions?.[0];
+          if (!competition) continue;
+
+          const status = event.status;
+          const state = (status?.type?.state ?? 'pre') as 'pre' | 'in' | 'post';
+          const period: number = status?.period ?? 1;
+          const displayClock: string = status?.displayClock ?? '12:00';
+
+          const competitors: Array<{
+            homeAway: string;
+            team: { shortDisplayName: string; displayName: string; name: string; abbreviation: string };
+            score: string;
+          }> = competition.competitors ?? [];
+
+          const home = competitors.find((c) => c.homeAway === 'home');
+          const away = competitors.find((c) => c.homeAway === 'away');
+
+          if (!home || !away) continue;
+
+          const homeScore = parseInt(home.score ?? '0', 10);
+          const awayScore = parseInt(away.score ?? '0', 10);
+          const secondsRemaining = calcSecondsRemaining(state, period, displayClock);
+
+          allGames.push({
+            id: gameId,
+            name: String(event.name ?? ''),
+            homeTeam: String(home.team.shortDisplayName || home.team.displayName || home.team.name || ''),
+            awayTeam: String(away.team.shortDisplayName || away.team.displayName || away.team.name || ''),
+            homeAbbr: (home.team.abbreviation ?? '').toLowerCase(),
+            awayAbbr: (away.team.abbreviation ?? '').toLowerCase(),
+            homeScore,
+            awayScore,
+            period,
+            clock: displayClock,
+            state,
+            secondsRemaining,
+            scheduledStart: String(event.date ?? new Date().toISOString()),
+          });
+        } catch {
+          // Skip malformed game entries
+        }
+      }
     } catch {
-      // Skip malformed game entries
+      // Skip failed date fetch
     }
   }
 
-  return games;
+  return allGames;
+}
+
+export function getLiveGames(games: ESPNGame[]): ESPNGame[] {
+  return games.filter(g => g.state === 'in');
+}
+
+export function getUpcomingGames(games: ESPNGame[]): ESPNGame[] {
+  return games.filter(g => g.state === 'pre');
+}
+
+export interface ESPNPlay {
+  id: string;
+  type: string;        // e.g. 'Personal Foul', 'Flagrant Foul', 'Free Throw'
+  description: string;
+  teamId: string;
+  period: number;
+  clock: string;
+  homeScore: number;
+  awayScore: number;
+}
+
+export async function fetchPlayByPlay(gameId: string): Promise<ESPNPlay[]> {
+  try {
+    const response = await fetch(
+      `${ESPN_BASE}/summary?event=${gameId}`,
+      { cache: 'no-store', signal: AbortSignal.timeout(3000) }
+    );
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    const rawPlays: Record<string, unknown>[] = data?.plays ?? data?.recentPlays ?? [];
+
+    const plays: ESPNPlay[] = [];
+    for (const p of rawPlays) {
+      const typeText = String((p?.type as Record<string, unknown>)?.text ?? '');
+      const lower = typeText.toLowerCase();
+      if (!lower.includes('foul') && !lower.includes('free throw')) continue;
+
+      plays.push({
+        id: String(p?.id ?? ''),
+        type: typeText,
+        description: String(p?.text ?? ''),
+        teamId: String((p?.team as Record<string, unknown>)?.id ?? ''),
+        period: parseInt(String((p?.period as Record<string, unknown>)?.number ?? '0'), 10),
+        clock: String((p?.clock as Record<string, unknown>)?.displayValue ?? '0:00'),
+        homeScore: parseInt(String(p?.homeScore ?? '0'), 10),
+        awayScore: parseInt(String(p?.awayScore ?? '0'), 10)
+      });
+    }
+    return plays;
+  } catch {
+    return [];
+  }
 }

@@ -31,6 +31,14 @@ const STATUS_CONFIG = {
     borderTopClass: 'from-rose-500/40 via-rose-500/10 to-transparent',
     badgeBg: 'bg-rose-500/10 border-rose-500/25',
   },
+  paused: {
+    label: 'Paused',
+    textClass: 'text-slate-500',
+    dotClass: 'bg-slate-600',
+    glowClass: '',
+    borderTopClass: 'from-white/10 via-white/[0.04] to-transparent',
+    badgeBg: 'bg-white/[0.05] border-white/10',
+  },
 };
 
 export function SkillCard({ skill }: Props) {

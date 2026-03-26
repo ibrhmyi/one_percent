@@ -5,6 +5,7 @@ import { enterPosition } from './trade-manager';
 import { checkExits } from './exit-manager';
 import { NBALiveEdge } from './skills/nba-live-edge';
 import { parseTokenIds } from './skills/nba-live-edge/market-matcher';
+import { startPriceFeed, resubscribePriceFeed } from './price-feed';
 
 const GAMMA_EVENTS_API = 'https://gamma-api.polymarket.com/events';
 
@@ -56,8 +57,8 @@ async function fetchNBAMarkets(): Promise<WatchedMarket[]> {
 
   if (!Array.isArray(events)) return markets;
 
-  // Filter to game events only (ending within next 24 hours)
-  const cutoff = Date.now() + 24 * 60 * 60 * 1000;
+  // Filter to game events only (ending within next 7 days)
+  const cutoff = Date.now() + 7 * 24 * 60 * 60 * 1000;
   const gameEvents = events.filter(ev => {
     const slug = String(ev.slug ?? '');
     const endDate = String(ev.endDate ?? '');
@@ -200,14 +201,24 @@ export async function refreshMarkets(): Promise<void> {
       const { fetchNBAScoreboard } = await import('./skills/nba-live-edge/espn-api');
       const games = await fetchNBAScoreboard();
       for (const market of markets) {
-        // Match by abbrevs in slug, e.g. nba-lal-ind-2026-03-25
+        // Match by abbrevs + date in slug, e.g. nba-lal-ind-2026-03-25
+        // Slug order is typically away-home, but we match both directions.
         const slugParts = market.slug.replace(/^nba-/, '').split('-');
-        const homeAbbr = slugParts[0] ?? '';
-        const awayAbbr = slugParts[1] ?? '';
-        const game = games.find(g =>
-          (g.homeAbbr === homeAbbr || g.awayAbbr === awayAbbr) ||
-          (g.homeAbbr === awayAbbr || g.awayAbbr === homeAbbr)
-        );
+        const abbrA = slugParts[0] ?? '';
+        const abbrB = slugParts[1] ?? '';
+        // Extract date from slug: parts 2-4 = YYYY, MM, DD
+        const slugDate = slugParts.length >= 5
+          ? `${slugParts[2]}-${slugParts[3]}-${slugParts[4]}`
+          : null;
+        const game = games.find(g => {
+          const gameAbbrs = new Set([g.homeAbbr, g.awayAbbr]);
+          if (!gameAbbrs.has(abbrA) || !gameAbbrs.has(abbrB)) return false;
+          // Also require the game date to match the slug date
+          if (slugDate && g.scheduledStart) {
+            return g.scheduledStart.substring(0, 10) === slugDate;
+          }
+          return true;
+        });
         if (game?.scheduledStart) {
           market.gameStartTime = game.scheduledStart;
           if (game.state === 'in') market.status = 'live';
@@ -221,12 +232,14 @@ export async function refreshMarkets(): Promise<void> {
       await enrichWithClobSpreads(markets);
     } catch { /* CLOB errors don't block market discovery */ }
 
-    // Only keep markets where game hasn't started yet OR is live right now
+    // Keep live games + games starting within 36h (enough for upcoming tab's 24h view)
     const now = Date.now();
+    const H36 = 36 * 60 * 60 * 1000;
     const relevant = markets.filter(m => {
       if (m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open') return true;
-      if (!m.gameStartTime) return true;
-      return new Date(m.gameStartTime).getTime() > now;
+      if (!m.gameStartTime) return false;
+      const diff = new Date(m.gameStartTime).getTime() - now;
+      return diff > -4 * 60 * 60 * 1000 && diff < H36;
     });
 
     engineState.watchedMarkets = relevant;
@@ -241,12 +254,18 @@ export async function refreshMarkets(): Promise<void> {
     const focused = liveMarket ?? nextMarket ?? null;
     engineState.focusedMarketId = focused?.id ?? null;
 
-    if (relevant.length > 0) {
-      addMessage({
-        text: `Watching ${relevant.length} markets — focused on ${focused?.title ?? 'none'}`,
-        type: 'info',
-      });
-    }
+    const liveCount = relevant.filter(m =>
+      m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open'
+    ).length;
+    addMessage({
+      text: liveCount > 0
+        ? `${liveCount} live game${liveCount > 1 ? 's' : ''} — tracking ${relevant.length} markets`
+        : `Tracking ${relevant.length} markets — no live games`,
+      type: 'info',
+    });
+
+    // Re-subscribe WS price feed to new set of token IDs
+    resubscribePriceFeed();
   } catch (err) {
     addMessage({
       text: `Market refresh error: ${err instanceof Error ? err.message : String(err)}`,
@@ -267,14 +286,41 @@ export async function runCycle(): Promise<void> {
   if (skills.length === 0) return;
 
   const markets = engineState.watchedMarkets;
+  const liveMarkets = markets.filter(m =>
+    m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open'
+  );
+  const openTrade = getOpenTrade();
 
-  // Only scan the focused market — no point watching games hours away
+  // No live games and no open position — skip skill scanning entirely.
+  // refreshMarkets() runs every 15s and will flip market status to 'live' when games start.
+  if (liveMarkets.length === 0 && !openTrade) {
+    const enabledSkills = skills.filter(s => s.status !== 'paused');
+    if (enabledSkills.length > 0) {
+      const now = Date.now();
+      if (now - lastNarrationAt > NARRATION_THROTTLE_MS * 6) {
+        const upcoming = markets.filter(m => m.gameStartTime);
+        const next = upcoming.sort((a, b) =>
+          new Date(a.gameStartTime!).getTime() - new Date(b.gameStartTime!).getTime()
+        )[0];
+        const msg = next
+          ? `Waiting for games to start. Next: ${next.homeTeam} vs ${next.awayTeam} at ${new Date(next.gameStartTime!).toLocaleTimeString()}`
+          : 'Waiting for NBA games to start...';
+        addMessage({ text: msg, type: 'idle' });
+        lastNarrationAt = now;
+      }
+    }
+    return;
+  }
+
   const focused = markets.find(m => m.id === engineState.focusedMarketId);
-  const scanTargets = focused ? [focused] : markets.slice(0, 1);
+  const scanTargets = liveMarkets.length > 0
+    ? liveMarkets
+    : focused ? [focused] : markets.slice(0, 1);
 
   const allOpportunities: Opportunity[] = [];
 
   for (const skill of skills) {
+    if (skill.status === 'paused') continue;
     try {
       const opps = await skill.detect(scanTargets);
       allOpportunities.push(...opps);
@@ -302,7 +348,6 @@ export async function runCycle(): Promise<void> {
   engineState.lastCycleAt = new Date().toISOString();
 
   // Only one open position at a time
-  const openTrade = getOpenTrade();
   if (openTrade) {
     // Narrate occasionally while holding
     const now = Date.now();
@@ -366,6 +411,9 @@ export function startBrain() {
   engineState.isRunning = true;
 
   registerSkill(new NBALiveEdge());
+
+  // Start real-time WebSocket price feed
+  startPriceFeed();
 
   // Main cycle: every 1s
   setInterval(async () => {

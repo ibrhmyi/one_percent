@@ -105,7 +105,7 @@ export interface SkillInfo {
   icon: string;
   description: string;
   category: string;
-  status: 'active' | 'idle' | 'error';
+  status: 'active' | 'idle' | 'error' | 'paused';
   pollIntervalMs: number;
   stats: SkillStats;
 }

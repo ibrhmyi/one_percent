@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { WatchedMarket } from '@/lib/types';
 
 interface Props {
@@ -144,12 +144,14 @@ export function MarketCard({ market }: Props) {
           value={`${(market.yesPrice * 100).toFixed(1)}¢`}
           valueClass="text-emerald-400"
           bgClass="bg-emerald-500/5 border-emerald-500/15"
+          flash
         />
         <MetricBox
           label="NO PRICE"
           value={`${(market.noPrice * 100).toFixed(1)}¢`}
           valueClass="text-rose-400"
           bgClass="bg-rose-500/5 border-rose-500/15"
+          flash
         />
         <MetricBox
           label="SPREAD"
@@ -194,16 +196,46 @@ function MetricBox({
   value,
   valueClass,
   bgClass,
+  flash = false,
 }: {
   label: string;
   value: string;
   valueClass: string;
   bgClass: string;
+  flash?: boolean;
 }) {
+  const prevRef = useRef(value);
+  const [direction, setDirection] = useState<'up' | 'down' | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!flash || value === prevRef.current) {
+      prevRef.current = value;
+      return;
+    }
+    // Determine direction by comparing numeric part
+    const prev = parseFloat(prevRef.current);
+    const next = parseFloat(value);
+    if (!isNaN(prev) && !isNaN(next) && prev !== next) {
+      setDirection(next > prev ? 'up' : 'down');
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setDirection(null), 600);
+    }
+    prevRef.current = value;
+  }, [value, flash]);
+
+  const flashClass = direction === 'up'
+    ? 'bg-emerald-400/20 border-emerald-400/40'
+    : direction === 'down'
+      ? 'bg-rose-400/20 border-rose-400/40'
+      : bgClass;
+
   return (
-    <div className={`rounded-xl border px-3 py-2.5 ${bgClass}`}>
+    <div className={`rounded-xl border px-3 py-2.5 transition-colors duration-300 ${direction ? flashClass : bgClass}`}>
       <div className="text-[9px] font-mono text-slate-600 uppercase tracking-wider mb-1">{label}</div>
-      <div className={`text-base font-mono font-bold ${valueClass} tabular-nums`}>{value}</div>
+      <div className={`text-base font-mono font-bold tabular-nums transition-colors duration-300 ${
+        direction === 'up' ? 'text-emerald-300' : direction === 'down' ? 'text-rose-300' : valueClass
+      }`}>{value}</div>
     </div>
   );
 }
