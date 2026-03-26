@@ -1,33 +1,33 @@
 'use client';
-interface ScoringEvent {
-  timestamp: string;
-  homeTeam: string;
-  awayTeam: string;
-  homeScore: number;
-  awayScore: number;
-  period: string;
-  clock: string;
-  edge: number;
-  action: string;
-  reason: string;
-}
-interface Props {
-  scoringEvents: ScoringEvent[];
-  cycleCount: number;
-  liveGames: number;
-  isRunning: boolean;
-  wsConnected: boolean;
-}
-export function TopBar({ scoringEvents, cycleCount, liveGames, isRunning, wsConnected }: Props) {
-  const tapeItems = scoringEvents.slice(-20).reverse().map((ev, i) => {
-    const edgePct = (ev.edge * 100).toFixed(1);
-    const color = ev.action === 'enter' ? 'var(--green)' : ev.edge > 0 ? 'var(--amber)' : 'var(--text-dim)';
-    return (
-      <span key={i} style={{ marginRight: '40px', color }}>
-        {ev.awayTeam} @ {ev.homeTeam} {ev.period} {ev.clock} — {ev.awayScore}–{ev.homeScore} — edge: {ev.edge > 0 ? '+' : ''}{edgePct}%{ev.action === 'enter' ? ' → TRADE' : ''}
-      </span>
-    );
-  });
+import { useEffect, useRef, useState } from 'react';
+
+interface Message { text: string; type: string; timestamp: string; }
+interface Props { latestMessage: Message | null; }
+
+export function TopBar({ latestMessage }: Props) {
+  const [displayed, setDisplayed] = useState<string>('Initializing...');
+  const [fade, setFade] = useState(true);
+  const prevRef = useRef<string>('');
+
+  useEffect(() => {
+    const txt = latestMessage?.text ?? '';
+    if (!txt || txt === prevRef.current) return;
+    prevRef.current = txt;
+    setFade(false);
+    const t = setTimeout(() => { setDisplayed(txt); setFade(true); }, 150);
+    return () => clearTimeout(t);
+  }, [latestMessage?.text]);
+
+  const typeColor: Record<string, string> = {
+    info: 'var(--text-secondary)',
+    idle: 'var(--text-dim)',
+    warning: 'var(--amber)',
+    action: 'var(--cyan)',
+    success: 'var(--green)',
+    trade: 'var(--green)',
+    error: 'var(--red)',
+  };
+  const color = typeColor[latestMessage?.type ?? 'info'] ?? 'var(--text-secondary)';
 
   return (
     <div style={{
@@ -53,27 +53,18 @@ export function TopBar({ scoringEvents, cycleCount, liveGames, isRunning, wsConn
         ONEPERCENT
       </div>
 
-      {/* Scrolling tape */}
-      <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-        {tapeItems.length > 0 ? (
-          <div className="ticker-tape">{tapeItems}{tapeItems}</div>
-        ) : (
-          <span style={{ padding: '0 16px', color: 'var(--text-dim)' }}>Waiting for scoring events...</span>
-        )}
-      </div>
-
-      {/* Stats */}
+      {/* Sliding brain message */}
       <div style={{
+        flex: 1,
         padding: '0 16px',
-        borderLeft: '1px solid var(--border-default)',
+        overflow: 'hidden',
         whiteSpace: 'nowrap',
-        color: 'var(--text-dim)',
-        flexShrink: 0,
-        display: 'flex', gap: '12px',
+        textOverflow: 'ellipsis',
+        color,
+        opacity: fade ? 1 : 0,
+        transition: 'opacity 0.15s ease',
       }}>
-        <span>CYC <span style={{ color: 'var(--text-secondary)' }}>{cycleCount.toLocaleString()}</span></span>
-        <span>LIVE <span style={{ color: liveGames > 0 ? 'var(--green)' : 'var(--text-dim)' }}>{liveGames}</span></span>
-        <span style={{ color: isRunning ? 'var(--green)' : 'var(--red)' }}>{isRunning ? '● ON' : '○ OFF'}</span>
+        {displayed}
       </div>
     </div>
   );

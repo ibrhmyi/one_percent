@@ -27,6 +27,7 @@ const DEFAULT_STATE = {
   totalGames: 0,
   scoringEvents: [] as any[],
   gameSchedule: [] as any[],
+  latestMessage: null as any,
 };
 
 export default function Home() {
@@ -59,13 +60,7 @@ export default function Home() {
       paddingBottom: '32px',
       fontFamily: 'var(--font-mono)',
     }}>
-      <TopBar
-        scoringEvents={state.scoringEvents}
-        cycleCount={state.cycleCount}
-        liveGames={state.liveGames}
-        isRunning={state.isRunning}
-        wsConnected={state.wsConnected}
-      />
+      <TopBar latestMessage={state.latestMessage} />
 
       {error && (
         <div style={{

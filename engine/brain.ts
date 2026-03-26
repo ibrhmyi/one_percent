@@ -257,13 +257,6 @@ export async function refreshMarkets(): Promise<void> {
     const liveCount = relevant.filter(m =>
       m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open'
     ).length;
-    addMessage({
-      text: liveCount > 0
-        ? `${liveCount} live game${liveCount > 1 ? 's' : ''} — tracking ${relevant.length} markets`
-        : `Tracking ${relevant.length} markets — no live games`,
-      type: 'info',
-    });
-
     // Re-subscribe WS price feed to new set of token IDs
     resubscribePriceFeed();
   } catch (err) {
@@ -295,20 +288,7 @@ export async function runCycle(): Promise<void> {
   // refreshMarkets() runs every 15s and will flip market status to 'live' when games start.
   if (liveMarkets.length === 0 && !openTrade) {
     const enabledSkills = skills.filter(s => s.status !== 'paused');
-    if (enabledSkills.length > 0) {
-      const now = Date.now();
-      if (now - lastNarrationAt > NARRATION_THROTTLE_MS * 6) {
-        const upcoming = markets.filter(m => m.gameStartTime);
-        const next = upcoming.sort((a, b) =>
-          new Date(a.gameStartTime!).getTime() - new Date(b.gameStartTime!).getTime()
-        )[0];
-        const msg = next
-          ? `Waiting for games to start. Next: ${next.homeTeam} vs ${next.awayTeam} at ${new Date(next.gameStartTime!).toLocaleTimeString()}`
-          : 'Waiting for NBA games to start...';
-        addMessage({ text: msg, type: 'idle' });
-        lastNarrationAt = now;
-      }
-    }
+    // Countdown shown in UI — no log spam needed
     return;
   }
 

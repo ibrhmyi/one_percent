@@ -59,7 +59,15 @@ export async function GET() {
     hasPolymarketMatch: true,
     yesPrice: m.yesPrice,
     noPrice: m.noPrice,
+    volume: m.volume,
+    spread: m.spread,
+    slug: m.slug,
   }));
+
+  // Latest brain message for top bar ticker
+  const latestMessage = engineState.messages.length > 0
+    ? engineState.messages[engineState.messages.length - 1]
+    : null;
 
   // Scoring events from cycleLogs
   const scoringEvents = engineState.cycleLogs.slice(-50).map(log => ({
@@ -102,12 +110,12 @@ export async function GET() {
       stats: s.stats,
     })),
     cycleLogs: engineState.cycleLogs.slice(-200),
-    // New fields
     cycleCount,
     uptimeSeconds,
     liveGames: liveMarkets.length,
     totalGames: engineState.watchedMarkets.length,
     scoringEvents,
     gameSchedule,
+    latestMessage,
   });
 }
