@@ -17,6 +17,7 @@ interface WatchlistEntry {
     spread: number;
   };
   polymarketMatched: boolean;
+  polymarketUrl?: string;
   conditionId?: string;
   currentYesPrice?: number;
   currentNoPrice?: number;
@@ -127,12 +128,23 @@ export function OddsRanker({ watchlist, summary }: Props) {
                     background: 'rgba(100,116,139,0.15)', color: 'var(--text-dim)',
                     border: '1px solid var(--border-default)', flexShrink: 0,
                   }}>{sportLabel}</span>
-                  <span style={{
-                    fontSize: '0.68rem', color: 'var(--text-primary)', fontWeight: 500,
-                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
-                    {entry.awayTeam} @ {entry.homeTeam}
-                  </span>
+                  {entry.polymarketUrl ? (
+                    <a href={entry.polymarketUrl} target="_blank" rel="noopener noreferrer" style={{
+                      fontSize: '0.68rem', color: 'var(--text-primary)', fontWeight: 500,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      textDecoration: 'none',
+                    }} className="schedule-row-link">
+                      {entry.awayTeam} @ {entry.homeTeam}
+                      <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)', marginLeft: 4 }}>↗</span>
+                    </a>
+                  ) : (
+                    <span style={{
+                      fontSize: '0.68rem', color: 'var(--text-primary)', fontWeight: 500,
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {entry.awayTeam} @ {entry.homeTeam}
+                    </span>
+                  )}
                 </div>
                 <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', flexShrink: 0 }}>
                   <Countdown target={entry.commenceTime} />

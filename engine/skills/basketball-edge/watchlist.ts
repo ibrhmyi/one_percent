@@ -42,6 +42,7 @@ export function buildWatchlist(
       const { homeIsYes } = resolveTokenSides(market, game.home_team, game.away_team);
 
       entry.polymarketMatched = true;
+      entry.polymarketUrl = market.url || (market.slug ? `https://polymarket.com/event/${market.slug}` : undefined);
       entry.conditionId = market.conditionId;
       entry.yesTokenId = market.yesTokenId;
       entry.noTokenId = market.noTokenId;

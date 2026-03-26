@@ -48,13 +48,21 @@ function formatVol(v?: number) {
 export function GameSchedule({ games }: Props) {
   const now = useNow();
 
-  // Only show games within 24 hours or currently live
+  // Only show games within 24 hours or currently live, sorted: live first, then earliest start
   const H24 = 24 * 60 * 60 * 1000;
   const filtered = games.filter(g => {
     if (g.status === 'live') return true;
     if (!g.startTime) return false;
     const diff = new Date(g.startTime).getTime() - now;
     return diff > -4 * 60 * 60 * 1000 && diff < H24;
+  }).sort((a, b) => {
+    // Live games first
+    if (a.status === 'live' && b.status !== 'live') return -1;
+    if (b.status === 'live' && a.status !== 'live') return 1;
+    // Then by start time ascending (soonest first)
+    const aTime = a.startTime ? new Date(a.startTime).getTime() : Infinity;
+    const bTime = b.startTime ? new Date(b.startTime).getTime() : Infinity;
+    return aTime - bTime;
   });
 
   return (

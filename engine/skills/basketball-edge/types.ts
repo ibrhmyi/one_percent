@@ -115,6 +115,7 @@ export interface WatchlistEntry {
   consensus: ConsensusResult;
 
   polymarketMatched: boolean;
+  polymarketUrl?: string;
   conditionId?: string;
   yesTokenId?: string;
   noTokenId?: string;

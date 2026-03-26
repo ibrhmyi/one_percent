@@ -7,14 +7,24 @@ const MIN_EDGE: Record<string, number> = {
   low: 0.08,
 };
 
+/**
+ * Target price = where we place our limit order.
+ * Must be BELOW fair value (buy cheap, sell at true value).
+ * We move from market price toward fair value by an aggressiveness factor.
+ * Never exceeds fairValue - 1¢ (we always want positive EV at entry).
+ */
 function calculateTargetPrice(
   marketPrice: number,
   fairValue: number,
   confidence: 'high' | 'medium' | 'low'
 ): number {
+  // How far toward fair value we're willing to go (lower = more patient maker orders)
   const aggressiveness = confidence === 'high' ? 0.40 : confidence === 'medium' ? 0.50 : 0.60;
   const raw = marketPrice + aggressiveness * (fairValue - marketPrice);
-  return Math.round(raw * 100) / 100;
+  // CRITICAL: Never place order at or above fair value — that's negative EV
+  const maxTarget = fairValue - 0.01;
+  const clamped = Math.min(raw, maxTarget);
+  return Math.round(clamped * 100) / 100;
 }
 
 /**
@@ -111,10 +121,13 @@ export function detectEdges(
     if (edge < minEdge) continue;
 
     const targetPrice = calculateTargetPrice(marketPrice, fairValue, consensus.confidence);
+    // Guard: if target >= fairValue, this is not worth entering
+    if (targetPrice >= fairValue) continue;
     const kellySize = calculateKellySize(fairValue, targetPrice, bankroll);
     if (kellySize === 0) continue;
 
-    const ev = edge * kellySize;
+    // EV = (fairValue - targetPrice) * size — profit if consensus is correct
+    const ev = (fairValue - targetPrice) * kellySize;
 
     edges.push({
       oddsGameId: game.id,

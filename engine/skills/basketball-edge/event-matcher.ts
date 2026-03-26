@@ -3,25 +3,25 @@ import type { WatchedMarket } from '@/lib/types';
 
 // Common NCAAB name aliases
 const TEAM_ALIASES: Record<string, string[]> = {
-  'north carolina state wolfpack': ['nc state'],
-  'connecticut huskies': ['uconn'],
-  'southern california trojans': ['usc'],
-  'louisiana state tigers': ['lsu'],
-  'texas christian horned frogs': ['tcu'],
-  'brigham young cougars': ['byu'],
-  'mississippi rebels': ['ole miss'],
-  'mississippi state bulldogs': ['miss state', 'mississippi st'],
-  'virginia commonwealth rams': ['vcu'],
-  'southern methodist mustangs': ['smu'],
-  'central florida knights': ['ucf'],
-  'st johns red storm': ['st johns', 'saint johns'],
-  'miami hurricanes': ['miami fl'],
-  'pittsburgh panthers': ['pitt'],
-  'california golden bears': ['cal'],
-  'alabama crimson tide': ['alabama', 'bama'],
-  'michigan state spartans': ['mich state', 'mich st'],
-  'florida state seminoles': ['fsu'],
-  'san diego state aztecs': ['sdsu'],
+  'north carolina state wolfpack': ['nc state', 'wolfpack'],
+  'connecticut huskies': ['uconn', 'huskies'],
+  'southern california trojans': ['usc', 'trojans'],
+  'louisiana state tigers': ['lsu', 'tigers'],
+  'texas christian horned frogs': ['tcu', 'horned frogs'],
+  'brigham young cougars': ['byu', 'cougars'],
+  'mississippi rebels': ['ole miss', 'rebels'],
+  'mississippi state bulldogs': ['miss state', 'mississippi st', 'bulldogs'],
+  'virginia commonwealth rams': ['vcu', 'rams'],
+  'southern methodist mustangs': ['smu', 'mustangs'],
+  'central florida knights': ['ucf', 'knights'],
+  'st johns red storm': ['st johns', 'saint johns', 'red storm'],
+  'miami hurricanes': ['miami fl', 'hurricanes'],
+  'pittsburgh panthers': ['pitt', 'panthers'],
+  'california golden bears': ['cal', 'golden bears'],
+  'alabama crimson tide': ['alabama', 'bama', 'crimson tide'],
+  'michigan state spartans': ['mich state', 'mich st', 'spartans'],
+  'florida state seminoles': ['fsu', 'seminoles'],
+  'san diego state aztecs': ['sdsu', 'aztecs'],
 };
 
 function normalize(name: string): string {
@@ -37,26 +37,54 @@ function lastWord(name: string): string | null {
   return last;
 }
 
-function getAliases(teamName: string): string[] {
+function getMatchTerms(teamName: string): string[] {
   const norm = normalize(teamName);
+  const terms = [norm];
+
+  // Add aliases if found
   const aliases = TEAM_ALIASES[norm];
-  return aliases ? [norm, ...aliases] : [norm];
+  if (aliases) terms.push(...aliases);
+
+  // Add last word (mascot name) — e.g. "Chicago Bulls" → "bulls"
+  const mascot = lastWord(teamName);
+  if (mascot && !terms.includes(mascot)) terms.push(mascot);
+
+  // Add city/state name — e.g. "Chicago Bulls" → "chicago"
+  const parts = norm.split(/\s+/);
+  if (parts.length > 1) {
+    const city = parts[0];
+    if (city && city.length > 2 && !terms.includes(city)) terms.push(city);
+  }
+
+  return terms;
+}
+
+function teamMatchesTitle(terms: string[], titleNorm: string): boolean {
+  return terms.some(t => {
+    // For short terms (<=3 chars like "lsu"), require word boundary match
+    if (t.length <= 3) {
+      const re = new RegExp(`\\b${t}\\b`);
+      return re.test(titleNorm);
+    }
+    return titleNorm.includes(t);
+  });
 }
 
 /**
- * Match an Odds API game to a Polymarket market using team names and aliases.
+ * Match an Odds API game to a Polymarket market.
+ * Uses full name, mascot name, city name, and aliases for fuzzy matching.
  */
 export function matchOddsGameToMarket(
   game: OddsAPIGame,
   markets: WatchedMarket[]
 ): WatchedMarket | null {
-  const homeAliases = getAliases(game.home_team);
-  const awayAliases = getAliases(game.away_team);
+  const homeTerms = getMatchTerms(game.home_team);
+  const awayTerms = getMatchTerms(game.away_team);
 
   for (const market of markets) {
     const titleNorm = normalize(market.title);
-    const homeMatch = homeAliases.some(a => titleNorm.includes(a));
-    const awayMatch = awayAliases.some(a => titleNorm.includes(a));
+    const homeMatch = teamMatchesTitle(homeTerms, titleNorm);
+    const awayMatch = teamMatchesTitle(awayTerms, titleNorm);
     if (homeMatch && awayMatch) return market;
   }
 
@@ -65,9 +93,7 @@ export function matchOddsGameToMarket(
 
 /**
  * Determine which Polymarket token corresponds to which team.
- * Uses title parsing to determine if home team is on YES side.
- *
- * Returns: { homeIsYes: boolean }
+ * The first team in "TeamA vs. TeamB" title maps to YES token.
  */
 export function resolveTokenSides(
   market: WatchedMarket,
@@ -75,24 +101,19 @@ export function resolveTokenSides(
   _awayTeam: string
 ): { homeIsYes: boolean } {
   const titleNorm = normalize(market.title);
-  const homeNorm = normalize(homeTeam);
 
   const vsIdx = titleNorm.indexOf(' vs ') !== -1
     ? titleNorm.indexOf(' vs ')
     : titleNorm.indexOf(' against ');
-  const homeIdx = titleNorm.indexOf(homeNorm);
 
-  // If home team appears before "vs", it's the YES side
-  if (homeIdx >= 0 && vsIdx >= 0 && homeIdx < vsIdx) {
+  if (vsIdx < 0) return { homeIsYes: false };
+
+  const beforeVs = titleNorm.slice(0, vsIdx);
+  const homeTerms = getMatchTerms(homeTeam);
+
+  // If any home team term appears before "vs", home is YES
+  if (homeTerms.some(t => beforeVs.includes(t))) {
     return { homeIsYes: true };
-  }
-
-  const homeLast = lastWord(homeTeam);
-  if (homeLast) {
-    const homeLastIdx = titleNorm.indexOf(homeLast);
-    if (homeLastIdx >= 0 && vsIdx >= 0 && homeLastIdx < vsIdx) {
-      return { homeIsYes: true };
-    }
   }
 
   return { homeIsYes: false };

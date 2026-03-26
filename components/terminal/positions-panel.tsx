@@ -104,9 +104,15 @@ export function PositionsPanel({ orders, summary }: Props) {
               alignItems: 'center',
             }}>
               <div>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                  {order.awayTeam} @ {order.homeTeam}
-                </div>
+                <a
+                  href={`https://polymarket.com/search?query=${encodeURIComponent(order.homeTeam + ' ' + order.awayTeam)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="schedule-row-link"
+                  style={{ fontSize: '0.68rem', color: 'var(--text-primary)', fontWeight: 500, textDecoration: 'none', display: 'block' }}
+                >
+                  {order.awayTeam} @ {order.homeTeam} <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)' }}>↗</span>
+                </a>
                 <div style={{ fontSize: '0.55rem', color: 'var(--text-dim)' }}>
                   Filled @ {(order.avgFillPrice * 100).toFixed(0)}¢
                   {pnl !== 0 && (
@@ -153,9 +159,15 @@ export function PositionsPanel({ orders, summary }: Props) {
               alignItems: 'center',
             }}>
               <div>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                  {order.awayTeam} @ {order.homeTeam}
-                </div>
+                <a
+                  href={`https://polymarket.com/search?query=${encodeURIComponent(order.homeTeam + ' ' + order.awayTeam)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="schedule-row-link"
+                  style={{ fontSize: '0.68rem', color: 'var(--text-primary)', fontWeight: 500, textDecoration: 'none', display: 'block' }}
+                >
+                  {order.awayTeam} @ {order.homeTeam} <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)' }}>↗</span>
+                </a>
                 <div style={{ fontSize: '0.55rem', color: 'var(--text-dim)' }}>
                   {order.orderId.startsWith('sim-') ? 'DRY' : 'LIVE'} · Limit @ {(order.price * 100).toFixed(0)}¢
                 </div>
