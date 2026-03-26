@@ -50,10 +50,8 @@ let clobClient: any = null;
 async function getClobClient() {
   if (clobClient) return clobClient;
 
-  // @ts-expect-error — optional live-trading dependency, only used when DRY_RUN=false
-  const { ClobClient } = await import('@polymarket/clob-client');
-  // @ts-expect-error — optional live-trading dependency
-  const { Wallet } = await import('@ethersproject/wallet');
+  const { ClobClient } = await import(/* webpackIgnore: true */ '@polymarket/clob-client' as any);
+  const { Wallet } = await import(/* webpackIgnore: true */ '@ethersproject/wallet' as any);
 
   const signer = new Wallet(process.env.POLY_PRIVATE_KEY!);
   const creds = await new ClobClient('https://clob.polymarket.com', 137, signer).createOrDeriveApiKey();
@@ -127,8 +125,7 @@ export async function placeOrder(params: {
   if (!isDryRun) {
     try {
       const client = await getClobClient();
-      // @ts-expect-error — optional live-trading dependency
-      const { OrderType, Side } = await import('@polymarket/clob-client');
+      const { OrderType, Side } = await import(/* webpackIgnore: true */ '@polymarket/clob-client' as any);
 
       const result = await client.createAndPostOrder(
         { tokenID: params.tokenId, price: params.price, side: Side.BUY, size: params.size },
