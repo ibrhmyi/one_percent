@@ -48,14 +48,23 @@ function formatVol(v?: number) {
 export function GameSchedule({ games }: Props) {
   const now = useNow();
 
+  // Only show games within 24 hours or currently live
+  const H24 = 24 * 60 * 60 * 1000;
+  const filtered = games.filter(g => {
+    if (g.status === 'live') return true;
+    if (!g.startTime) return false;
+    const diff = new Date(g.startTime).getTime() - now;
+    return diff > -4 * 60 * 60 * 1000 && diff < H24;
+  });
+
   return (
     <div className="panel">
-      <div className="panel-header">Game Schedule</div>
-      {games.length === 0 ? (
-        <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>No games found</div>
+      <div className="panel-header">Game Schedule <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>({filtered.length})</span></div>
+      {filtered.length === 0 ? (
+        <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>No games in next 24h</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {games.map(g => {
+          {filtered.map(g => {
             const isLive = g.status === 'live';
             const polyUrl = g.slug ? `https://polymarket.com/event/${g.slug}` : undefined;
 

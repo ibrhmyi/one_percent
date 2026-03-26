@@ -161,4 +161,5 @@ export interface ESPNGame {
   state: 'pre' | 'in' | 'post';
   secondsRemaining: number;
   scheduledStart: string;  // ISO — actual scheduled tip-off time
+  league?: string;         // e.g. 'NBA', 'NCAA Basketball'
 }

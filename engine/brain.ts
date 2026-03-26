@@ -3,9 +3,9 @@ import { engineState, addMessage, getOpenTrade, updateAccount } from './state';
 import { registerSkill, getSkills } from './skill-registry';
 import { enterPosition } from './trade-manager';
 import { checkExits } from './exit-manager';
-import { NBALiveEdge } from './skills/nba-live-edge';
+import { BasketballSkill } from './skills/basketball';
 import { PreGameEdgeSkill } from './skills/basketball-edge/index';
-import { parseTokenIds } from './skills/nba-live-edge/market-matcher';
+import { parseTokenIds } from './skills/basketball/market-matcher';
 import { startPriceFeed, resubscribePriceFeed } from './price-feed';
 
 const GAMMA_EVENTS_API = 'https://gamma-api.polymarket.com/events';
@@ -199,8 +199,8 @@ export async function refreshMarkets(): Promise<void> {
 
     // Enrich with actual ESPN start times
     try {
-      const { fetchNBAScoreboard } = await import('./skills/nba-live-edge/espn-api');
-      const games = await fetchNBAScoreboard();
+      const { fetchScoreboard } = await import('./skills/basketball/espn-api');
+      const games = await fetchScoreboard('basketball/nba', 'NBA');
       for (const market of markets) {
         // Match by abbrevs + date in slug, e.g. nba-lal-ind-2026-03-25
         // Slug order is typically away-home, but we match both directions.
@@ -405,7 +405,7 @@ export function startBrain() {
   started = true;
   engineState.isRunning = true;
 
-  registerSkill(new NBALiveEdge());
+  registerSkill(new BasketballSkill());
   registerSkill(new PreGameEdgeSkill());
 
   // Start real-time WebSocket price feed

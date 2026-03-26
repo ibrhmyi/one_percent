@@ -36,6 +36,7 @@ export interface ScoreEvent {
   netProfit: number;
   tradeable: boolean;
   sizing: number;
+  league?: string;
 }
 
 export interface PriceSnapshot {
@@ -69,6 +70,7 @@ export interface FoulEvent {
   yesPrice: number;
   noPrice: number;
   isCrunchTime: boolean;
+  league?: string;
 }
 
 export interface TradeRecord {
