@@ -4,6 +4,7 @@ import { registerSkill, getSkills } from './skill-registry';
 import { enterPosition } from './trade-manager';
 import { checkExits } from './exit-manager';
 import { NBALiveEdge } from './skills/nba-live-edge';
+import { PreGameEdgeSkill } from './skills/basketball-edge/index';
 import { parseTokenIds } from './skills/nba-live-edge/market-matcher';
 import { startPriceFeed, resubscribePriceFeed } from './price-feed';
 
@@ -391,6 +392,7 @@ export function startBrain() {
   engineState.isRunning = true;
 
   registerSkill(new NBALiveEdge());
+  registerSkill(new PreGameEdgeSkill());
 
   // Start real-time WebSocket price feed
   startPriceFeed();
