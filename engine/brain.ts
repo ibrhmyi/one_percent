@@ -18,8 +18,8 @@ const GAMMA_EVENTS_API = 'https://gamma-api.polymarket.com/events';
 // Game events have slugs like nba-lal-ind-2026-03-25 or ncaa-duke-vermont-2026-03-27.
 
 const BASKETBALL_TAGS = ['nba', 'ncaa-basketball', 'march-madness', 'wnba'];
-// Match game slugs: prefix-team1-team2-YYYY-MM-DD (teams can be multi-word like san-diego-state)
-const GAME_SLUG_RE = /^(nba|ncaa|wnba|march-madness)-[a-z]+(?:-[a-z]+)*-[a-z]+(?:-[a-z]+)*-\d{4}-\d{2}-\d{2}$/;
+// Match game slugs: prefix-team1-team2-YYYY-MM-DD (teams can be multi-word, prefix includes cbb)
+const GAME_SLUG_RE = /^(nba|ncaa|wnba|march-madness|cbb)-[a-z]+(?:-[a-z]+)*-[a-z]+(?:-[a-z]+)*-\d{4}-\d{2}-\d{2}$/;
 
 function estimateGameStart(marketEndTime: string): string {
   // Estimate game start = market close - 2.5 hours
@@ -132,7 +132,7 @@ async function fetchNBAMarkets(): Promise<WatchedMarket[]> {
       yesPrice,
       noPrice,
       volume,
-      category: eventSlug.startsWith('ncaa') || eventSlug.startsWith('march-madness') ? 'NCAA'
+      category: eventSlug.startsWith('ncaa') || eventSlug.startsWith('march-madness') || eventSlug.startsWith('cbb') ? 'NCAA'
               : eventSlug.startsWith('wnba') ? 'WNBA' : 'NBA',
       url: `https://polymarket.com/event/${eventSlug}`,
       yesTokenId: tokenIds[0] ?? '',
@@ -234,7 +234,7 @@ export async function refreshMarkets(): Promise<void> {
       for (const market of markets) {
         // Strip league prefix from slug: nba-lal-ind-2026-03-25 → lal-ind-2026-03-25
         const slug = market.slug;
-        const prefixMatch = slug.match(/^(nba|ncaa|wnba|march-madness)-/);
+        const prefixMatch = slug.match(/^(nba|ncaa|wnba|march-madness|cbb)-/);
         const stripped = prefixMatch ? slug.slice(prefixMatch[0].length) : slug;
         const slugParts = stripped.split('-');
         const abbrA = slugParts[0] ?? '';
@@ -247,11 +247,17 @@ export async function refreshMarkets(): Promise<void> {
         const game = allGames.find(g => {
           const gameAbbrs = new Set([g.homeAbbr.toLowerCase(), g.awayAbbr.toLowerCase()]);
           if (!gameAbbrs.has(abbrA) || !gameAbbrs.has(abbrB)) {
-            // Also try team name substring match for NCAA
+            // Try team name substring match (NCAA slugs use short names like 'stjohn', 'duke')
             const titleLower = market.title.toLowerCase();
+            const slugLower = market.slug.toLowerCase();
             const homeName = g.homeTeam.toLowerCase().split(' ').pop() ?? '';
             const awayName = g.awayTeam.toLowerCase().split(' ').pop() ?? '';
-            if (!titleLower.includes(homeName) || !titleLower.includes(awayName)) return false;
+            const homeAbbr = g.homeAbbr.toLowerCase();
+            const awayAbbr = g.awayAbbr.toLowerCase();
+            // Check title OR slug contains team names/abbreviations
+            const matchesHome = titleLower.includes(homeName) || slugLower.includes(homeAbbr) || slugLower.includes(homeName);
+            const matchesAway = titleLower.includes(awayName) || slugLower.includes(awayAbbr) || slugLower.includes(awayName);
+            if (!matchesHome || !matchesAway) return false;
           }
           if (slugDate && g.scheduledStart) {
             return g.scheduledStart.substring(0, 10) === slugDate;
