@@ -19,14 +19,14 @@ interface Props { events: ScoringEvent[]; }
 export function ScoreFeed({ events }: Props) {
   const reversed = [...events].reverse().slice(0, 20);
   return (
-    <div className="panel" style={{ display: 'flex', flexDirection: 'column' }}>
+    <div className="panel" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
       <div className="panel-header">Live Score Feed</div>
       {reversed.length === 0 ? (
         <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem', padding: '8px 0' }}>
           Waiting for live games...
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {reversed.map((ev, i) => {
             const edgePct = (ev.edge * 100).toFixed(1);
             const isPositive = ev.edge > 0;
