@@ -100,7 +100,13 @@ export async function GET() {
     isRunning: engineState.isRunning,
     lastCycleAt: engineState.lastCycleAt,
     wsConnected: isPriceFeedConnected(),
-    account: engineState.account,
+    account: {
+      ...engineState.account,
+      // Compute open positions from pre-game orders + live trades
+      openPositions: (preGameInfo?.orders ?? []).filter(
+        (o: any) => o.status === 'resting' || o.status === 'filled' || o.status === 'partially_filled'
+      ).length + engineState.trades.filter(t => t.status === 'open').length,
+    },
     watchedMarkets: engineState.watchedMarkets.map(m => ({
       ...m,
       priceHistory: priceHistory.get(m.id) ?? [],

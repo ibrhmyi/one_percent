@@ -7,6 +7,7 @@ import { BasketballSkill } from './skills/basketball';
 import { PreGameEdgeSkill } from './skills/basketball-edge/index';
 import { parseTokenIds } from './skills/basketball/market-matcher';
 import { startPriceFeed, resubscribePriceFeed } from './price-feed';
+import { getOrders } from './order-manager';
 
 const GAMMA_EVENTS_API = 'https://gamma-api.polymarket.com/events';
 
@@ -306,6 +307,41 @@ export async function refreshMarkets(): Promise<void> {
 }
 
 // ─────────────────────────────────────────────
+// Dry-run fill simulation — checks resting orders against market prices
+// ─────────────────────────────────────────────
+
+function simulateDryRunFills(): void {
+  const isDryRun = process.env.DRY_RUN !== 'false' || !process.env.POLY_PRIVATE_KEY;
+  if (!isDryRun) return;
+
+  const orders = getOrders();
+  const markets = engineState.watchedMarkets;
+
+  for (const order of orders) {
+    if (order.status !== 'resting') continue;
+    if (!order.orderId.startsWith('sim-')) continue;
+
+    // Find matching market by conditionId
+    const market = markets.find(m => m.conditionId === order.conditionId);
+    if (!market) continue;
+
+    // For BUY orders: fill when market price <= order limit price
+    const currentPrice = order.tokenSide === 'YES' ? market.yesPrice : market.noPrice;
+    if (currentPrice <= order.price) {
+      order.status = 'filled';
+      order.filledSize = order.size;
+      order.avgFillPrice = currentPrice;
+      order.updatedAt = new Date().toISOString();
+
+      addMessage({
+        text: `[DRY-RUN FILL] ${order.awayTeam} @ ${order.homeTeam} | ${order.tokenSide} filled @ ${(currentPrice * 100).toFixed(0)}¢ ($${order.size.toFixed(0)})`,
+        type: 'success',
+      });
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
 // Main brain cycle — runs every 1s
 // ─────────────────────────────────────────────
 
@@ -319,6 +355,9 @@ const PRE_GAME_DETECT_INTERVAL_MS = 60_000; // full detect() for pre-game skill 
 export async function runCycle(): Promise<void> {
   const skills = getSkills();
   if (skills.length === 0) return;
+
+  // Simulate fills for dry-run orders
+  simulateDryRunFills();
 
   const markets = engineState.watchedMarkets;
   const liveMarkets = markets.filter(m =>
@@ -492,12 +531,24 @@ export async function startBrain() {
   });
 
   // Initial market load — AWAIT so first API response has data
-  initialLoadPromise = refreshMarkets().then(() => {
+  initialLoadPromise = (async () => {
+    await refreshMarkets();
+    console.log(`[Brain] Initial load: ${engineState.watchedMarkets.length} markets`);
+
+    // Immediately run basketball-edge detect so watchlist is populated on first request
+    const edgeSkill = getSkills().find(s => s.id === 'basketball-edge');
+    if (edgeSkill) {
+      try {
+        await edgeSkill.detect(engineState.watchedMarkets);
+        console.log(`[Brain] Initial detect complete`);
+      } catch (err) {
+        console.error('[Brain] Initial detect failed:', err);
+      }
+    }
     initialLoadDone = true;
-    console.log(`[Brain] Initial load complete: ${engineState.watchedMarkets.length} markets`);
-  }).catch(err => {
+  })().catch(err => {
     initialLoadDone = true;
-    console.error('[Brain] Initial market load failed:', err);
+    console.error('[Brain] Initial load failed:', err);
   });
   await initialLoadPromise;
 }

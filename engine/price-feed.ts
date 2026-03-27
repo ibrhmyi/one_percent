@@ -30,12 +30,8 @@ export function isPriceFeedConnected(): boolean {
 function subscribe(): void {
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
 
-  // Only subscribe to live/active markets — no need for real-time prices on upcoming games
-  const liveMarkets = engineState.watchedMarkets.filter(m =>
-    m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open'
-  );
-  const markets = liveMarkets.length > 0 ? liveMarkets : engineState.watchedMarkets.slice(0, 2);
-  const tokenIds = markets
+  // Subscribe to ALL markets with token IDs — pre-game prices need updates too
+  const tokenIds = engineState.watchedMarkets
     .flatMap(m => [m.yesTokenId, m.noTokenId])
     .filter(Boolean);
 
