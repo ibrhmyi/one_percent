@@ -17,7 +17,8 @@ const GAMMA_EVENTS_API = 'https://gamma-api.polymarket.com/events';
 // Game events have slugs like nba-lal-ind-2026-03-25 or ncaa-duke-vermont-2026-03-27.
 
 const BASKETBALL_TAGS = ['nba', 'ncaa-basketball', 'march-madness', 'wnba'];
-const GAME_SLUG_RE = /^(nba|ncaa|wnba|march-madness)-[a-z]+-[a-z]+-\d{4}-\d{2}-\d{2}$/;
+// Match game slugs: prefix-team1-team2-YYYY-MM-DD (teams can be multi-word like san-diego-state)
+const GAME_SLUG_RE = /^(nba|ncaa|wnba|march-madness)-[a-z]+(?:-[a-z]+)*-[a-z]+(?:-[a-z]+)*-\d{4}-\d{2}-\d{2}$/;
 
 function estimateGameStart(marketEndTime: string): string {
   // Estimate game start = market close - 2.5 hours
@@ -52,11 +53,17 @@ async function fetchNBAMarkets(): Promise<WatchedMarket[]> {
       url.searchParams.set('ascending', 'true');
 
       const res = await fetch(url.toString(), { cache: 'no-store' });
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.error(`[Brain] Gamma API ${tag}: HTTP ${res.status}`);
+        return;
+      }
       const data = await res.json();
-      if (Array.isArray(data)) allEvents.push(...data);
-    } catch {
-      // Skip failed tags
+      if (Array.isArray(data)) {
+        console.log(`[Brain] Gamma API ${tag}: ${data.length} events`);
+        allEvents.push(...data);
+      }
+    } catch (err) {
+      console.error(`[Brain] Gamma API ${tag} error:`, err instanceof Error ? err.message : err);
     }
   }));
 
@@ -439,8 +446,10 @@ export async function runCycle(): Promise<void> {
 // ─────────────────────────────────────────────
 
 let started = false;
+let initialLoadDone = false;
+let initialLoadPromise: Promise<void> | null = null;
 
-export function startBrain() {
+export async function startBrain() {
   if (started) return;
   started = true;
   engineState.isRunning = true;
@@ -477,11 +486,29 @@ export function startBrain() {
     await refreshMarkets();
   }, 15_000);
 
-  // Initial market load
-  refreshMarkets();
-
   addMessage({
-    text: 'OnePercent AI brain started. Scanning for NBA opportunities...',
+    text: 'OnePercent AI brain started. Scanning for basketball opportunities...',
     type: 'info',
   });
+
+  // Initial market load — AWAIT so first API response has data
+  initialLoadPromise = refreshMarkets().then(() => {
+    initialLoadDone = true;
+    console.log(`[Brain] Initial load complete: ${engineState.watchedMarkets.length} markets`);
+  }).catch(err => {
+    initialLoadDone = true;
+    console.error('[Brain] Initial market load failed:', err);
+  });
+  await initialLoadPromise;
+}
+
+/** Wait for initial market data to be available (max 8s) */
+export async function waitForInitialLoad(): Promise<void> {
+  if (initialLoadDone) return;
+  if (initialLoadPromise) {
+    await Promise.race([
+      initialLoadPromise,
+      new Promise<void>(resolve => setTimeout(resolve, 8000)),
+    ]);
+  }
 }

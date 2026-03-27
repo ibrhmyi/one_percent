@@ -69,7 +69,7 @@ export function PositionsPanel({ orders, summary }: Props) {
         </span>
       </div>
 
-      <div style={{ overflowY: 'auto', maxHeight: '280px' }}>
+      <div>
         {/* Header row */}
         <div style={{
           display: 'grid',

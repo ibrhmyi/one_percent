@@ -143,7 +143,7 @@ export function MarketsTable({ markets }: Props) {
       <div className="panel-header">
         Watched Markets <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>({active.length} live)</span>
       </div>
-      <div style={{ overflowY: 'auto', maxHeight: '340px' }}>
+      <div>
         {/* Header row */}
         <div style={{
           display: 'grid',

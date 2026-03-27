@@ -59,11 +59,11 @@ export default function Home() {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
       background: 'var(--bg-primary)',
       display: 'flex',
       flexDirection: 'column',
-      paddingBottom: '32px',
+      overflow: 'hidden',
       fontFamily: 'var(--font-mono)',
     }}>
       <TopBar latestMessage={state.latestMessage} />
@@ -71,7 +71,7 @@ export default function Home() {
       {error && (
         <div style={{
           background: 'rgba(239,68,68,0.1)', borderBottom: '1px solid rgba(239,68,68,0.3)',
-          padding: '4px 16px', fontSize: '0.7rem', color: 'var(--red)',
+          padding: '4px 16px', fontSize: '0.7rem', color: 'var(--red)', flexShrink: 0,
         }}>
           {error}
         </div>
@@ -79,56 +79,70 @@ export default function Home() {
 
       {/* Loading skeleton */}
       {!loaded && !error && (
-        <div style={{
-          display: 'grid', gridTemplateColumns: '260px 1fr 280px',
-          gap: 8, padding: 8,
-        }}>
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr 280px', gap: 8, padding: 8 }}>
           {[0, 1, 2].map(col => (
             <div key={col} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {[120, 200, 160].map((h, i) => (
-                <div key={i} className="panel" style={{
-                  height: h, background: 'var(--bg-card)',
-                  animation: 'pulse 1.5s ease-in-out infinite',
-                }} />
+              {[1, 2].map(i => (
+                <div key={i} className="panel" style={{ flex: 1, background: 'var(--bg-card)', animation: 'pulse 1.5s ease-in-out infinite' }} />
               ))}
             </div>
           ))}
         </div>
       )}
 
-      {/* Main 3-column grid */}
+      {/* 3-column grid filling viewport — no page scroll */}
       <div style={{
         flex: 1,
         display: loaded ? 'grid' : 'none',
-        gridTemplateColumns: '260px 1fr 280px',
-        gap: 8,
-        padding: 8,
+        gridTemplateColumns: '280px 1fr 240px',
+        gap: 4,
+        padding: 4,
         minHeight: 0,
-        alignItems: 'start',
+        overflow: 'hidden',
       }}>
-        {/* LEFT COLUMN */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <ScoreFeed events={state.scoringEvents} />
-          <GameSchedule games={state.gameSchedule} />
-          <OddsRanker watchlist={state.preGameWatchlist} summary={state.preGameSummary} />
+        {/* LEFT — Game Schedule + Odds Ranker (equal 50/50 split) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 0, overflow: 'hidden' }}>
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            <div style={{ height: '100%', overflowY: 'auto' }}>
+              <GameSchedule games={state.gameSchedule} />
+            </div>
+          </div>
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            <div style={{ height: '100%', overflowY: 'auto' }}>
+              <OddsRanker watchlist={state.preGameWatchlist} summary={state.preGameSummary} />
+            </div>
+          </div>
         </div>
 
-        {/* CENTER COLUMN — Markets + Positions + Trades */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <MarketsTable markets={state.watchedMarkets} />
-          <PositionsPanel orders={state.preGameOrders} summary={state.preGameSummary} />
-          <TradesPanel trades={state.trades} mode={state.account.mode} />
+        {/* CENTER — Markets + Positions + Trades (proportional) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 0, overflow: 'hidden' }}>
+          <div style={{ flex: 2, minHeight: 0, overflowY: 'auto' }}>
+            <MarketsTable markets={state.watchedMarkets} />
+          </div>
+          <div style={{ flex: 2, minHeight: 0, overflowY: 'auto' }}>
+            <PositionsPanel orders={state.preGameOrders} summary={state.preGameSummary} />
+          </div>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <TradesPanel trades={state.trades} mode={state.account.mode} />
+          </div>
         </div>
 
-        {/* RIGHT COLUMN — Account + Skills */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <AccountPanel
-            account={state.account}
-            trades={state.trades}
-            preGameOrderCount={state.preGameOrders?.length ?? 0}
-            skillStats={state.skills?.map((s: any) => s.stats) ?? []}
-          />
-          <SkillsPanel skills={state.skills} />
+        {/* RIGHT — Account + Score Feed + Skills (proportional) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 0, overflow: 'hidden' }}>
+          <div style={{ flexShrink: 0 }}>
+            <AccountPanel
+              account={state.account}
+              trades={state.trades}
+              preGameOrderCount={state.preGameOrders?.filter((o: any) => o.status !== 'cancelled').length ?? 0}
+              skillStats={state.skills?.map((s: any) => s.stats) ?? []}
+            />
+          </div>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+            <ScoreFeed events={state.scoringEvents} />
+          </div>
+          <div style={{ flexShrink: 0 }}>
+            <SkillsPanel skills={state.skills} />
+          </div>
         </div>
       </div>
 

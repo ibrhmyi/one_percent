@@ -2,7 +2,9 @@ import { PreGameOrder } from './skills/basketball-edge/types';
 import { appendFileSync, readFileSync, existsSync, writeFileSync, mkdirSync } from 'fs';
 import { dirname } from 'path';
 
-const ORDERS_FILE = 'data/pregame_orders.json';
+// On Vercel serverless, filesystem is read-only except /tmp
+const isVercel = !!process.env.VERCEL;
+const ORDERS_FILE = isVercel ? '/tmp/pregame_orders.json' : 'data/pregame_orders.json';
 const orders: Map<string, PreGameOrder> = new Map();
 
 // ── Persistence ──

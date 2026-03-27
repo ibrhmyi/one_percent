@@ -13,7 +13,8 @@ import { OddsAPIGame, PreGameEdge, WatchlistEntry, AllocationDecision } from './
 import { appendFileSync, mkdirSync, existsSync } from 'fs';
 import { dirname } from 'path';
 
-const SIGNAL_LOG = 'data/pregame_signals.jsonl';
+const isVercel = !!process.env.VERCEL;
+const SIGNAL_LOG = isVercel ? '/tmp/pregame_signals.jsonl' : 'data/pregame_signals.jsonl';
 
 function logSignal(edge: PreGameEdge, action: 'placed' | 'skipped', reason?: string) {
   const entry = {
@@ -109,13 +110,31 @@ export class PreGameEdgeSkill implements Skill {
       if (!consensus) continue;
 
       const { homeIsYes } = resolveTokenSides(market, matchedOdds.home_team, matchedOdds.away_team);
-      const fairValue = homeIsYes ? consensus.homeWinProb : consensus.awayWinProb;
-      const marketPrice = homeIsYes ? market.yesPrice : market.noPrice;
-      const edge = fairValue - marketPrice;
+
+      // Check BOTH sides for edge (same logic as detectEdges)
+      const yesFair = homeIsYes ? consensus.homeWinProb : consensus.awayWinProb;
+      const noFair = homeIsYes ? consensus.awayWinProb : consensus.homeWinProb;
+      const yesEdge = yesFair - market.yesPrice;
+      const noEdge = noFair - market.noPrice;
+
+      let side: 'YES' | 'NO';
+      let fairValue: number;
+      let marketPrice: number;
+      let edge: number;
+      let tokenId: string;
+
+      if (yesEdge >= noEdge && yesEdge > 0) {
+        side = 'YES'; fairValue = yesFair; marketPrice = market.yesPrice; edge = yesEdge;
+        tokenId = market.yesTokenId || '';
+      } else if (noEdge > 0) {
+        side = 'NO'; fairValue = noFair; marketPrice = market.noPrice; edge = noEdge;
+        tokenId = market.noTokenId || '';
+      } else {
+        continue;
+      }
 
       const config = getEarlyMarketConfig();
       if (edge < config.minEdge) continue;
-      // Never buy above fair value
       if (marketPrice >= fairValue) continue;
 
       const kellySize = calculateKellySize(fairValue, marketPrice, bankroll);
@@ -123,12 +142,10 @@ export class PreGameEdgeSkill implements Skill {
 
       if (adjustedSize < 5) continue;
 
-      const tokenId = (homeIsYes ? market.yesTokenId : market.noTokenId) || '';
-      const side = homeIsYes ? 'YES' : 'NO';
       const order = await placeOrder({
         conditionId: market.conditionId,
         tokenId,
-        price: marketPrice,  // Buy at market price, not above
+        price: marketPrice,
         size: adjustedSize,
         sportKey: matchedOdds.sport_key,
         homeTeam: matchedOdds.home_team,

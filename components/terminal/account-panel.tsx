@@ -26,7 +26,8 @@ export function AccountPanel({ account, trades, preGameOrderCount, skillStats }:
   const liveWins = trades.filter(t => (t.pnl ?? 0) > 0).length;
   const skillWins = skillStats?.reduce((s, st) => s + st.wins, 0) ?? 0;
   const totalWins = liveWins + skillWins;
-  const winRate = totalTrades > 0 ? ((totalWins / totalTrades) * 100).toFixed(0) : '—';
+  const closedTrades = trades.filter(t => t.status === 'closed').length;
+  const winRate = closedTrades > 0 ? ((totalWins / closedTrades) * 100).toFixed(0) : '—';
 
   // Open positions = live engine positions + pre-game orders
   const totalOpenPos = account.openPositions + (preGameOrderCount ?? 0);
@@ -55,7 +56,7 @@ export function AccountPanel({ account, trades, preGameOrderCount, skillStats }:
         { label: 'P&L Today', value: account.pnlToday, isNum: true },
         { label: 'P&L Total', value: account.pnlTotal, isNum: true },
         { label: 'Open Pos', value: totalOpenPos, isNum: false },
-        { label: 'Win Rate', value: winRate, isNum: false, suffix: '%' },
+        { label: 'Win Rate', value: winRate, isNum: false, suffix: winRate === '—' ? '' : '%' },
         { label: 'Trades', value: totalTrades, isNum: false },
       ].map(({ label, value, isNum, suffix }) => (
         <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid var(--border-default)' }}>
@@ -65,7 +66,7 @@ export function AccountPanel({ account, trades, preGameOrderCount, skillStats }:
             fontSize: '0.75rem',
             color: isNum ? (Number(value) > 0 ? 'var(--green)' : Number(value) < 0 ? 'var(--red)' : 'var(--text-secondary)') : 'var(--text-secondary)',
           }}>
-            {isNum && Number(value) > 0 ? '+' : ''}{isNum ? `$${Number(value).toFixed(2)}` : value}{suffix ?? ''}
+            {isNum && Number(value) > 0 ? '+' : ''}{isNum ? `$${(Math.abs(Number(value)) < 0.005 ? 0 : Number(value)).toFixed(2)}` : value}{suffix ?? ''}
           </span>
         </div>
       ))}

@@ -81,7 +81,7 @@ export function OddsRanker({ watchlist, summary }: Props) {
           {summary && ` · ${summary.apiRequestsUsed}/${summary.apiRequestsBudget} API`}
         </span>
       </div>
-      <div style={{ overflowY: 'auto', maxHeight: '400px' }}>
+      <div>
         {watchlist.map((entry, i) => {
           const ev = entry.polymarketMatched ? entry.bestSideEV : entry.projectedEV;
           const evPct = (ev * 100).toFixed(1);
@@ -167,9 +167,12 @@ export function OddsRanker({ watchlist, summary }: Props) {
 
                 <span style={{
                   fontSize: '0.6rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
-                  color: isPositive ? 'var(--green)' : 'var(--text-dim)',
+                  color: isMatched && isPositive ? 'var(--green)' : 'var(--text-dim)',
                 }}>
-                  {isPositive ? '+' : ''}{evPct}%
+                  {isMatched
+                    ? `${isPositive ? '+' : ''}${evPct}%`
+                    : `${(entry.consensus.homeWinProb * 100).toFixed(0)}/${(entry.consensus.awayWinProb * 100).toFixed(0)}`
+                  }
                 </span>
 
                 {/* Status badge */}

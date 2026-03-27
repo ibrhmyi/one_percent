@@ -1,5 +1,5 @@
 import { engineState } from '@/engine/state';
-import { startBrain } from '@/engine/brain';
+import { startBrain, waitForInitialLoad } from '@/engine/brain';
 import { isPriceFeedConnected } from '@/engine/price-feed';
 import { getSkill } from '@/engine/skill-registry';
 import type { PreGameEdgeSkill } from '@/engine/skills/basketball-edge/index';
@@ -13,7 +13,9 @@ let lastCycleAt = '';
 const priceHistory = new Map<string, number[]>();
 
 export async function GET() {
-  startBrain();
+  await startBrain();
+  // On first request after cold start, wait for markets to load
+  await waitForInitialLoad();
 
   // Track uptime
   if (brainStartedAt === 0 && engineState.isRunning) {
@@ -119,7 +121,7 @@ export async function GET() {
     cycleCount,
     uptimeSeconds,
     liveGames: liveMarkets.length,
-    totalGames: engineState.watchedMarkets.length,
+    totalGames: Math.max(engineState.watchedMarkets.length, (preGameInfo?.cachedGames ?? 0)),
     scoringEvents,
     gameSchedule,
     latestMessage,

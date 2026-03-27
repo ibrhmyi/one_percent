@@ -6,7 +6,7 @@ interface Trade {
   entryPrice: number;
   currentPrice?: number;
   exitPrice?: number;
-  size: number;
+  entryAmount: number;
   pnl?: number;
   status: string;
   enteredAt: string;
@@ -23,8 +23,8 @@ export function TradesPanel({ trades, mode }: Props) {
       ) : recent.map(t => {
         const pnl = t.pnl ?? 0;
         const isProfit = pnl > 0;
-        const pnlPct = t.entryPrice > 0 && t.size > 0
-          ? ((pnl / (t.entryPrice * t.size)) * 100).toFixed(1)
+        const pnlPct = t.entryPrice > 0 && t.entryAmount > 0
+          ? ((pnl / (t.entryPrice * t.entryAmount)) * 100).toFixed(1)
           : '0.0';
         return (
           <div key={t.id} style={{
@@ -47,7 +47,7 @@ export function TradesPanel({ trades, mode }: Props) {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 2 }}>
               <span style={{ fontSize: '0.65rem', color: 'var(--text-dim)' }}>
-                ${(t.size * t.entryPrice).toFixed(2)}
+                ${(t.entryAmount * t.entryPrice).toFixed(2)}
               </span>
               <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isProfit ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--text-dim)' }}>
                 {pnl !== 0 ? `${isProfit ? '+' : ''}$${pnl.toFixed(2)} (${pnlPct}%)` : 'OPEN'}

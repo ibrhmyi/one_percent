@@ -14,7 +14,9 @@ import { join } from 'path';
  *   YYYY-MM-DD_trades.jsonl        — trade entries and exits with P&L
  */
 
-const DATA_DIR = join(process.cwd(), 'research', 'data');
+const DATA_DIR = process.env.VERCEL
+  ? join('/tmp', 'research-data')
+  : join(process.cwd(), 'research', 'data');
 
 export interface ScoreEvent {
   timestamp: string;
