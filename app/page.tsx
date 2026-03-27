@@ -140,6 +140,7 @@ export default function Home() {
               account={state.account}
               trades={state.trades}
               preGameOrderCount={state.preGameOrders?.filter((o: any) => o.status !== 'cancelled').length ?? 0}
+              preGameDeployed={state.preGameSummary?.totalDeployed ?? 0}
               skillStats={state.skills?.map((s: any) => s.stats) ?? []}
             />
           </div>

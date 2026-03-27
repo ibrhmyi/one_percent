@@ -24,17 +24,19 @@ interface PreGameOrder {
 
 interface Props {
   orders: PreGameOrder[];
-  summary: {
-    restingCount: number;
-    filledCount: number;
-    totalDeployed: number;
-  } | null;
+  summary: { restingCount: number; filledCount: number; totalDeployed: number } | null;
 }
 
-function formatVol(v: number) {
-  if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
-  if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`;
-  return `$${v.toFixed(0)}`;
+const DIM = 'rgba(255,255,255,0.4)';
+const LABEL: React.CSSProperties = { fontSize: '0.55rem', color: DIM, textTransform: 'uppercase', letterSpacing: '0.05em', width: 56, flexShrink: 0 };
+const VALUE: React.CSSProperties = { fontSize: '0.68rem', color: 'rgba(255,255,255,0.9)', fontFamily: 'var(--font-mono)' };
+
+function getBetMeaning(order: PreGameOrder): string {
+  const side = order.tokenSide ?? (order.fairValue > 0.5 ? 'YES' : 'NO');
+  // If YES, we're betting the home team wins (assuming homeIsYes)
+  // Simplify: show team name based on side
+  if (side === 'YES') return `${order.homeTeam.split(' ').pop()} wins`;
+  return `${order.homeTeam.split(' ').pop()} loses`;
 }
 
 export function PositionsPanel({ orders, summary }: Props) {
@@ -45,160 +47,101 @@ export function PositionsPanel({ orders, summary }: Props) {
       <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <div className="panel-header">
           Pre-Game Positions
-          {summary && (
-            <span style={{ color: 'var(--text-dim)', fontWeight: 400, marginLeft: 6 }}>
-              ${summary.totalDeployed.toFixed(0)} deployed
-            </span>
-          )}
+          {summary && <span style={{ color: DIM, fontWeight: 400, marginLeft: 6 }}>${summary.totalDeployed.toFixed(0)} deployed</span>}
         </div>
-        <div style={{ color: 'var(--text-dim)', fontSize: '0.65rem', padding: '12px 0', textAlign: 'center', flex: 1 }}>
+        <div style={{ color: DIM, fontSize: '0.65rem', padding: '12px 0', textAlign: 'center', flex: 1 }}>
           No active pre-game positions
         </div>
       </div>
     );
   }
 
-  const resting = active.filter(o => o.status === 'resting');
-  const filled = active.filter(o => o.status === 'filled' || o.status === 'partially_filled');
-
   return (
     <div className="panel" style={{ overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="panel-header">
         Pre-Game Positions
-        <span style={{ color: 'var(--text-dim)', fontWeight: 400, marginLeft: 6 }}>
-          {active.length} active · {formatVol(summary?.totalDeployed ?? 0)} deployed
+        <span style={{ color: DIM, fontWeight: 400, marginLeft: 6 }}>
+          {active.length} active · ${summary?.totalDeployed?.toFixed(0) ?? '0'} deployed
         </span>
       </div>
-
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-        {/* Header row */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '2fr 60px 60px 60px 60px 60px',
-          gap: 4, padding: '4px 6px',
-          fontSize: '0.55rem', color: 'var(--text-dim)',
-          textTransform: 'uppercase', letterSpacing: '0.08em',
-          borderBottom: '1px solid var(--border-default)',
-          position: 'sticky', top: 0, background: 'var(--bg-card)',
-        }}>
-          <span>Game</span>
-          <span>Fair</span>
-          <span>Price</span>
-          <span>Edge</span>
-          <span>Size</span>
-          <span>Status</span>
-        </div>
-
-        {/* Filled positions first */}
-        {filled.map(order => {
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {active.map(order => {
+          const side = order.tokenSide ?? (order.fairValue > 0.5 ? 'YES' : 'NO');
+          const isFilled = order.status === 'filled' || order.status === 'partially_filled';
+          const fillPrice = isFilled ? order.avgFillPrice : order.price;
+          const edgeCents = (order.edge * 100).toFixed(1);
           const edgePct = (order.edge * 100).toFixed(1);
-          // P&L = fair value - fill price (unrealized, based on consensus)
-          const pnl = order.avgFillPrice > 0 ? order.fairValue - order.avgFillPrice : 0;
+          const tokens = Math.round(order.size / order.price);
+          const potentialProfit = ((1 - fillPrice) * tokens).toFixed(2);
+          const polyUrl = `https://polymarket.com/search?query=${encodeURIComponent(order.homeTeam + ' ' + order.awayTeam)}`;
 
           return (
-            <div key={order.orderId} style={{
-              display: 'grid',
-              gridTemplateColumns: '2fr 60px 60px 60px 60px 60px',
-              gap: 4, padding: '6px 6px',
-              borderBottom: '1px solid var(--border-default)',
-              borderLeft: '2px solid var(--green)',
-              background: 'rgba(34,197,94,0.04)',
-              alignItems: 'center',
-            }}>
-              <div>
-                <a
-                  href={`https://polymarket.com/search?query=${encodeURIComponent(order.homeTeam + ' ' + order.awayTeam)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="schedule-row-link"
-                  style={{ fontSize: '0.68rem', color: 'var(--text-primary)', fontWeight: 500, textDecoration: 'none', display: 'block' }}
-                >
-                  {order.awayTeam} @ {order.homeTeam} <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)' }}>↗</span>
-                </a>
-                <div style={{ fontSize: '0.55rem', color: 'var(--text-dim)' }}>
-                  Filled @ {(order.avgFillPrice * 100).toFixed(0)}¢
-                  {pnl !== 0 && (
-                    <span style={{ color: pnl > 0 ? 'var(--green)' : 'var(--red)', marginLeft: 4 }}>
-                      {pnl > 0 ? '+' : ''}{(pnl * 100).toFixed(1)}¢
+            <a key={order.orderId} href={polyUrl} target="_blank" rel="noopener noreferrer"
+              className="schedule-row-link"
+              style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-default)',
+                borderLeft: `3px solid ${isFilled ? 'var(--green)' : 'var(--cyan)'}`,
+                borderRadius: 4,
+                padding: '8px 10px',
+              }}>
+                {/* Teams + link */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
+                    {order.awayTeam} @ {order.homeTeam}
+                  </span>
+                  <span style={{ fontSize: '0.5rem', color: DIM }}>↗</span>
+                </div>
+
+                {/* Key-value rows */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={LABEL}>{isFilled ? 'Position' : 'Order'}</span>
+                    <span style={{ ...VALUE, color: 'var(--cyan)' }}>
+                      {isFilled ? 'Bought' : 'Buy'} {side} ({getBetMeaning(order)})
                     </span>
-                  )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={LABEL}>{isFilled ? 'Entry' : 'Limit'}</span>
+                    <span style={VALUE}>{(fillPrice * 100).toFixed(0)}¢ per share</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={LABEL}>Fair</span>
+                    <span style={VALUE}>{(order.fairValue * 100).toFixed(0)}¢</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={LABEL}>Edge</span>
+                    <span style={{ ...VALUE, color: 'var(--green)', fontWeight: 700 }}>+{edgeCents}¢ per share (+{edgePct}%)</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={LABEL}>Size</span>
+                    <span style={VALUE}>${order.size.toFixed(0)} · {tokens} shares</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={LABEL}>Status</span>
+                    <span style={{
+                      fontSize: '0.6rem', fontWeight: 600,
+                      color: isFilled ? 'var(--green)' : DIM,
+                    }}>
+                      {isFilled ? '● FILLED' : '○ RESTING · waiting fill'}
+                    </span>
+                    {order.orderId.startsWith('sim-') && (
+                      <span style={{ fontSize: '0.5rem', color: DIM, marginLeft: 6, padding: '1px 4px', border: '1px solid var(--border-default)', borderRadius: 2 }}>DRY</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <span style={{ fontSize: '0.65rem', color: 'var(--cyan)', fontFamily: 'var(--font-mono)' }}>
-                {(order.fairValue * 100).toFixed(0)}%
-                <span style={{ fontSize: '0.45rem', color: 'var(--text-dim)', marginLeft: 2 }}>
-                  {order.tokenSide ?? (order.fairValue > 0.5 ? 'YES' : 'NO')}
-                </span>
-              </span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--green)', fontFamily: 'var(--font-mono)' }}>
-                {(order.price * 100).toFixed(0)}¢
-              </span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--green)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                +{edgePct}%
-              </span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                ${order.filledSize.toFixed(0)}
-              </span>
-              <span style={{
-                fontSize: '0.5rem', padding: '1px 5px', borderRadius: 2,
-                background: 'rgba(34,197,94,0.15)', color: 'var(--green)',
-                border: '1px solid rgba(34,197,94,0.3)', fontWeight: 600,
-                textAlign: 'center',
-              }}>FILLED</span>
-            </div>
-          );
-        })}
 
-        {/* Resting orders */}
-        {resting.map(order => {
-          const edgePct = (order.edge * 100).toFixed(1);
-
-          return (
-            <div key={order.orderId} style={{
-              display: 'grid',
-              gridTemplateColumns: '2fr 60px 60px 60px 60px 60px',
-              gap: 4, padding: '6px 6px',
-              borderBottom: '1px solid var(--border-default)',
-              borderLeft: '2px solid var(--amber)',
-              background: 'rgba(245,158,11,0.03)',
-              alignItems: 'center',
-            }}>
-              <div>
-                <a
-                  href={`https://polymarket.com/search?query=${encodeURIComponent(order.homeTeam + ' ' + order.awayTeam)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="schedule-row-link"
-                  style={{ fontSize: '0.68rem', color: 'var(--text-primary)', fontWeight: 500, textDecoration: 'none', display: 'block' }}
-                >
-                  {order.awayTeam} @ {order.homeTeam} <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)' }}>↗</span>
-                </a>
-                <div style={{ fontSize: '0.55rem', color: 'var(--text-dim)' }}>
-                  {order.orderId.startsWith('sim-') ? 'DRY' : 'LIVE'} · Limit @ {(order.price * 100).toFixed(0)}¢
-                </div>
+                {/* Outcome line */}
+                {isFilled && (
+                  <div style={{ fontSize: '0.55rem', color: DIM, marginTop: 6, paddingTop: 4, borderTop: '1px solid var(--border-default)' }}>
+                    If {side === 'YES' ? 'wins' : 'outcome correct'} → profit ${potentialProfit}
+                    <span style={{ margin: '0 6px' }}>·</span>
+                    If wrong → lose ${order.size.toFixed(0)}
+                  </div>
+                )}
               </div>
-              <span style={{ fontSize: '0.65rem', color: 'var(--cyan)', fontFamily: 'var(--font-mono)' }}>
-                {(order.fairValue * 100).toFixed(0)}%
-                <span style={{ fontSize: '0.45rem', color: 'var(--text-dim)', marginLeft: 2 }}>
-                  {order.tokenSide ?? (order.fairValue > 0.5 ? 'YES' : 'NO')}
-                </span>
-              </span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--amber)', fontFamily: 'var(--font-mono)' }}>
-                {(order.price * 100).toFixed(0)}¢
-              </span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--green)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                +{edgePct}%
-              </span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                ${order.size.toFixed(0)}
-              </span>
-              <span style={{
-                fontSize: '0.5rem', padding: '1px 5px', borderRadius: 2,
-                background: 'rgba(245,158,11,0.12)', color: 'var(--amber)',
-                border: '1px solid rgba(245,158,11,0.25)', fontWeight: 600,
-                textAlign: 'center',
-              }}>RESTING</span>
-            </div>
+            </a>
           );
         })}
       </div>

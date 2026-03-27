@@ -40,8 +40,7 @@ interface Props {
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
-  const now = new Date();
-  const diffMs = d.getTime() - now.getTime();
+  const diffMs = d.getTime() - Date.now();
   if (diffMs < 0) return 'Started';
   const h = Math.floor(diffMs / 3600000);
   const m = Math.floor((diffMs % 3600000) / 60000);
@@ -59,13 +58,15 @@ function Countdown({ target }: { target: string }) {
   return <>{formatTime(target)}</>;
 }
 
+const DIM = 'rgba(255,255,255,0.4)';
+const LABEL: React.CSSProperties = { fontSize: '0.55rem', color: DIM, textTransform: 'uppercase', letterSpacing: '0.05em' };
 
 export function OddsRanker({ watchlist, summary }: Props) {
   if (watchlist.length === 0 && !summary) {
     return (
       <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <div className="panel-header">Odds Ranker</div>
-        <div style={{ color: 'var(--text-dim)', fontSize: '0.65rem', padding: '8px 0', flex: 1 }}>
+        <div style={{ color: DIM, fontSize: '0.65rem', padding: '8px 0', flex: 1 }}>
           Waiting for odds data...
         </div>
       </div>
@@ -76,140 +77,117 @@ export function OddsRanker({ watchlist, summary }: Props) {
     <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="panel-header">
         Odds Ranker
-        <span style={{ color: 'var(--text-dim)', fontWeight: 400, marginLeft: 6 }}>
+        <span style={{ color: DIM, fontWeight: 400, marginLeft: 6 }}>
           {watchlist.length} games
           {summary && ` · ${summary.apiRequestsUsed}/${summary.apiRequestsBudget} API`}
         </span>
       </div>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
         {watchlist.map((entry, i) => {
-          const ev = entry.polymarketMatched ? entry.bestSideEV : entry.projectedEV;
-          const evPct = (ev * 100).toFixed(1);
-          const isPositive = ev > 0;
           const isMatched = entry.polymarketMatched;
+          const isPositive = entry.bestSideEV > 0;
           const isHeld = entry.status === 'position_held';
-
-          const borderColor = isHeld ? 'var(--green)' :
-            isMatched && isPositive ? 'var(--amber)' :
-            'transparent';
-
-          const bgColor = isHeld ? 'rgba(34,197,94,0.04)' :
-            isMatched && isPositive ? 'rgba(245,158,11,0.03)' :
-            'transparent';
 
           const sportLabel = entry.sportKey.includes('ncaab') ? 'NCAA' :
             entry.sportKey.includes('wnba') ? 'WNBA' :
             entry.sportKey.includes('euroleague') ? 'EUR' : 'NBA';
 
-          return (
-            <div key={entry.oddsGameId} style={{
-              padding: '6px 4px',
-              borderBottom: '1px solid var(--border-default)',
-              borderLeft: `2px solid ${borderColor}`,
-              background: bgColor,
+          // Determine which team the best side corresponds to
+          const buyingTeam = isMatched && isPositive
+            ? (entry.bestSide === 'YES'
+              ? (entry.homeIsYes ? entry.homeTeam : entry.awayTeam)
+              : (entry.homeIsYes ? entry.awayTeam : entry.homeTeam))
+            : null;
+          const betMeaning = isMatched && isPositive && buyingTeam
+            ? `${buyingTeam} ${entry.bestSide === 'YES' ? 'wins' : 'loses'}`
+            : null;
+
+          const borderColor = isHeld ? 'var(--green)' :
+            isMatched && isPositive ? 'var(--cyan)' : 'transparent';
+
+          const entryPrice = isMatched
+            ? ((entry.bestSide === 'YES' ? entry.currentYesPrice : entry.currentNoPrice) ?? 0)
+            : 0;
+          const fairPrice = isMatched
+            ? (entry.bestSide === 'YES'
+              ? (entry.homeIsYes ? entry.consensus.homeWinProb : entry.consensus.awayWinProb)
+              : (entry.homeIsYes ? entry.consensus.awayWinProb : entry.consensus.homeWinProb))
+            : 0;
+
+          const cardContent = (
+            <div style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-default)',
+              borderLeft: `3px solid ${borderColor}`,
+              borderRadius: 4,
+              padding: '8px 10px',
             }}>
-              {/* Row 1: Rank + Game + Time */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                  <span style={{
-                    fontSize: '0.55rem', fontFamily: 'var(--font-mono)', color: 'var(--text-dim)',
-                    width: 16, textAlign: 'right', flexShrink: 0,
-                  }}>#{i + 1}</span>
-                  <span style={{
-                    fontSize: '0.5rem', padding: '1px 4px', borderRadius: 2,
-                    background: 'rgba(100,116,139,0.15)', color: 'var(--text-dim)',
-                    border: '1px solid var(--border-default)', flexShrink: 0,
-                  }}>{sportLabel}</span>
-                  {entry.polymarketUrl ? (
-                    <a href={entry.polymarketUrl} target="_blank" rel="noopener noreferrer" style={{
-                      fontSize: '0.68rem', color: 'var(--text-primary)', fontWeight: 500,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      textDecoration: 'none',
-                    }} className="schedule-row-link">
-                      {entry.awayTeam} @ {entry.homeTeam}
-                      <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)', marginLeft: 4 }}>↗</span>
-                    </a>
-                  ) : (
-                    <span style={{
-                      fontSize: '0.68rem', color: 'var(--text-primary)', fontWeight: 500,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {entry.awayTeam} @ {entry.homeTeam}
-                    </span>
-                  )}
+              {/* Row 1: Rank + League + Countdown + Link */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: '0.6rem', color: DIM, fontFamily: 'var(--font-mono)' }}>#{i + 1}</span>
+                  <span style={{ fontSize: '0.5rem', color: DIM, padding: '1px 4px', borderRadius: 2, border: '1px solid var(--border-default)' }}>{sportLabel}</span>
+                  <span style={{ fontSize: '0.55rem', color: 'var(--cyan)' }}><Countdown target={entry.commenceTime} /></span>
                 </div>
-                <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', flexShrink: 0 }}>
-                  <Countdown target={entry.commenceTime} />
-                </span>
-              </div>
-
-              {/* Row 2: Consensus + Poly Price + EV + Status */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, paddingLeft: 22 }}>
-                <span style={{ fontSize: '0.6rem', color: 'var(--cyan)', fontFamily: 'var(--font-mono)' }}>
-                  {(entry.consensus.homeWinProb * 100).toFixed(0)}%
-                  <span style={{ color: 'var(--text-dim)', fontSize: '0.5rem', marginLeft: 2 }}>
-                    ({entry.consensus.numBookmakers}b)
-                  </span>
-                </span>
-
-                {isMatched ? (
-                  <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)' }}>
-                    <span style={{ color: 'var(--text-dim)' }}>Poly </span>
-                    <span style={{ color: 'var(--green)' }}>{((entry.currentYesPrice ?? 0) * 100).toFixed(0)}¢</span>
-                    <span style={{ color: 'var(--text-dim)' }}>/</span>
-                    <span style={{ color: 'var(--red)' }}>{((entry.currentNoPrice ?? 0) * 100).toFixed(0)}¢</span>
-                  </span>
-                ) : (
-                  <span style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
-                    no market
-                  </span>
+                {entry.polymarketUrl && (
+                  <span style={{ fontSize: '0.5rem', color: DIM }}>↗</span>
                 )}
-
-                <span style={{
-                  fontSize: '0.6rem', fontFamily: 'var(--font-mono)', fontWeight: 700,
-                  color: isMatched && isPositive ? 'var(--green)' : 'var(--text-dim)',
-                }}>
-                  {isMatched
-                    ? `${isPositive ? '+' : ''}${evPct}%`
-                    : `${(entry.consensus.homeWinProb * 100).toFixed(0)}/${(entry.consensus.awayWinProb * 100).toFixed(0)}`
-                  }
-                </span>
-
-                {/* Status badge */}
-                <span style={{
-                  fontSize: '0.5rem', padding: '1px 5px', borderRadius: 2, marginLeft: 'auto',
-                  background: isHeld ? 'rgba(34,197,94,0.15)' :
-                    isMatched && isPositive ? 'rgba(245,158,11,0.12)' :
-                    'rgba(100,116,139,0.1)',
-                  color: isHeld ? 'var(--green)' :
-                    isMatched && isPositive ? 'var(--amber)' :
-                    'var(--text-dim)',
-                  border: `1px solid ${isHeld ? 'rgba(34,197,94,0.3)' :
-                    isMatched && isPositive ? 'rgba(245,158,11,0.25)' :
-                    'var(--border-default)'}`,
-                  fontWeight: 600,
-                }}>
-                  {isHeld ? 'HELD' :
-                   isMatched && isPositive ? 'EDGE' :
-                   isMatched ? 'FLAT' :
-                   'WAITING'}
-                </span>
               </div>
 
-              {/* Row 3: Best side info */}
-              {isMatched && isPositive && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, paddingLeft: 22 }}>
-                  <span style={{ fontSize: '0.5rem', color: 'var(--text-dim)' }}>
-                    BUY {entry.bestSide} @ {(((entry.bestSide === 'YES' ? entry.currentYesPrice : entry.currentNoPrice) ?? 0) * 100).toFixed(0)}¢
-                    → SELL @ {(((entry.bestSide === 'YES'
-                      ? (entry.homeIsYes ? entry.consensus.homeWinProb : entry.consensus.awayWinProb)
-                      : (entry.homeIsYes ? entry.consensus.awayWinProb : entry.consensus.homeWinProb)
-                    ) * 100)).toFixed(0)}¢
-                  </span>
-                </div>
+              {/* Row 2: Teams */}
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', fontWeight: 600, marginBottom: 6 }}>
+                {entry.awayTeam} @ {entry.homeTeam}
+              </div>
+
+              {isMatched ? (
+                <>
+                  {/* Prices */}
+                  <div style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
+                    <span style={{ color: 'var(--green)' }}>YES {((entry.currentYesPrice ?? 0) * 100).toFixed(0)}¢</span>
+                    <span style={{ color: DIM, margin: '0 8px' }}>·</span>
+                    <span style={{ color: 'var(--red)' }}>NO {((entry.currentNoPrice ?? 0) * 100).toFixed(0)}¢</span>
+                  </div>
+
+                  {/* Fair values */}
+                  <div style={{ fontSize: '0.55rem', color: DIM, marginBottom: 4 }}>
+                    Fair: {entry.homeTeam.split(' ').pop()} {(entry.consensus.homeWinProb * 100).toFixed(0)}% · {entry.awayTeam.split(' ').pop()} {(entry.consensus.awayWinProb * 100).toFixed(0)}%
+                    <span style={{ marginLeft: 6 }}>{entry.consensus.numBookmakers} books · {entry.consensus.confidence}</span>
+                  </div>
+
+                  {/* Action line */}
+                  {isPositive && (
+                    <div style={{ fontSize: '0.6rem', color: 'var(--cyan)', fontWeight: 600, marginTop: 2 }}>
+                      BUY {entry.bestSide} {betMeaning ? `(${betMeaning})` : ''} @ {(entryPrice * 100).toFixed(0)}¢
+                      <span style={{ color: 'var(--green)', marginLeft: 8 }}>Edge +{(entry.bestSideEV * 100).toFixed(1)}%</span>
+                      <span style={{ color: DIM, marginLeft: 8 }}>Exit {(fairPrice * 100).toFixed(0)}¢</span>
+                    </div>
+                  )}
+                  {!isPositive && (
+                    <div style={{ fontSize: '0.55rem', color: DIM }}>No edge — prices aligned with consensus</div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: '0.6rem', color: DIM, marginBottom: 4 }}>No Polymarket market found</div>
+                  <div style={{ fontSize: '0.55rem', color: DIM, marginBottom: 4 }}>
+                    Fair: {entry.homeTeam.split(' ').pop()} {(entry.consensus.homeWinProb * 100).toFixed(0)}% · {entry.awayTeam.split(' ').pop()} {(entry.consensus.awayWinProb * 100).toFixed(0)}%
+                    <span style={{ marginLeft: 6 }}>{entry.consensus.numBookmakers} books</span>
+                  </div>
+                  <div style={{ fontSize: '0.55rem', color: DIM }}>WAITING for market</div>
+                </>
               )}
             </div>
           );
+
+          if (entry.polymarketUrl) {
+            return (
+              <a key={entry.oddsGameId} href={entry.polymarketUrl} target="_blank" rel="noopener noreferrer"
+                style={{ textDecoration: 'none', color: 'inherit' }} className="schedule-row-link">
+                {cardContent}
+              </a>
+            );
+          }
+          return <div key={entry.oddsGameId}>{cardContent}</div>;
         })}
       </div>
     </div>
