@@ -114,20 +114,20 @@ export default function Home() {
           </div>
         </div>
 
-        {/* CENTER — Markets + Positions + Trades (proportional) */}
+        {/* CENTER — Markets + Positions + Trades (equal thirds) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 0, overflow: 'hidden' }}>
-          <div style={{ flex: 2, minHeight: 0, overflowY: 'auto' }}>
+          <div style={{ flex: 1, minHeight: 60, overflowY: 'auto' }}>
             <MarketsTable markets={state.watchedMarkets} />
           </div>
-          <div style={{ flex: 2, minHeight: 0, overflowY: 'auto' }}>
+          <div style={{ flex: 1, minHeight: 60, overflowY: 'auto' }}>
             <PositionsPanel orders={state.preGameOrders} summary={state.preGameSummary} />
           </div>
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          <div style={{ flex: 1, minHeight: 60, overflowY: 'auto' }}>
             <TradesPanel trades={state.trades} mode={state.account.mode} />
           </div>
         </div>
 
-        {/* RIGHT — Account + Score Feed + Skills (proportional) */}
+        {/* RIGHT — Account + Score Feed (flex) + Skills */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 0, overflow: 'hidden' }}>
           <div style={{ flexShrink: 0 }}>
             <AccountPanel
@@ -137,7 +137,7 @@ export default function Home() {
               skillStats={state.skills?.map((s: any) => s.stats) ?? []}
             />
           </div>
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          <div style={{ flex: 1, minHeight: 60, overflowY: 'auto' }}>
             <ScoreFeed events={state.scoringEvents} />
           </div>
           <div style={{ flexShrink: 0 }}>
