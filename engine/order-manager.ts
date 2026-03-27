@@ -84,6 +84,7 @@ function getTotalDeployed(): number {
 export async function placeOrder(params: {
   conditionId: string;
   tokenId: string;
+  tokenSide: 'YES' | 'NO';
   price: number;
   size: number;
   sportKey: string;
@@ -108,6 +109,7 @@ export async function placeOrder(params: {
     conditionId: params.conditionId,
     tokenId: params.tokenId,
     side: 'BUY',
+    tokenSide: params.tokenSide,
     price: params.price,
     size: params.size,
     filledSize: 0,

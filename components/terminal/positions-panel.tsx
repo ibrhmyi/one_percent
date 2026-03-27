@@ -5,6 +5,7 @@ interface PreGameOrder {
   conditionId: string;
   tokenId: string;
   side: 'BUY';
+  tokenSide?: 'YES' | 'NO';
   price: number;
   size: number;
   filledSize: number;
@@ -126,7 +127,7 @@ export function PositionsPanel({ orders, summary }: Props) {
               <span style={{ fontSize: '0.65rem', color: 'var(--cyan)', fontFamily: 'var(--font-mono)' }}>
                 {(order.fairValue * 100).toFixed(0)}%
                 <span style={{ fontSize: '0.45rem', color: 'var(--text-dim)', marginLeft: 2 }}>
-                  {order.fairValue > 0.5 ? 'YES' : 'NO'}
+                  {order.tokenSide ?? (order.fairValue > 0.5 ? 'YES' : 'NO')}
                 </span>
               </span>
               <span style={{ fontSize: '0.65rem', color: 'var(--green)', fontFamily: 'var(--font-mono)' }}>
@@ -179,7 +180,7 @@ export function PositionsPanel({ orders, summary }: Props) {
               <span style={{ fontSize: '0.65rem', color: 'var(--cyan)', fontFamily: 'var(--font-mono)' }}>
                 {(order.fairValue * 100).toFixed(0)}%
                 <span style={{ fontSize: '0.45rem', color: 'var(--text-dim)', marginLeft: 2 }}>
-                  {order.fairValue > 0.5 ? 'YES' : 'NO'}
+                  {order.tokenSide ?? (order.fairValue > 0.5 ? 'YES' : 'NO')}
                 </span>
               </span>
               <span style={{ fontSize: '0.65rem', color: 'var(--amber)', fontFamily: 'var(--font-mono)' }}>

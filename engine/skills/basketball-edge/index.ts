@@ -145,6 +145,7 @@ export class PreGameEdgeSkill implements Skill {
       const order = await placeOrder({
         conditionId: market.conditionId,
         tokenId,
+        tokenSide: side,
         price: marketPrice,
         size: adjustedSize,
         sportKey: matchedOdds.sport_key,
@@ -223,6 +224,7 @@ export class PreGameEdgeSkill implements Skill {
         const order = await placeOrder({
           conditionId: target.conditionId,
           tokenId: target.tokenId,
+          tokenSide: target.side,
           price: target.entryPrice,
           size: target.kellySize,
           sportKey: this.lastWatchlist.find(w => w.conditionId === target.conditionId)?.sportKey || '',
@@ -275,6 +277,7 @@ export class PreGameEdgeSkill implements Skill {
         const order = await placeOrder({
           conditionId: target.conditionId,
           tokenId: target.tokenId,
+          tokenSide: target.side,
           price: target.entryPrice,
           size: target.kellySize,
           sportKey: this.lastWatchlist.find(w => w.conditionId === target.conditionId)?.sportKey || '',

@@ -85,6 +85,7 @@ export interface PreGameOrder {
   conditionId: string;
   tokenId: string;
   side: 'BUY';
+  tokenSide: 'YES' | 'NO';  // Which token we're buying
   price: number;
   size: number;
   filledSize: number;
