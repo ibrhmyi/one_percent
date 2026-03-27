@@ -7,7 +7,7 @@ import { allocate } from './capital-allocator';
 import { isNewMarket, markMarketSeen, getEarlyMarketConfig } from './market-watcher';
 import { fetchOrderbook } from '../../orderbook';
 import { placeOrder, cancelOrder, getOrders } from '../../order-manager';
-import { addMessage } from '../../state';
+import { addMessage, engineState } from '../../state';
 import type { WatchedMarket, Opportunity, Skill, SkillInfo, SkillStats } from '@/lib/types';
 import { OddsAPIGame, PreGameEdge, WatchlistEntry, AllocationDecision } from './types';
 import { appendFileSync, mkdirSync, existsSync } from 'fs';
@@ -115,18 +115,20 @@ export class PreGameEdgeSkill implements Skill {
 
       const config = getEarlyMarketConfig();
       if (edge < config.minEdge) continue;
+      // Never buy above fair value
+      if (marketPrice >= fairValue) continue;
 
-      const targetPrice = marketPrice + 0.03;
-      const kellySize = calculateKellySize(fairValue, targetPrice, bankroll);
+      const kellySize = calculateKellySize(fairValue, marketPrice, bankroll);
       const adjustedSize = Math.min(kellySize * (config.kellyFraction / 0.25), bankroll * config.maxBetPct);
 
       if (adjustedSize < 5) continue;
 
       const tokenId = (homeIsYes ? market.yesTokenId : market.noTokenId) || '';
+      const side = homeIsYes ? 'YES' : 'NO';
       const order = await placeOrder({
         conditionId: market.conditionId,
         tokenId,
-        price: targetPrice,
+        price: marketPrice,  // Buy at market price, not above
         size: adjustedSize,
         sportKey: matchedOdds.sport_key,
         homeTeam: matchedOdds.home_team,
@@ -138,8 +140,31 @@ export class PreGameEdgeSkill implements Skill {
 
       if (order) {
         addMessage({
-          text: `[INSTANT ENTRY] NEW MARKET: ${matchedOdds.home_team} vs ${matchedOdds.away_team} | Consensus: ${(fairValue * 100).toFixed(0)}% | Poly: ${(marketPrice * 100).toFixed(0)}c | EDGE: +${(edge * 100).toFixed(0)}% | BUY @ ${targetPrice} ($${adjustedSize.toFixed(0)})`,
+          text: `[INSTANT BUY] ${matchedOdds.home_team} vs ${matchedOdds.away_team} | BUY ${side} @ ${(marketPrice * 100).toFixed(0)}¢ → SELL @ ${(fairValue * 100).toFixed(0)}¢ | Edge: +${(edge * 100).toFixed(0)}% | $${adjustedSize.toFixed(0)}`,
           type: 'action',
+        });
+        // Add to engine trades so it shows in TradesPanel
+        engineState.trades.push({
+          id: order.orderId,
+          marketId: market.id,
+          marketTitle: `${matchedOdds.home_team} vs ${matchedOdds.away_team}`,
+          side: side.toLowerCase() as 'yes' | 'no',
+          entryPrice: marketPrice,
+          entryAmount: adjustedSize,
+          exitPrice: null,
+          exitAmount: null,
+          pnl: null,
+          tokens: adjustedSize / marketPrice,
+          skillId: 'basketball-edge',
+          skillIcon: '📊',
+          enteredAt: new Date().toISOString(),
+          exitedAt: null,
+          exitReason: null,
+          status: 'open' as const,
+          peakPrice: marketPrice,
+          yesTokenId: homeIsYes ? tokenId : '',
+          noTokenId: homeIsYes ? '' : tokenId,
+          isDryRun: !process.env.POLY_PRIVATE_KEY,
         });
         this.stats.trades++;
       }
@@ -195,6 +220,28 @@ export class PreGameEdgeSkill implements Skill {
           addMessage({
             text: `[PRE-GAME][BUY] ${target.game} | BUY ${target.side} @ ${(target.entryPrice * 100).toFixed(0)}¢ (market) → SELL @ ${(target.fairValue * 100).toFixed(0)}¢ (fair) | Edge: +${((target.fairValue - target.entryPrice) * 100).toFixed(1)}% | $${target.kellySize.toFixed(0)}`,
             type: 'action',
+          });
+          engineState.trades.push({
+            id: order.orderId,
+            marketId: target.conditionId,
+            marketTitle: target.game,
+            side: target.side.toLowerCase() as 'yes' | 'no',
+            entryPrice: target.entryPrice,
+            entryAmount: target.kellySize,
+            exitPrice: null,
+            exitAmount: null,
+            pnl: null,
+            tokens: target.kellySize / target.entryPrice,
+            skillId: 'basketball-edge',
+            skillIcon: '📊',
+            enteredAt: new Date().toISOString(),
+            exitedAt: null,
+            exitReason: null,
+            status: 'open' as const,
+            peakPrice: target.entryPrice,
+            yesTokenId: target.tokenId,
+            noTokenId: '',
+            isDryRun: !process.env.POLY_PRIVATE_KEY,
           });
           this.stats.trades++;
         }
