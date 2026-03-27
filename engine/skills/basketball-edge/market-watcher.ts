@@ -32,8 +32,8 @@ export function getMarketAge(conditionId: string): number {
  */
 export function getEarlyMarketConfig() {
   return {
-    minEdge: 0.10,
-    kellyFraction: 0.35,
+    minEdge: 0.04,  // After 2% taker fee subtracted from edge
+    kellyFraction: 0.25,  // Consistent with Kelly formula
     skipLiquidityCheck: true,
     maxBetPct: 0.15,
   };

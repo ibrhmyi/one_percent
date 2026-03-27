@@ -336,7 +336,7 @@ function simulateDryRunFills(): void {
     if (currentPrice <= order.price) {
       order.status = 'filled';
       order.filledSize = order.size;
-      order.avgFillPrice = currentPrice;
+      order.avgFillPrice = order.price; // Fill at limit price, not market mid
       order.updatedAt = new Date().toISOString();
 
       addMessage({

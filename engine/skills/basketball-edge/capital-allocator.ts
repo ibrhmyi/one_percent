@@ -3,8 +3,6 @@ import { calculateKellySize } from './edge-detector';
 
 const TAKER_FEE = 0.02;
 const MIN_SWITCH_BENEFIT = 0.03;  // Only switch if net benefit > 3 cents/share
-const EV_CLUSTER_THRESHOLD = 0.05; // Split capital when top EVs are within 5%
-const MAX_POSITIONS = 3;           // Don't spread across more than 3
 
 /**
  * Core allocation logic. Runs every 60-second cycle.
@@ -36,35 +34,30 @@ export function allocate(
     return { action: 'HOLD', reason: 'No positive-EV opportunities available' };
   }
 
-  // ── Build allocation targets (top 1-3 clustered by EV) ──
-  const topEV = opportunities[0].bestSideEV;
-  const cluster = opportunities
-    .filter(o => topEV - o.bestSideEV <= EV_CLUSTER_THRESHOLD)
-    .slice(0, MAX_POSITIONS);
+  // ── Pick SINGLE best opportunity (spec: all capital to best opportunity) ──
+  const best = opportunities[0];
+  const marketPrice = best.bestSide === 'YES' ? best.currentYesPrice! : best.currentNoPrice!;
+  const fairValue = best.bestSide === 'YES'
+    ? (best.homeIsYes ? best.homeFairValue : best.awayFairValue)
+    : (best.homeIsYes ? best.awayFairValue : best.homeFairValue);
 
-  const totalClusterEV = cluster.reduce((s, o) => s + o.bestSideEV, 0);
-  const targets = cluster.map(entry => {
-    const weight = entry.bestSideEV / totalClusterEV;
-    // BUY at current market price (taker) — this is the actual entry
-    const marketPrice = entry.bestSide === 'YES' ? entry.currentYesPrice! : entry.currentNoPrice!;
-    // Fair value = where we'll place our SELL limit to take profit
-    const fairValue = entry.bestSide === 'YES'
-      ? (entry.homeIsYes ? entry.homeFairValue : entry.awayFairValue)
-      : (entry.homeIsYes ? entry.awayFairValue : entry.homeFairValue);
+  const kellySize = calculateKellySize(fairValue, marketPrice, bankroll);
+  if (kellySize < 5) {
+    return { action: 'HOLD', reason: 'Kelly size too small for best opportunity' };
+  }
 
-    return {
-      conditionId: entry.conditionId!,
-      tokenId: (entry.bestSide === 'YES' ? entry.yesTokenId : entry.noTokenId) || '',
-      game: `${entry.homeTeam} vs ${entry.awayTeam}`,
-      side: entry.bestSide as 'YES' | 'NO',
-      entryPrice: marketPrice,  // Buy at market
-      exitPrice: fairValue,     // Sell limit at fair value
-      fairValue,
-      ev: entry.bestSideEV,
-      kellySize: Math.max(5, Math.round(bankroll * weight * 0.40)),
-      weight,
-    };
-  });
+  const targets = [{
+    conditionId: best.conditionId!,
+    tokenId: (best.bestSide === 'YES' ? best.yesTokenId : best.noTokenId) || '',
+    game: `${best.homeTeam} vs ${best.awayTeam}`,
+    side: best.bestSide as 'YES' | 'NO',
+    entryPrice: marketPrice,
+    exitPrice: fairValue,
+    fairValue,
+    ev: best.bestSideEV,
+    kellySize,
+    weight: 1.0,
+  }];
 
   // ── Case 1: No positions and no resting orders -> ENTER ──
   if (filledPositions.length === 0 && restingOrders.length === 0) {

@@ -1,10 +1,13 @@
 import { ConsensusResult, PreGameEdge, OddsAPIGame } from './types';
 import type { WatchedMarket } from '@/lib/types';
 
+// Polymarket taker fee — applied when EXITING a position
+const TAKER_FEE = 0.02;
+
 const MIN_EDGE: Record<string, number> = {
-  high: 0.03,
-  medium: 0.05,
-  low: 0.08,
+  high: 0.04,    // was 0.03 — raised to survive fees
+  medium: 0.06,  // was 0.05
+  low: 0.09,     // was 0.08
 };
 
 /**
@@ -18,10 +21,8 @@ function calculateTargetPrice(
   fairValue: number,
   confidence: 'high' | 'medium' | 'low'
 ): number {
-  // How far toward fair value we're willing to go (lower = more patient maker orders)
   const aggressiveness = confidence === 'high' ? 0.40 : confidence === 'medium' ? 0.50 : 0.60;
   const raw = marketPrice + aggressiveness * (fairValue - marketPrice);
-  // CRITICAL: Never place order at or above fair value — that's negative EV
   const maxTarget = fairValue - 0.01;
   const clamped = Math.min(raw, maxTarget);
   return Math.round(clamped * 100) / 100;
@@ -30,13 +31,11 @@ function calculateTargetPrice(
 /**
  * Kelly criterion for pre-game sizing.
  * f* = (p * b - q) / b, where:
- *   p = consensus probability
+ *   p = consensus probability (fair value)
  *   q = 1 - p
- *   b = payout ratio = (1 - targetPrice) / targetPrice
+ *   b = NET payout after taker fee = ((1 - TAKER_FEE) - targetPrice) / targetPrice
  *
- * We use quarter Kelly (x 0.25) for safety.
- * Capped at 15% of bankroll per bet.
- * Minimum bet: $5.
+ * Quarter Kelly (0.25x) for safety. Capped at 15% of bankroll per bet.
  */
 export function calculateKellySize(
   fairValue: number,
@@ -49,7 +48,11 @@ export function calculateKellySize(
 
   const p = fairValue;
   const q = 1 - p;
-  const b = (1 - targetPrice) / targetPrice;
+  // Net payout accounts for taker fee on exit
+  const netPayout = (1 - TAKER_FEE);
+  const b = (netPayout - targetPrice) / targetPrice;
+
+  if (b <= 0) return 0;
 
   const fullKelly = (p * b - q) / b;
   if (fullKelly <= 0) return 0;
@@ -62,7 +65,8 @@ export function calculateKellySize(
 
 /**
  * Detect pre-game edges.
- * Implements spread filter (Amendment 3): skip if books disagree > 10%.
+ * Edge = fairValue - marketPrice - TAKER_FEE (net edge after exit fee).
+ * Spread filter: skip if books disagree > 10%.
  */
 export function detectEdges(
   oddsGames: Array<{
@@ -83,11 +87,7 @@ export function detectEdges(
     if (minsUntilStart < 5) continue;
     if (minsUntilStart > 48 * 60) continue;
 
-    // SPREAD FILTER: Skip if bookmakers disagree too much (Amendment 3)
-    if (consensus.spread > 0.10) {
-      console.log(`[PreGameEdge] Skip ${game.home_team} vs ${game.away_team}: book spread ${(consensus.spread * 100).toFixed(1)}% too high`);
-      continue;
-    }
+    if (consensus.spread > 0.10) continue;
 
     const homeFair = consensus.homeWinProb;
     const awayFair = consensus.awayWinProb;
@@ -95,8 +95,9 @@ export function detectEdges(
     const yesFair = homeIsYes ? homeFair : awayFair;
     const noFair = homeIsYes ? awayFair : homeFair;
 
-    const yesEdge = yesFair - market.yesPrice;
-    const noEdge = noFair - market.noPrice;
+    // Edge AFTER taker fee on exit
+    const yesEdge = yesFair - market.yesPrice - TAKER_FEE;
+    const noEdge = noFair - market.noPrice - TAKER_FEE;
 
     let side: 'YES' | 'NO';
     let fairValue: number;
@@ -104,30 +105,24 @@ export function detectEdges(
     let edge: number;
 
     if (yesEdge >= noEdge && yesEdge > 0) {
-      side = 'YES';
-      fairValue = yesFair;
-      marketPrice = market.yesPrice;
-      edge = yesEdge;
+      side = 'YES'; fairValue = yesFair; marketPrice = market.yesPrice; edge = yesEdge;
     } else if (noEdge > 0) {
-      side = 'NO';
-      fairValue = noFair;
-      marketPrice = market.noPrice;
-      edge = noEdge;
+      side = 'NO'; fairValue = noFair; marketPrice = market.noPrice; edge = noEdge;
     } else {
       continue;
     }
 
-    const minEdge = MIN_EDGE[consensus.confidence] || 0.05;
+    const minEdge = MIN_EDGE[consensus.confidence] || 0.06;
     if (edge < minEdge) continue;
 
     const targetPrice = calculateTargetPrice(marketPrice, fairValue, consensus.confidence);
-    // Guard: if target >= fairValue, this is not worth entering
     if (targetPrice >= fairValue) continue;
     const kellySize = calculateKellySize(fairValue, targetPrice, bankroll);
     if (kellySize === 0) continue;
 
-    // EV = (fairValue - targetPrice) * size — profit if consensus is correct
-    const ev = (fairValue - targetPrice) * kellySize;
+    // EV = (fairValue - targetPrice - TAKER_FEE) * shares
+    const shares = kellySize / targetPrice;
+    const ev = (fairValue - targetPrice - TAKER_FEE) * shares;
 
     edges.push({
       oddsGameId: game.id,

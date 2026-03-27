@@ -111,11 +111,12 @@ export class PreGameEdgeSkill implements Skill {
 
       const { homeIsYes } = resolveTokenSides(market, matchedOdds.home_team, matchedOdds.away_team);
 
-      // Check BOTH sides for edge (same logic as detectEdges)
+      // Check BOTH sides for edge AFTER 2% taker fee
+      const TAKER_FEE = 0.02;
       const yesFair = homeIsYes ? consensus.homeWinProb : consensus.awayWinProb;
       const noFair = homeIsYes ? consensus.awayWinProb : consensus.homeWinProb;
-      const yesEdge = yesFair - market.yesPrice;
-      const noEdge = noFair - market.noPrice;
+      const yesEdge = yesFair - market.yesPrice - TAKER_FEE;
+      const noEdge = noFair - market.noPrice - TAKER_FEE;
 
       let side: 'YES' | 'NO';
       let fairValue: number;
@@ -133,21 +134,27 @@ export class PreGameEdgeSkill implements Skill {
         continue;
       }
 
+      // Dedup: skip if we already have an order for this game
+      const existingOrders = getOrders();
+      const alreadyOrdered = existingOrders.some(
+        o => o.conditionId === market.conditionId && o.status !== 'cancelled'
+      );
+      if (alreadyOrdered) continue;
+
       const config = getEarlyMarketConfig();
       if (edge < config.minEdge) continue;
       if (marketPrice >= fairValue) continue;
 
+      // Use consistent Kelly sizing (no multiplier hack)
       const kellySize = calculateKellySize(fairValue, marketPrice, bankroll);
-      const adjustedSize = Math.min(kellySize * (config.kellyFraction / 0.25), bankroll * config.maxBetPct);
-
-      if (adjustedSize < 5) continue;
+      if (kellySize < 5) continue;
 
       const order = await placeOrder({
         conditionId: market.conditionId,
         tokenId,
         tokenSide: side,
         price: marketPrice,
-        size: adjustedSize,
+        size: kellySize,
         sportKey: matchedOdds.sport_key,
         homeTeam: matchedOdds.home_team,
         awayTeam: matchedOdds.away_team,
@@ -158,7 +165,7 @@ export class PreGameEdgeSkill implements Skill {
 
       if (order) {
         addMessage({
-          text: `[INSTANT BUY] ${matchedOdds.home_team} vs ${matchedOdds.away_team} | BUY ${side} @ ${(marketPrice * 100).toFixed(0)}¢ → SELL @ ${(fairValue * 100).toFixed(0)}¢ | Edge: +${(edge * 100).toFixed(0)}% | $${adjustedSize.toFixed(0)}`,
+          text: `[INSTANT BUY] ${matchedOdds.home_team} vs ${matchedOdds.away_team} | BUY ${side} @ ${(marketPrice * 100).toFixed(0)}¢ → SELL @ ${(fairValue * 100).toFixed(0)}¢ | Edge: +${(edge * 100).toFixed(1)}% (net of 2% fee) | $${kellySize.toFixed(0)}`,
           type: 'action',
         });
         // Add to engine trades so it shows in TradesPanel
@@ -168,11 +175,11 @@ export class PreGameEdgeSkill implements Skill {
           marketTitle: `${matchedOdds.home_team} vs ${matchedOdds.away_team}`,
           side: side.toLowerCase() as 'yes' | 'no',
           entryPrice: marketPrice,
-          entryAmount: adjustedSize,
+          entryAmount: kellySize,
           exitPrice: null,
           exitAmount: null,
           pnl: null,
-          tokens: adjustedSize / marketPrice,
+          tokens: kellySize / marketPrice,
           skillId: 'basketball-edge',
           skillIcon: '📊',
           enteredAt: new Date().toISOString(),
@@ -266,9 +273,15 @@ export class PreGameEdgeSkill implements Skill {
         }
       }
     } else if (decision.action === 'SWITCH' && decision.targets && decision.currentPosition) {
-      // Exit current position (market sell to reduce complexity in V1)
+      // ACTUALLY exit current position — cancel all orders for the old game
+      const oldConditionId = decision.currentPosition.conditionId;
+      for (const order of allOrders) {
+        if (order.conditionId === oldConditionId && order.status !== 'cancelled') {
+          await cancelOrder(order.orderId);
+        }
+      }
       addMessage({
-        text: `[PRE-GAME][EXIT] ${decision.currentPosition.game} | Better opportunity available (net benefit: +${(decision.netBenefit! * 100).toFixed(1)}c)`,
+        text: `[PRE-GAME][EXIT] ${decision.currentPosition.game} | Cancelled — better opportunity (net benefit: +${(decision.netBenefit! * 100).toFixed(1)}c)`,
         type: 'warning',
       });
 
