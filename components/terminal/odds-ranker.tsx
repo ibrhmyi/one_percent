@@ -63,9 +63,9 @@ function Countdown({ target }: { target: string }) {
 export function OddsRanker({ watchlist, summary }: Props) {
   if (watchlist.length === 0 && !summary) {
     return (
-      <div className="panel">
+      <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <div className="panel-header">Odds Ranker</div>
-        <div style={{ color: 'var(--text-dim)', fontSize: '0.65rem', padding: '8px 0' }}>
+        <div style={{ color: 'var(--text-dim)', fontSize: '0.65rem', padding: '8px 0', flex: 1 }}>
           Waiting for odds data...
         </div>
       </div>
@@ -73,7 +73,7 @@ export function OddsRanker({ watchlist, summary }: Props) {
   }
 
   return (
-    <div className="panel">
+    <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="panel-header">
         Odds Ranker
         <span style={{ color: 'var(--text-dim)', fontWeight: 400, marginLeft: 6 }}>
@@ -81,7 +81,7 @@ export function OddsRanker({ watchlist, summary }: Props) {
           {summary && ` · ${summary.apiRequestsUsed}/${summary.apiRequestsBudget} API`}
         </span>
       </div>
-      <div>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {watchlist.map((entry, i) => {
           const ev = entry.polymarketMatched ? entry.bestSideEV : entry.projectedEV;
           const evPct = (ev * 100).toFixed(1);

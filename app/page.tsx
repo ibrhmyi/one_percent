@@ -114,8 +114,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* CENTER — Markets + Positions + Trades (equal thirds, always touching) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0, minHeight: 0, overflow: 'hidden' }}>
+        {/* CENTER — Markets + Positions + Trades (equal thirds, tiny gap) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 0, overflow: 'hidden' }}>
           <div style={{ flex: '1 1 0%', minHeight: 60, overflow: 'hidden' }}>
             <div style={{ height: '100%', overflowY: 'auto' }}>
               <MarketsTable markets={state.watchedMarkets} />

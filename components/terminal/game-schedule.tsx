@@ -66,12 +66,12 @@ export function GameSchedule({ games }: Props) {
   });
 
   return (
-    <div className="panel">
+    <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="panel-header">Game Schedule <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>({filtered.length})</span></div>
       {filtered.length === 0 ? (
-        <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>No games in next 24h</div>
+        <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem', flex: 1 }}>No games in next 24h</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, minHeight: 0, overflowY: 'auto' }}>
           {filtered.map(g => {
             const isLive = g.status === 'live';
             const polyUrl = g.slug ? `https://polymarket.com/event/${g.slug}` : undefined;

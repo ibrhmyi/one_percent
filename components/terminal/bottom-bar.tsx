@@ -22,9 +22,11 @@ export function BottomBar({ wsConnected, isRunning, cycleCount, uptimeSeconds, l
     : null;
   return (
     <div style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
-      background: 'var(--bg-primary)',
-      borderTop: '1px solid var(--border-default)',
+      flexShrink: 0,
+      background: 'var(--bg-card)',
+      border: '1px solid var(--border-default)',
+      borderRadius: 6,
+      margin: '0 4px 4px 4px',
       padding: '4px 16px',
       display: 'flex', alignItems: 'center', gap: '16px',
       fontSize: '0.65rem', color: 'var(--text-dim)',
