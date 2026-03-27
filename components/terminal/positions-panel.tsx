@@ -41,7 +41,7 @@ export function PositionsPanel({ orders, summary }: Props) {
 
   if (active.length === 0) {
     return (
-      <div className="panel">
+      <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <div className="panel-header">
           Pre-Game Positions
           {summary && (
@@ -50,7 +50,7 @@ export function PositionsPanel({ orders, summary }: Props) {
             </span>
           )}
         </div>
-        <div style={{ color: 'var(--text-dim)', fontSize: '0.65rem', padding: '12px 0', textAlign: 'center' }}>
+        <div style={{ color: 'var(--text-dim)', fontSize: '0.65rem', padding: '12px 0', textAlign: 'center', flex: 1 }}>
           No active pre-game positions
         </div>
       </div>
@@ -61,7 +61,7 @@ export function PositionsPanel({ orders, summary }: Props) {
   const filled = active.filter(o => o.status === 'filled' || o.status === 'partially_filled');
 
   return (
-    <div className="panel" style={{ overflow: 'hidden' }}>
+    <div className="panel" style={{ overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="panel-header">
         Pre-Game Positions
         <span style={{ color: 'var(--text-dim)', fontWeight: 400, marginLeft: 6 }}>
@@ -69,7 +69,7 @@ export function PositionsPanel({ orders, summary }: Props) {
         </span>
       </div>
 
-      <div>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {/* Header row */}
         <div style={{
           display: 'grid',

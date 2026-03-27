@@ -16,11 +16,11 @@ interface Props { trades: Trade[]; mode: string; }
 export function TradesPanel({ trades, mode }: Props) {
   const recent = [...trades].reverse().slice(0, 10);
   return (
-    <div className="panel">
+    <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="panel-header">Recent Trades</div>
       {recent.length === 0 ? (
-        <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>No trades yet</div>
-      ) : recent.map(t => {
+        <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem', flex: 1 }}>No trades yet</div>
+      ) : <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>{recent.map(t => {
         const pnl = t.pnl ?? 0;
         const isProfit = pnl > 0;
         const pnlPct = t.entryPrice > 0 && t.entryAmount > 0
@@ -55,7 +55,7 @@ export function TradesPanel({ trades, mode }: Props) {
             </div>
           </div>
         );
-      })}
+      })}</div>}
     </div>
   );
 }

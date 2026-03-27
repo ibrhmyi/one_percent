@@ -97,7 +97,7 @@ export function MarketsTable({ markets }: Props) {
     const next = upcoming[0];
 
     return (
-      <div className="panel" style={{ textAlign: 'center', padding: '20px 16px' }}>
+      <div className="panel" style={{ textAlign: 'center', padding: '20px 16px', height: '100%', display: 'flex', flexDirection: 'column' }}>
         <div className="panel-header" style={{ textAlign: 'left' }}>Watched Markets</div>
         {next ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: '16px 0 8px' }}>
@@ -139,11 +139,11 @@ export function MarketsTable({ markets }: Props) {
   });
 
   return (
-    <div className="panel" style={{ overflow: 'hidden' }}>
+    <div className="panel" style={{ overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="panel-header">
         Watched Markets <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>({active.length} live)</span>
       </div>
-      <div>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {/* Header row */}
         <div style={{
           display: 'grid',
