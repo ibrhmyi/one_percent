@@ -1,16 +1,20 @@
 /**
- * Sportsbook Poller — polls the Vercel /api/odds/scrape endpoint every 30s
- * to get DraftKings + FanDuel odds, then feeds them into the aggregator.
+ * Sportsbook Poller — fetches DraftKings + FanDuel odds and feeds into aggregator.
  *
- * Why Vercel? DK/FD geo-block non-US IPs. Vercel runs in the US.
- * The local bot calls the deployed endpoint to get the data.
+ * Strategy:
+ *   1. Try fetching DK/FD DIRECTLY (works if running in US or from US IP)
+ *   2. Fall back to Vercel /api/odds/scrape endpoint (US servers bypass geo-block)
+ *
+ * Polls every 30s to balance speed vs Vercel function invocation limits.
+ * (~86K calls/month vs 100K free tier limit)
  */
 
 import { updateBooksPrediction } from './aggregator';
 import { addMessage } from '../state';
 
-const POLL_INTERVAL_MS = 15_000; // 15 seconds — fast enough to catch news drops
+const POLL_INTERVAL_MS = 30_000; // 30 seconds — balances speed vs Vercel limits
 const VERCEL_ODDS_URL = process.env.VERCEL_ODDS_URL || 'https://onepercentmarkets.vercel.app/api/odds/scrape';
+const LOCAL_SCRAPE_URL = 'http://localhost:3000/api/odds/scrape'; // Try local first
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let lastPollAt = 0;
@@ -44,24 +48,37 @@ interface ScrapeResponse {
   timestamp: string;
 }
 
-/** Fetch odds from the Vercel scraper endpoint */
+/** Fetch odds — try local server first, then fall back to Vercel */
 async function fetchOdds(): Promise<ScrapeResponse | null> {
-  try {
-    const res = await fetch(VERCEL_ODDS_URL, {
-      signal: AbortSignal.timeout(15000),
-      headers: { 'Accept': 'application/json' },
-    });
+  // Try local first (if running Next.js locally, this hits the same scraper code without Vercel limits)
+  const urls = [LOCAL_SCRAPE_URL, VERCEL_ODDS_URL];
 
-    if (!res.ok) {
-      console.error(`[SportsbookPoller] HTTP ${res.status} from scraper`);
-      return null;
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(12000),
+        headers: { 'Accept': 'application/json' },
+      });
+
+      if (!res.ok) {
+        console.log(`[SportsbookPoller] ${url} returned ${res.status}, trying next...`);
+        continue;
+      }
+
+      const data = await res.json();
+      if (data.games && data.games.length > 0) {
+        return data;
+      }
+      // Got response but no games — might be geo-blocked, try next
+      console.log(`[SportsbookPoller] ${url} returned 0 games, trying next...`);
+    } catch {
+      // Connection refused (not running locally) or timeout — try next
+      continue;
     }
-
-    return await res.json();
-  } catch (err) {
-    console.error('[SportsbookPoller] Fetch error:', err instanceof Error ? err.message : err);
-    return null;
   }
+
+  console.error('[SportsbookPoller] All sources failed');
+  return null;
 }
 
 /** Process scraped odds and feed into aggregator */

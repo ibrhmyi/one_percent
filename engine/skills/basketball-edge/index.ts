@@ -5,10 +5,10 @@ import { detectEdges, calculateKellySize } from './edge-detector';
 import { buildWatchlist } from './watchlist';
 import { allocate } from './capital-allocator';
 import { isNewMarket, markMarketSeen, getEarlyMarketConfig } from './market-watcher';
-import { fetchOrderbook } from '../../orderbook';
+import { fetchOrderbook, simulateBuy } from '../../orderbook';
 import { placeOrder, cancelOrder, getOrders } from '../../order-manager';
 import { addMessage, engineState } from '../../state';
-import { updateBooksPrediction } from '../../predictions/aggregator';
+import { updateBooksPrediction, getFairValue, getAllPredictions } from '../../predictions/aggregator';
 import type { WatchedMarket, Opportunity, Skill, SkillInfo, SkillStats } from '@/lib/types';
 import { OddsAPIGame, PreGameEdge, WatchlistEntry, AllocationDecision } from './types';
 import { appendFileSync, mkdirSync, existsSync } from 'fs';
@@ -129,38 +129,35 @@ Sources are dynamically weighted based on availability and credibility:
   }
 
   /**
-   * Lightweight scan — only checks if any new Polymarket markets match
-   * our cached odds. No API calls, no orderbook fetches, no allocation.
-   * Called every ~10s by brain.ts even when no live games.
+   * Lightweight scan — checks ALL Polymarket markets against the aggregator's
+   * fair values. Uses BPI + Torvik + DK/FD data (whatever is available).
+   * No Odds API calls needed — the aggregator is fed by the sportsbook-poller.
+   * Called every ~10s by brain.ts.
    */
   async quickScan(markets: WatchedMarket[]): Promise<void> {
-    if (this.status === 'paused' || this.cachedOdds.length === 0) return;
+    if (this.status === 'paused') return;
 
-    const bankroll = parseFloat(process.env.BANKROLL || '400');
+    const bankroll = parseFloat(process.env.BANKROLL || '10000');
+    const TAKER_FEE = 0.0075;
+    const MAKER_REBATE = 0.002;
 
     for (const market of markets) {
-      if (!isNewMarket(market.conditionId)) continue;
-      markMarketSeen(market.conditionId, market.yesPrice);
+      // Get fair value from aggregator (BPI + Torvik + DK/FD combined)
+      const prediction = getFairValue(market.homeTeam, market.awayTeam);
+      if (!prediction) continue;
+      if (prediction.sourcesAvailable.length === 0) continue;
 
-      // Try to match with cached odds
-      const matchedOdds = this.cachedOdds.find(game => {
-        const m = matchOddsGameToMarket(game, [market]);
-        return m !== null;
-      });
+      // Determine confidence from number of sources
+      const confidence: 'high' | 'medium' | 'low' =
+        prediction.sourcesAvailable.length >= 3 ? 'high' :
+        prediction.sourcesAvailable.length >= 2 ? 'medium' : 'low';
 
-      if (!matchedOdds) continue;
+      const yesFair = prediction.fairHomeWinProb;
+      const noFair = prediction.fairAwayWinProb;
 
-      const consensus = calculateConsensus(matchedOdds);
-      if (!consensus) continue;
-
-      const { homeIsYes } = resolveTokenSides(market, matchedOdds.home_team, matchedOdds.away_team);
-
-      // Check BOTH sides for edge AFTER 2% taker fee
-      const TAKER_FEE = 0.02;
-      const yesFair = homeIsYes ? consensus.homeWinProb : consensus.awayWinProb;
-      const noFair = homeIsYes ? consensus.awayWinProb : consensus.homeWinProb;
-      const yesEdge = yesFair - market.yesPrice - TAKER_FEE;
-      const noEdge = noFair - market.noPrice - TAKER_FEE;
+      // Edge after fees (maker entry rebate, taker exit fee)
+      const yesEdge = yesFair - market.yesPrice - TAKER_FEE + (market.yesPrice * MAKER_REBATE);
+      const noEdge = noFair - market.noPrice - TAKER_FEE + (market.noPrice * MAKER_REBATE);
 
       let side: 'YES' | 'NO';
       let fairValue: number;
@@ -185,20 +182,38 @@ Sources are dynamically weighted based on availability and credibility:
       );
       if (alreadyOrdered) continue;
 
-      const config = getEarlyMarketConfig();
-      if (edge < config.minEdge) continue;
+      // Min edge thresholds
+      const minEdges: Record<string, number> = { high: 0.015, medium: 0.025, low: 0.04 };
+      if (edge < (minEdges[confidence] ?? 0.025)) continue;
       if (marketPrice >= fairValue) continue;
 
-      // Skip if spread is too wide (> 15¢) — market is illiquid
-      const spreadCents = (market.spread ?? 0);
-      if (spreadCents > 15) {
-        console.log(`[QuickScan] Skip ${matchedOdds.home_team} vs ${matchedOdds.away_team}: spread ${spreadCents.toFixed(0)}¢ too wide`);
+      // Skip if Polymarket spread too wide (> 8%)
+      const polySpread = Math.abs(1 - market.yesPrice - market.noPrice);
+      if (polySpread > 0.08) {
+        console.log(`[QuickScan] Skip ${market.homeTeam} vs ${market.awayTeam}: spread ${(polySpread * 100).toFixed(1)}% too wide`);
         continue;
       }
 
-      // Use limit order at market price (maker, not taker)
+      // Kelly sizing with maker-adjusted cost
       const kellySize = calculateKellySize(fairValue, marketPrice, bankroll);
       if (kellySize < 5) continue;
+
+      // Check order book depth before placing — make sure there's enough liquidity
+      try {
+        const book = await fetchOrderbook(tokenId);
+        const simulation = simulateBuy(book.asks, kellySize);
+        if (!simulation.wouldFill) {
+          console.log(`[QuickScan] Skip ${market.homeTeam} vs ${market.awayTeam}: insufficient liquidity ($${simulation.liquidityWithin3Cents.toFixed(0)} available, need $${kellySize.toFixed(0)})`);
+          continue;
+        }
+        if (simulation.slippage > 0.02) {
+          console.log(`[QuickScan] Skip ${market.homeTeam} vs ${market.awayTeam}: slippage ${(simulation.slippage * 100).toFixed(1)}% would eat the edge`);
+          continue;
+        }
+      } catch {
+        // If orderbook fetch fails, proceed with caution (smaller size)
+        console.log(`[QuickScan] Orderbook unavailable for ${market.homeTeam} vs ${market.awayTeam}, proceeding with reduced size`);
+      }
 
       const order = await placeOrder({
         conditionId: market.conditionId,
@@ -206,26 +221,26 @@ Sources are dynamically weighted based on availability and credibility:
         tokenSide: side,
         price: marketPrice,
         size: kellySize,
-        sportKey: matchedOdds.sport_key,
-        homeTeam: matchedOdds.home_team,
-        awayTeam: matchedOdds.away_team,
-        commenceTime: matchedOdds.commence_time,
+        sportKey: market.category?.toLowerCase() === 'ncaa' ? 'basketball_ncaab' : 'basketball_nba',
+        homeTeam: market.homeTeam,
+        awayTeam: market.awayTeam,
+        commenceTime: market.gameStartTime || '',
         fairValue,
         edge,
-        spread: spreadCents,
+        spread: polySpread * 100,
         slug: market.slug,
       });
 
       if (order) {
+        const sources = prediction.sourcesAvailable.join('+');
         addMessage({
-          text: `[INSTANT BUY] ${matchedOdds.home_team} vs ${matchedOdds.away_team} | BUY ${side} @ ${(marketPrice * 100).toFixed(0)}¢ → SELL @ ${(fairValue * 100).toFixed(0)}¢ | Edge: +${(edge * 100).toFixed(1)}% (net of 2% fee) | $${kellySize.toFixed(0)}`,
+          text: `[EDGE] ${market.homeTeam} vs ${market.awayTeam} | BUY ${side} @ ${(marketPrice * 100).toFixed(0)}¢ | Fair: ${(fairValue * 100).toFixed(0)}% [${sources}] | Edge: +${(edge * 100).toFixed(1)}% | $${kellySize.toFixed(0)}`,
           type: 'action',
         });
-        // Add to engine trades so it shows in TradesPanel
         engineState.trades.push({
           id: order.orderId,
           marketId: market.id,
-          marketTitle: `${matchedOdds.home_team} vs ${matchedOdds.away_team}`,
+          marketTitle: `${market.homeTeam} vs ${market.awayTeam}`,
           side: side.toLowerCase() as 'yes' | 'no',
           entryPrice: marketPrice,
           entryAmount: kellySize,
@@ -240,51 +255,61 @@ Sources are dynamically weighted based on availability and credibility:
           exitReason: null,
           status: 'open' as const,
           peakPrice: marketPrice,
-          yesTokenId: homeIsYes ? tokenId : '',
-          noTokenId: homeIsYes ? '' : tokenId,
+          yesTokenId: side === 'YES' ? tokenId : '',
+          noTokenId: side === 'NO' ? tokenId : '',
           isDryRun: !process.env.POLY_PRIVATE_KEY,
         });
         this.stats.trades++;
       }
     }
-
-    // Also refresh the watchlist if we have cached odds (no API call, just recomputes)
-    if (this.cachedOdds.length > 0) {
-      this.lastWatchlist = buildWatchlist(this.cachedOdds, markets);
-    }
   }
 
   async detect(markets: WatchedMarket[]): Promise<Opportunity[]> {
-    // New-market detection is handled by quickScan() which runs every 10s.
-    // detect() focuses on: odds refresh → watchlist → allocation → execution.
-    const bankroll = parseFloat(process.env.BANKROLL || '400');
+    // detect() runs every 60s. It does:
+    //   1. Optionally refresh Odds API (if budget remains)
+    //   2. Run quickScan to find edges using aggregator data (BPI+Torvik+DK/FD)
+    //   3. Build watchlist from aggregator predictions
+    //   4. Allocate capital and execute
+    const bankroll = parseFloat(process.env.BANKROLL || '10000');
 
-    // ── Step 1: Refresh odds if needed ──
+    // ── Step 1: Optionally refresh Odds API (supplement, not primary) ──
     if (this.shouldRefreshOdds()) {
-      console.log('[PreGameEdge] Fetching fresh odds from The Odds API...');
-      this.cachedOdds = await fetchAllBasketballOdds();
-      this.lastOddsFetchAt = Date.now();
-      const stats = getRequestStats();
-      console.log(`[PreGameEdge] Got ${this.cachedOdds.length} games. API budget: ${stats.totalRequestsUsed}/${stats.totalBudget} used.`);
+      try {
+        console.log('[PreGameEdge] Fetching supplementary odds from The Odds API...');
+        this.cachedOdds = await fetchAllBasketballOdds();
+        this.lastOddsFetchAt = Date.now();
+        const stats = getRequestStats();
+        console.log(`[PreGameEdge] Got ${this.cachedOdds.length} games. API budget: ${stats.totalRequestsUsed}/${stats.totalBudget} used.`);
 
-      // Feed sportsbook consensus into the aggregator
-      for (const game of this.cachedOdds) {
-        const consensus = calculateConsensus(game);
-        if (!consensus) continue;
-        const league = game.sport_key.includes('ncaab') ? 'NCAAB'
-          : game.sport_key.includes('wnba') ? 'WNBA' : 'NBA';
-        updateBooksPrediction(
-          game.home_team, game.away_team,
-          consensus.homeWinProb, consensus.awayWinProb,
-          consensus.numBookmakers, consensus.confidence, league
-        );
+        // Feed into the aggregator (supplements DK/FD data with 30+ books)
+        for (const game of this.cachedOdds) {
+          const consensus = calculateConsensus(game);
+          if (!consensus) continue;
+          const league = game.sport_key.includes('ncaab') ? 'NCAAB'
+            : game.sport_key.includes('wnba') ? 'WNBA' : 'NBA';
+          updateBooksPrediction(
+            game.home_team, game.away_team,
+            consensus.homeWinProb, consensus.awayWinProb,
+            consensus.numBookmakers, consensus.confidence, league
+          );
+        }
+      } catch {
+        // Odds API might be exhausted — that's fine, we have DK/FD + models
+        console.log('[PreGameEdge] Odds API unavailable — using aggregator data only');
       }
     }
 
-    if (this.cachedOdds.length === 0) return [];
+    // ── Step 2: Run quickScan to detect edges from aggregator ──
+    await this.quickScan(markets);
 
-    // ── Step 3: Build watchlist ──
-    this.lastWatchlist = buildWatchlist(this.cachedOdds, markets);
+    // ── Step 3: Build watchlist from aggregator predictions ──
+    // Build from cached odds if available, otherwise from aggregator predictions
+    if (this.cachedOdds.length > 0) {
+      this.lastWatchlist = buildWatchlist(this.cachedOdds, markets);
+    } else {
+      // Build watchlist from aggregator predictions (no Odds API data)
+      this.lastWatchlist = this.buildWatchlistFromAggregator(markets);
+    }
 
     // ── Step 4: Allocate capital ──
     const allOrders = getOrders();
@@ -416,17 +441,85 @@ Sources are dynamically weighted based on availability and credibility:
     return [];
   }
 
+  /**
+   * Build watchlist from aggregator predictions when Odds API data is unavailable.
+   * Uses BPI + Torvik + DK/FD data that the aggregator has collected.
+   */
+  private buildWatchlistFromAggregator(markets: WatchedMarket[]): WatchlistEntry[] {
+    const TAKER_FEE = 0.0075;
+    const MAKER_REBATE = 0.002;
+    const entries: WatchlistEntry[] = [];
+
+    for (const market of markets) {
+      const prediction = getFairValue(market.homeTeam, market.awayTeam);
+      if (!prediction) continue;
+
+      const yesFair = prediction.fairHomeWinProb;
+      const noFair = prediction.fairAwayWinProb;
+      const yesEdge = yesFair - market.yesPrice - TAKER_FEE + (market.yesPrice * MAKER_REBATE);
+      const noEdge = noFair - market.noPrice - TAKER_FEE + (market.noPrice * MAKER_REBATE);
+
+      const bestSide: 'YES' | 'NO' = yesEdge >= noEdge ? 'YES' : 'NO';
+      const bestEdge = Math.max(yesEdge, noEdge);
+      const fairValue = bestSide === 'YES' ? yesFair : noFair;
+      const marketPrice = bestSide === 'YES' ? market.yesPrice : market.noPrice;
+
+      // Determine if game has started
+      const gameStarted = market.gameStartTime
+        ? new Date(market.gameStartTime).getTime() < Date.now()
+        : false;
+
+      entries.push({
+        oddsGameId: `agg-${market.conditionId}`,
+        sportKey: market.category?.toLowerCase() === 'ncaa' ? 'basketball_ncaab' : 'basketball_nba',
+        homeTeam: market.homeTeam,
+        awayTeam: market.awayTeam,
+        commenceTime: market.gameStartTime || '',
+        homeFairValue: yesFair,
+        awayFairValue: noFair,
+        consensus: {
+          homeWinProb: yesFair,
+          awayWinProb: noFair,
+          numBookmakers: prediction.booksPrediction?.numBooks ?? 0,
+          confidence: (prediction.sourcesAvailable.length >= 3 ? 'high' :
+            prediction.sourcesAvailable.length >= 2 ? 'medium' : 'low') as 'high' | 'medium' | 'low',
+          bookmakers: [],
+          spread: 0,
+        },
+        polymarketMatched: true,
+        polymarketUrl: market.url,
+        conditionId: market.conditionId,
+        yesTokenId: market.yesTokenId,
+        noTokenId: market.noTokenId,
+        currentYesPrice: market.yesPrice,
+        currentNoPrice: market.noPrice,
+        homeIsYes: true,
+        bestSideEV: bestEdge > 0 ? bestEdge * (calculateKellySize(fairValue, marketPrice, 10000)) : 0,
+        bestSide: bestSide,
+        projectedEV: bestEdge * 100,
+        status: gameStarted ? 'game_started' :
+          bestEdge > 0.015 ? 'active_opportunity' : 'waiting_for_market',
+      });
+    }
+
+    entries.sort((a, b) => b.bestSideEV - a.bestSideEV);
+    return entries;
+  }
+
   getInfo(): SkillInfo & { preGame?: unknown } {
     const orders = getOrders();
     const resting = orders.filter(o => o.status === 'resting');
     const filled = orders.filter(o => o.status === 'filled');
     const stats = getRequestStats();
+    const predictions = getAllPredictions();
 
     return {
       id: this.id,
       name: this.name,
       icon: this.icon,
       description: this.description,
+      detailedDescription: this.detailedDescription,
+      dataSources: this.dataSources,
       category: this.category,
       status: this.status,
       pollIntervalMs: this.pollIntervalMs,
@@ -442,6 +535,8 @@ Sources are dynamically weighted based on availability and credibility:
         apiRequestsBudget: stats.totalBudget,
         lastScanAt: this.lastOddsFetchAt ? new Date(this.lastOddsFetchAt).toISOString() : null,
         cachedGames: this.cachedOdds.length,
+        aggregatorGames: predictions.length,
+        activeSources: [...new Set(predictions.flatMap(p => p.sourcesAvailable))],
       },
     };
   }
