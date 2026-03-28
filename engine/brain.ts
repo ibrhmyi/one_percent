@@ -7,8 +7,10 @@ import { BasketballSkill } from './skills/basketball';
 import { PreGameEdgeSkill } from './skills/basketball-edge/index';
 import { parseTokenIds } from './skills/basketball/market-matcher';
 import { startPriceFeed, resubscribePriceFeed } from './price-feed';
-import { getOrders } from './order-manager';
+import { getOrders, placeExitOrder, updateOrder } from './order-manager';
 import { syncToSupabase } from './supabase-sync';
+import { refreshAllPredictions, getAllPredictions, getFairValue, updateBooksPrediction } from './predictions/aggregator';
+import { startPolling as startSportsbookPoller } from './predictions/sportsbook-poller';
 
 const GAMMA_EVENTS_API = 'https://gamma-api.polymarket.com/events';
 
@@ -240,26 +242,53 @@ export async function refreshMarkets(): Promise<void> {
         const slugParts = stripped.split('-');
         const abbrA = slugParts[0] ?? '';
         const abbrB = slugParts[1] ?? '';
-        const slugDate = slugParts.length >= 5
-          ? `${slugParts[2]}-${slugParts[3]}-${slugParts[4]}`
-          : null;
+        // Slug date could be at various positions depending on team name length
+        // e.g., "duke-vermont-2026-03-27" or "michigan-st-ohio-st-2026-03-27"
+        const dateMatch = stripped.match(/(\d{4}-\d{2}-\d{2})$/);
+        const slugDate = dateMatch ? dateMatch[1] : null;
 
-        // Match against all leagues
+        // Match against all leagues — multi-strategy matching
         const game = allGames.find(g => {
+          // Strategy 1: Exact abbreviation match from slug
           const gameAbbrs = new Set([g.homeAbbr.toLowerCase(), g.awayAbbr.toLowerCase()]);
-          if (!gameAbbrs.has(abbrA) || !gameAbbrs.has(abbrB)) {
-            // Try team name substring match (NCAA slugs use short names like 'stjohn', 'duke')
+          const abbrMatch = gameAbbrs.has(abbrA) && gameAbbrs.has(abbrB);
+
+          if (!abbrMatch) {
+            // Strategy 2: Team name matching (multiple approaches)
             const titleLower = market.title.toLowerCase();
             const slugLower = market.slug.toLowerCase();
-            const homeName = g.homeTeam.toLowerCase().split(' ').pop() ?? '';
-            const awayName = g.awayTeam.toLowerCase().split(' ').pop() ?? '';
+            const homeWords = g.homeTeam.toLowerCase().split(/\s+/);
+            const awayWords = g.awayTeam.toLowerCase().split(/\s+/);
+            const homeLast = homeWords[homeWords.length - 1] ?? '';
+            const awayLast = awayWords[awayWords.length - 1] ?? '';
+            const homeFirst = homeWords[0] ?? '';
+            const awayFirst = awayWords[0] ?? '';
             const homeAbbr = g.homeAbbr.toLowerCase();
             const awayAbbr = g.awayAbbr.toLowerCase();
-            // Check title OR slug contains team names/abbreviations
-            const matchesHome = titleLower.includes(homeName) || slugLower.includes(homeAbbr) || slugLower.includes(homeName);
-            const matchesAway = titleLower.includes(awayName) || slugLower.includes(awayAbbr) || slugLower.includes(awayName);
+            const homeFull = g.homeTeam.toLowerCase();
+            const awayFull = g.awayTeam.toLowerCase();
+
+            // Check title, slug, or full team name contains various forms
+            const matchesHome = (
+              titleLower.includes(homeLast) ||
+              titleLower.includes(homeFull) ||
+              slugLower.includes(homeAbbr) ||
+              slugLower.includes(homeLast) ||
+              slugLower.includes(homeFirst) ||
+              // NCAA: slug might have condensed names like "stjohn" → match "john"
+              (homeLast.length >= 4 && slugLower.includes(homeLast.replace(/[^a-z]/g, '')))
+            );
+            const matchesAway = (
+              titleLower.includes(awayLast) ||
+              titleLower.includes(awayFull) ||
+              slugLower.includes(awayAbbr) ||
+              slugLower.includes(awayLast) ||
+              slugLower.includes(awayFirst) ||
+              (awayLast.length >= 4 && slugLower.includes(awayLast.replace(/[^a-z]/g, '')))
+            );
             if (!matchesHome || !matchesAway) return false;
           }
+          // Date filter if available
           if (slugDate && g.scheduledStart) {
             return g.scheduledStart.substring(0, 10) === slugDate;
           }
@@ -277,6 +306,24 @@ export async function refreshMarkets(): Promise<void> {
     try {
       await enrichWithClobSpreads(markets);
     } catch { /* CLOB errors don't block market discovery */ }
+
+    // Refresh prediction sources (BPI every 5min, Torvik every 30min — internally throttled)
+    try {
+      await refreshAllPredictions();
+    } catch { /* Prediction errors don't block market discovery */ }
+
+    // Enrich markets with aggregated fair values
+    for (const market of markets) {
+      const prediction = getFairValue(market.homeTeam, market.awayTeam);
+      if (prediction) {
+        market.aiEstimate = prediction.fairHomeWinProb;
+        // Calculate edge vs Polymarket price
+        // If fair value for YES side > yes price, there's a YES edge
+        const yesEdge = prediction.fairHomeWinProb - market.yesPrice;
+        const noEdge = prediction.fairAwayWinProb - market.noPrice;
+        market.edge = Math.max(yesEdge, noEdge);
+      }
+    }
 
     // Keep live games + games starting within 7 days
     const now = Date.now();
@@ -317,7 +364,7 @@ export async function refreshMarkets(): Promise<void> {
 // Dry-run fill simulation — checks resting orders against market prices
 // ─────────────────────────────────────────────
 
-function simulateDryRunFills(): void {
+async function simulateDryRunFills(): Promise<void> {
   const isDryRun = process.env.DRY_RUN !== 'false' || !process.env.POLY_PRIVATE_KEY;
   if (!isDryRun) return;
 
@@ -328,18 +375,23 @@ function simulateDryRunFills(): void {
     // Find matching market to update current price
     const market = markets.find(m => m.conditionId === order.conditionId);
     if (market) {
-      order.currentPrice = order.tokenSide === 'YES' ? market.yesPrice : market.noPrice;
+      const newPrice = order.tokenSide === 'YES' ? market.yesPrice : market.noPrice;
+      if (newPrice !== order.currentPrice) {
+        await updateOrder(order.orderId, { currentPrice: newPrice });
+      }
     }
 
+    // Simulate entry fill: resting order fills when market price drops to our limit
     if (order.status === 'resting' && order.orderId.startsWith('sim-')) {
       if (!market) continue;
       const currentPrice = order.tokenSide === 'YES' ? market.yesPrice : market.noPrice;
       if (currentPrice <= order.price) {
-        order.status = 'filled';
-        order.filledSize = order.size;
-        order.avgFillPrice = order.price;
-        order.exitOrderStatus = 'resting'; // Exit order placed at fair value
-        order.updatedAt = new Date().toISOString();
+        await updateOrder(order.orderId, {
+          status: 'filled',
+          filledSize: order.size,
+          avgFillPrice: order.price,
+          exitOrderStatus: 'resting',
+        });
 
         addMessage({
           text: `[DRY-RUN FILL] ${order.awayTeam} @ ${order.homeTeam} | ${order.tokenSide} filled @ ${(currentPrice * 100).toFixed(0)}¢ ($${order.size.toFixed(0)}) | Exit order @ ${(order.fairValue * 100).toFixed(0)}¢`,
@@ -348,13 +400,14 @@ function simulateDryRunFills(): void {
       }
     }
 
-    // Simulate exit fill: if filled and current price >= exit price
+    // Simulate exit fill: filled position exits when price reaches fair value
     if (order.status === 'filled' && order.exitOrderStatus === 'resting' && order.orderId.startsWith('sim-')) {
       if (order.currentPrice >= order.exitPrice) {
-        order.exitOrderStatus = 'filled';
-        order.updatedAt = new Date().toISOString();
+        const pnl = (order.exitPrice - order.avgFillPrice) * (order.size / order.avgFillPrice);
+        await updateOrder(order.orderId, { exitOrderStatus: 'filled' });
+
         addMessage({
-          text: `[DRY-RUN EXIT] ${order.awayTeam} @ ${order.homeTeam} | ${order.tokenSide} exit filled @ ${(order.exitPrice * 100).toFixed(0)}¢ | P&L +$${((order.exitPrice - order.avgFillPrice) * (order.size / order.avgFillPrice)).toFixed(2)}`,
+          text: `[DRY-RUN EXIT] ${order.awayTeam} @ ${order.homeTeam} | ${order.tokenSide} exit filled @ ${(order.exitPrice * 100).toFixed(0)}¢ | P&L ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`,
           type: 'success',
         });
       }
@@ -378,7 +431,7 @@ export async function runCycle(): Promise<void> {
   if (skills.length === 0) return;
 
   // Simulate fills for dry-run orders
-  simulateDryRunFills();
+  await simulateDryRunFills();
 
   const markets = engineState.watchedMarkets;
   const liveMarkets = markets.filter(m =>
@@ -521,6 +574,9 @@ export async function startBrain() {
 
   // Start real-time WebSocket price feed
   startPriceFeed();
+
+  // Start sportsbook odds poller (calls Vercel endpoint every 30s for DK/FD odds)
+  startSportsbookPoller();
 
   // Main cycle: every 1s
   setInterval(async () => {
