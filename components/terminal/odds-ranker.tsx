@@ -34,7 +34,6 @@ interface Props {
 
 const DIM = 'rgba(255,255,255,0.3)';
 const DIMMER = 'rgba(255,255,255,0.2)';
-const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: '0.6rem' };
 
 function formatCountdown(iso: string | null | undefined): string {
   if (!iso) return '';
@@ -64,15 +63,21 @@ function Countdown({ target }: { target: string | null | undefined }) {
       color: isLive ? 'var(--green)' : DIM,
       fontSize: '0.5rem',
       fontFamily: 'var(--font-mono)',
-      letterSpacing: '0.02em',
     }}>
       {text}
     </span>
   );
 }
 
+function formatVol(v: number | null | undefined): string {
+  if (v == null || v === 0) return '$0';
+  const k = v / 1000;
+  if (k >= 1000) return `$${(k / 1000).toFixed(1)}M`;
+  if (k >= 1) return `$${k.toFixed(0)}k`;
+  return `$${v.toFixed(0)}`;
+}
+
 export function OddsRanker({ predictions }: Props) {
-  // Only show matched predictions, sorted by edge (highest first)
   const matched = predictions
     .filter(p => p.polymarketMatched)
     .sort((a, b) => (b.bestEdge ?? 0) - (a.bestEdge ?? 0));
@@ -99,8 +104,15 @@ export function OddsRanker({ predictions }: Props) {
           const edgeVal = (pred.bestEdge ?? 0) * 100;
           const leagueLabel = pred.league === 'NCAAB' ? 'NCAA' : pred.league;
           const sources = pred.sourcesAvailable ?? [];
-          const spreadVal = pred.spread != null ? pred.spread : null;
-          const volK = pred.volume != null ? pred.volume / 1000 : null;
+          const spreadVal = pred.spread != null ? pred.spread : 0;
+          const yesC = ((pred.yesPrice ?? 0) * 100).toFixed(1);
+          const noC = ((pred.noPrice ?? 0) * 100).toFixed(1);
+
+          // Fair displayed in same order as game listing: away @ home → show away first if away has higher prob
+          const awayFair = pred.fairAwayWinProb;
+          const homeFair = pred.fairHomeWinProb;
+          const awayName = pred.awayTeam.split(' ').pop() ?? pred.awayTeam;
+          const homeName = pred.homeTeam.split(' ').pop() ?? pred.homeTeam;
 
           const content = (
             <div className="card-interactive" style={{
@@ -108,8 +120,8 @@ export function OddsRanker({ predictions }: Props) {
               borderRadius: 6,
               padding: '8px 10px',
             }}>
-              {/* Row 1: League + Sources (left) | Countdown (right) */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+              {/* Row 1: League + Sources | Countdown */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ fontSize: '0.45rem', color: DIM, padding: '1px 3px', borderRadius: 2, border: '1px solid var(--border-default)' }}>{leagueLabel}</span>
                   {sources.map(s => {
@@ -130,48 +142,35 @@ export function OddsRanker({ predictions }: Props) {
                 <Countdown target={pred.gameStartTime} />
               </div>
 
-              {/* Teams */}
+              {/* Teams: Away @ Home */}
               <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.9)', fontWeight: 600, marginBottom: 4 }}>
                 {pred.awayTeam} @ {pred.homeTeam}
               </div>
 
-              {/* Fair value */}
-              <div style={{ ...MONO, color: DIM, marginBottom: 3 }}>
-                Fair: {pred.homeTeam.split(' ').pop()} {(pred.fairHomeWinProb * 100).toFixed(0)}% · {pred.awayTeam.split(' ').pop()} {(pred.fairAwayWinProb * 100).toFixed(0)}%
-              </div>
-
-              {/* Market data: YES · NO · Spread · Vol */}
-              <div style={{ ...MONO, display: 'flex', alignItems: 'center', gap: 0, marginBottom: 3, flexWrap: 'wrap' }}>
-                <span style={{ color: 'var(--green)' }}>YES {((pred.yesPrice ?? 0) * 100).toFixed(0)}¢</span>
+              {/* Market data row: YES · NO · SPRD · VOL — same UI as Game Schedule */}
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', display: 'flex', alignItems: 'center', gap: 0, marginBottom: 4 }}>
+                <span style={{ color: 'var(--green)' }}>YES {yesC}¢</span>
                 <span style={{ color: DIMMER, margin: '0 5px' }}>·</span>
-                <span style={{ color: 'var(--red)' }}>NO {((pred.noPrice ?? 0) * 100).toFixed(0)}¢</span>
-                {spreadVal != null && (
-                  <>
-                    <span style={{ color: DIMMER, margin: '0 5px' }}>·</span>
-                    <span style={{ color: DIM, fontSize: '0.5rem' }}>Spread {spreadVal.toFixed(0)}¢</span>
-                  </>
-                )}
-                {volK != null && (
-                  <>
-                    <span style={{ color: DIMMER, margin: '0 5px' }}>·</span>
-                    <span style={{ color: DIM, fontSize: '0.5rem' }}>Vol ${volK >= 1000 ? `${(volK/1000).toFixed(1)}M` : `${volK.toFixed(0)}k`}</span>
-                  </>
-                )}
+                <span style={{ color: 'var(--red)' }}>NO {noC}¢</span>
+                <span style={{ color: DIMMER, margin: '0 5px' }}>·</span>
+                <span style={{ color: DIM }}>SPRD {spreadVal.toFixed(1)}¢</span>
+                <span style={{ color: DIMMER, margin: '0 5px' }}>·</span>
+                <span style={{ color: DIM }}>VOL {formatVol(pred.volume)}</span>
               </div>
 
-              {/* Edge — always show */}
-              {edgeVal > 0.5 ? (
-                <div style={{ fontSize: '0.6rem', fontWeight: 600 }}>
-                  <span style={{ color: 'var(--cyan)' }}>BUY {pred.bestSide}</span>
-                  <span style={{
-                    marginLeft: 8,
-                    fontWeight: 700,
-                    color: edgeVal >= 5 ? 'var(--green)' : edgeVal >= 2 ? 'var(--cyan)' : DIM,
-                  }}>+{edgeVal.toFixed(1)}%</span>
-                </div>
-              ) : (
-                <div style={{ fontSize: '0.5rem', color: DIMMER }}>Fair ≈ market</div>
-              )}
+              {/* Fair probability + Edge on same row */}
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ color: DIM }}>
+                  Fair: {awayName} {(awayFair * 100).toFixed(0)}% · {homeName} {(homeFair * 100).toFixed(0)}%
+                </span>
+                {edgeVal > 0.5 ? (
+                  <span style={{ color: 'var(--cyan)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    BUY {pred.bestSide} +{edgeVal.toFixed(1)}%
+                  </span>
+                ) : (
+                  <span style={{ color: DIMMER }}>—</span>
+                )}
+              </div>
             </div>
           );
 
