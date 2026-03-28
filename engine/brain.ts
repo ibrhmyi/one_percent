@@ -8,6 +8,7 @@ import { PreGameEdgeSkill } from './skills/basketball-edge/index';
 import { parseTokenIds } from './skills/basketball/market-matcher';
 import { startPriceFeed, resubscribePriceFeed } from './price-feed';
 import { getOrders } from './order-manager';
+import { syncToSupabase } from './supabase-sync';
 
 const GAMMA_EVENTS_API = 'https://gamma-api.polymarket.com/events';
 
@@ -396,6 +397,7 @@ export async function runCycle(): Promise<void> {
     }
     // Still count this as a cycle even when no live games
     engineState.lastCycleAt = new Date().toISOString();
+    await syncToSupabase();
     return;
   }
 
@@ -433,6 +435,7 @@ export async function runCycle(): Promise<void> {
   }
 
   engineState.lastCycleAt = new Date().toISOString();
+  await syncToSupabase();
 
   // Only one open position at a time
   if (openTrade) {
