@@ -93,6 +93,8 @@ export async function placeOrder(params: {
   commenceTime: string;
   fairValue: number;
   edge: number;
+  spread?: number;
+  slug?: string;
 }): Promise<PreGameOrder | null> {
   const bankroll = parseFloat(process.env.BANKROLL || '400');
   const maxTotalDeployed = bankroll * 0.40;
@@ -122,6 +124,11 @@ export async function placeOrder(params: {
     commenceTime: params.commenceTime,
     fairValue: params.fairValue,
     edge: params.edge,
+    exitPrice: params.fairValue,  // Exit at fair value
+    exitOrderStatus: 'pending',   // Exit order placed after entry fills
+    currentPrice: params.price,
+    spread: params.spread ?? 0,
+    slug: params.slug ?? '',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

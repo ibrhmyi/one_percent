@@ -18,6 +18,11 @@ interface PreGameOrder {
   commenceTime: string;
   fairValue: number;
   edge: number;
+  exitPrice?: number;
+  exitOrderStatus?: 'pending' | 'resting' | 'filled' | 'none';
+  currentPrice?: number;
+  spread?: number;
+  slug?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -69,11 +74,14 @@ export function PositionsPanel({ orders, summary }: Props) {
           const side = order.tokenSide ?? (order.fairValue > 0.5 ? 'YES' : 'NO');
           const isFilled = order.status === 'filled' || order.status === 'partially_filled';
           const fillPrice = isFilled ? order.avgFillPrice : order.price;
-          const edgeCents = (order.edge * 100).toFixed(1);
           const edgePct = (order.edge * 100).toFixed(1);
           const tokens = Math.round(order.size / order.price);
-          const potentialProfit = ((1 - fillPrice) * tokens).toFixed(2);
-          const polyUrl = `https://polymarket.com/search?query=${encodeURIComponent(order.homeTeam + ' ' + order.awayTeam)}`;
+          const currentPrice = order.currentPrice ?? order.price;
+          const unrealizedPnl = isFilled ? (currentPrice - fillPrice) * tokens : 0;
+          const pnlStr = unrealizedPnl >= 0 ? `+$${unrealizedPnl.toFixed(2)}` : `-$${Math.abs(unrealizedPnl).toFixed(2)}`;
+          const polyUrl = order.slug
+            ? `https://polymarket.com/event/${order.slug}`
+            : `https://polymarket.com/search?query=${encodeURIComponent(order.homeTeam + ' ' + order.awayTeam)}`;
 
           return (
             <a key={order.orderId} href={polyUrl} target="_blank" rel="noopener noreferrer"
@@ -90,10 +98,15 @@ export function PositionsPanel({ orders, summary }: Props) {
                   <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
                     {order.awayTeam} @ {order.homeTeam}
                   </span>
-                  <span style={{ fontSize: '0.5rem', color: DIM }}>↗</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {order.orderId.startsWith('sim-') && (
+                      <span style={{ fontSize: '0.45rem', color: DIM, padding: '1px 3px', border: '1px solid var(--border-default)', borderRadius: 2 }}>DRY</span>
+                    )}
+                    <span style={{ fontSize: '0.5rem', color: DIM }}>↗</span>
+                  </div>
                 </div>
 
-                {/* Position info */}
+                {/* Position + Side */}
                 <div style={{ fontSize: '0.6rem', color: 'var(--cyan)', marginBottom: 4 }}>
                   {isFilled ? 'Bought' : 'Buy'} {side} ({getBetMeaning(order)})
                 </div>
@@ -103,20 +116,36 @@ export function PositionsPanel({ orders, summary }: Props) {
                   <span><span style={{ color: DIM, fontSize: '0.5rem' }}>{isFilled ? 'ENTRY ' : 'LIMIT '}</span><span style={{ color: 'rgba(255,255,255,0.9)' }}>{(fillPrice * 100).toFixed(0)}¢</span></span>
                   <span><span style={{ color: DIM, fontSize: '0.5rem' }}>FAIR </span><span style={{ color: 'rgba(255,255,255,0.9)' }}>{(order.fairValue * 100).toFixed(0)}¢</span></span>
                   <span><span style={{ color: DIM, fontSize: '0.5rem' }}>EDGE </span><span style={{ color: 'var(--green)', fontWeight: 700 }}>+{edgePct}%</span></span>
+                  {(order.spread ?? 0) > 0 && (
+                    <span><span style={{ color: DIM, fontSize: '0.5rem' }}>SPRD </span><span style={{ color: (order.spread ?? 0) > 10 ? 'var(--red)' : DIM }}>{(order.spread ?? 0).toFixed(0)}¢</span></span>
+                  )}
                 </div>
 
-                {/* Size + Status */}
+                {/* Exit order + Value + Status */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.6rem', color: DIM }}>${order.size.toFixed(0)} · {tokens} shares</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: '0.55rem', fontWeight: 600, color: isFilled ? 'var(--green)' : DIM }}>
-                      {isFilled ? '● FILLED' : '○ RESTING'}
-                    </span>
-                    {order.orderId.startsWith('sim-') && (
-                      <span style={{ fontSize: '0.45rem', color: DIM, padding: '1px 3px', border: '1px solid var(--border-default)', borderRadius: 2 }}>DRY</span>
+                  <div style={{ display: 'flex', gap: 10, fontSize: '0.55rem' }}>
+                    <span style={{ color: DIM }}>${order.size.toFixed(0)} · {tokens}sh</span>
+                    {isFilled && (
+                      <>
+                        <span style={{ color: DIM }}>Now {(currentPrice * 100).toFixed(0)}¢</span>
+                        <span style={{ color: unrealizedPnl >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600 }}>{pnlStr}</span>
+                      </>
                     )}
                   </div>
+                  <span style={{ fontSize: '0.55rem', fontWeight: 600, color: isFilled ? 'var(--green)' : DIM }}>
+                    {isFilled ? '● FILLED' : '○ RESTING'}
+                  </span>
                 </div>
+
+                {/* Exit order info */}
+                {isFilled && order.exitPrice && (
+                  <div style={{ fontSize: '0.5rem', color: DIM, marginTop: 4, paddingTop: 4, borderTop: '1px solid var(--border-default)' }}>
+                    EXIT @ {(order.exitPrice * 100).toFixed(0)}¢
+                    <span style={{ marginLeft: 8, color: order.exitOrderStatus === 'filled' ? 'var(--green)' : DIM }}>
+                      {order.exitOrderStatus === 'filled' ? '● FILLED' : order.exitOrderStatus === 'resting' ? '○ AWAITING' : '○ PENDING'}
+                    </span>
+                  </div>
+                )}
               </div>
             </a>
           );

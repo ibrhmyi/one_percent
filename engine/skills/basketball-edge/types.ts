@@ -85,7 +85,7 @@ export interface PreGameOrder {
   conditionId: string;
   tokenId: string;
   side: 'BUY';
-  tokenSide: 'YES' | 'NO';  // Which token we're buying
+  tokenSide: 'YES' | 'NO';
   price: number;
   size: number;
   filledSize: number;
@@ -98,6 +98,11 @@ export interface PreGameOrder {
   commenceTime: string;
   fairValue: number;
   edge: number;
+  exitPrice: number;           // Where we plan to sell (at fair value)
+  exitOrderStatus: 'pending' | 'resting' | 'filled' | 'none';
+  currentPrice: number;        // Latest market price for this token
+  spread: number;              // Bid-ask spread at time of order
+  slug: string;                // Polymarket event slug for linking
   createdAt: string;
   updatedAt: string;
 }

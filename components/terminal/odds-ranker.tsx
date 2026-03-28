@@ -147,6 +147,11 @@ export function OddsRanker({ watchlist, summary }: Props) {
                   <div style={{ fontSize: '0.55rem', color: DIM, marginBottom: 4 }}>
                     Fair: {entry.homeTeam.split(' ').pop()} {(entry.consensus.homeWinProb * 100).toFixed(0)}% · {entry.awayTeam.split(' ').pop()} {(entry.consensus.awayWinProb * 100).toFixed(0)}%
                     <span style={{ marginLeft: 6 }}>{entry.consensus.numBookmakers} books</span>
+                    {entry.consensus.spread > 0.05 && (
+                      <span style={{ marginLeft: 6, color: entry.consensus.spread > 0.10 ? 'var(--red)' : DIM }}>
+                        spread {(entry.consensus.spread * 100).toFixed(0)}%
+                      </span>
+                    )}
                   </div>
                   {isPositive && (
                     <div style={{ fontSize: '0.6rem', color: 'var(--cyan)', fontWeight: 600 }}>

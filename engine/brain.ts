@@ -325,25 +325,39 @@ function simulateDryRunFills(): void {
   const markets = engineState.watchedMarkets;
 
   for (const order of orders) {
-    if (order.status !== 'resting') continue;
-    if (!order.orderId.startsWith('sim-')) continue;
-
-    // Find matching market by conditionId
+    // Find matching market to update current price
     const market = markets.find(m => m.conditionId === order.conditionId);
-    if (!market) continue;
+    if (market) {
+      order.currentPrice = order.tokenSide === 'YES' ? market.yesPrice : market.noPrice;
+    }
 
-    // For BUY orders: fill when market price <= order limit price
-    const currentPrice = order.tokenSide === 'YES' ? market.yesPrice : market.noPrice;
-    if (currentPrice <= order.price) {
-      order.status = 'filled';
-      order.filledSize = order.size;
-      order.avgFillPrice = order.price; // Fill at limit price, not market mid
-      order.updatedAt = new Date().toISOString();
+    if (order.status === 'resting' && order.orderId.startsWith('sim-')) {
+      if (!market) continue;
+      const currentPrice = order.tokenSide === 'YES' ? market.yesPrice : market.noPrice;
+      if (currentPrice <= order.price) {
+        order.status = 'filled';
+        order.filledSize = order.size;
+        order.avgFillPrice = order.price;
+        order.exitOrderStatus = 'resting'; // Exit order placed at fair value
+        order.updatedAt = new Date().toISOString();
 
-      addMessage({
-        text: `[DRY-RUN FILL] ${order.awayTeam} @ ${order.homeTeam} | ${order.tokenSide} filled @ ${(currentPrice * 100).toFixed(0)}¢ ($${order.size.toFixed(0)})`,
-        type: 'success',
-      });
+        addMessage({
+          text: `[DRY-RUN FILL] ${order.awayTeam} @ ${order.homeTeam} | ${order.tokenSide} filled @ ${(currentPrice * 100).toFixed(0)}¢ ($${order.size.toFixed(0)}) | Exit order @ ${(order.fairValue * 100).toFixed(0)}¢`,
+          type: 'success',
+        });
+      }
+    }
+
+    // Simulate exit fill: if filled and current price >= exit price
+    if (order.status === 'filled' && order.exitOrderStatus === 'resting' && order.orderId.startsWith('sim-')) {
+      if (order.currentPrice >= order.exitPrice) {
+        order.exitOrderStatus = 'filled';
+        order.updatedAt = new Date().toISOString();
+        addMessage({
+          text: `[DRY-RUN EXIT] ${order.awayTeam} @ ${order.homeTeam} | ${order.tokenSide} exit filled @ ${(order.exitPrice * 100).toFixed(0)}¢ | P&L +$${((order.exitPrice - order.avgFillPrice) * (order.size / order.avgFillPrice)).toFixed(2)}`,
+          type: 'success',
+        });
+      }
     }
   }
 }

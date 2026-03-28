@@ -145,7 +145,14 @@ export class PreGameEdgeSkill implements Skill {
       if (edge < config.minEdge) continue;
       if (marketPrice >= fairValue) continue;
 
-      // Use consistent Kelly sizing (no multiplier hack)
+      // Skip if spread is too wide (> 15¢) — market is illiquid
+      const spreadCents = (market.spread ?? 0);
+      if (spreadCents > 15) {
+        console.log(`[QuickScan] Skip ${matchedOdds.home_team} vs ${matchedOdds.away_team}: spread ${spreadCents.toFixed(0)}¢ too wide`);
+        continue;
+      }
+
+      // Use limit order at market price (maker, not taker)
       const kellySize = calculateKellySize(fairValue, marketPrice, bankroll);
       if (kellySize < 5) continue;
 
@@ -161,6 +168,8 @@ export class PreGameEdgeSkill implements Skill {
         commenceTime: matchedOdds.commence_time,
         fairValue,
         edge,
+        spread: spreadCents,
+        slug: market.slug,
       });
 
       if (order) {
