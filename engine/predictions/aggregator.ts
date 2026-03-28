@@ -159,7 +159,14 @@ export async function refreshBPI(): Promise<void> {
     // Update aggregated predictions
     for (const bpi of newPredictions) {
       const key = makeGameKey(bpi.homeTeam, bpi.awayTeam, bpi.gameDate);
-      const existing = predictions.get(key);
+      // Try exact key first, then fuzzy match (handles name mismatches like UConn vs Connecticut)
+      let existing = predictions.get(key);
+      if (!existing) {
+        const fuzzyMatch = getFairValue(bpi.homeTeam, bpi.awayTeam, bpi.gameDate);
+        if (fuzzyMatch) {
+          existing = predictions.get(fuzzyMatch.gameKey);
+        }
+      }
 
       const bpiData = {
         homeWinProb: bpi.homeWinProb,
