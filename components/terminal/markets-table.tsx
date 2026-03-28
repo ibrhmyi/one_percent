@@ -57,55 +57,85 @@ function formatVol(v: number) {
   return `$${v.toFixed(0)}`;
 }
 
-function formatCountdown(ms: number): string {
-  if (ms <= 0) return 'LIVE';
-  const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  if (h >= 24) return `${Math.floor(h / 24)}d ${h % 24}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+function formatDuration(ms: number): string {
+  if (ms <= 0) return '00:00:00';
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+function Countdown({ targetTime }: { targetTime: string }) {
+  const [remaining, setRemaining] = useState(() => new Date(targetTime).getTime() - Date.now());
+  useEffect(() => {
+    const id = setInterval(() => {
+      setRemaining(new Date(targetTime).getTime() - Date.now());
+    }, 1000);
+    return () => clearInterval(id);
+  }, [targetTime]);
+  return (
+    <span style={{ color: 'var(--cyan)', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1.4rem', letterSpacing: '0.04em' }}>
+      {formatDuration(remaining)}
+    </span>
+  );
 }
 
 export function MarketsTable({ markets }: Props) {
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 60000);
-    return () => clearInterval(id);
-  }, []);
+  const active = markets.filter(m =>
+    m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open'
+  );
 
-  if (markets.length === 0) {
+  // No live markets — show countdown to next game
+  if (active.length === 0) {
+    const upcoming = markets
+      .filter(m => m.gameStartTime && new Date(m.gameStartTime).getTime() > Date.now())
+      .sort((a, b) => new Date(a.gameStartTime!).getTime() - new Date(b.gameStartTime!).getTime());
+
+    const next = upcoming[0];
+
     return (
       <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <div className="panel-header">Watched Markets</div>
-        <div style={{ padding: '20px 0', color: 'var(--text-dim)', fontSize: '0.75rem', textAlign: 'center', flex: 1 }}>
-          No markets found
+        <div className="panel-header" style={{ textAlign: 'left' }}>Watched Markets</div>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {next ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                Next game starts in
+              </div>
+              <Countdown targetTime={next.gameStartTime!} />
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
+                {next.awayTeam ?? 'Away'} @ {next.homeTeam ?? 'Home'}
+              </div>
+              <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>
+                {new Date(next.gameStartTime!).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}
+              </div>
+              {upcoming.length > 1 && (
+                <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginTop: 4 }}>
+                  +{upcoming.length - 1} more game{upcoming.length > 2 ? 's' : ''} today
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>
+              No upcoming games scheduled
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
-  // Sort: live games first (position_open > edge_detected > live), then upcoming by start time
-  const sorted = [...markets].sort((a, b) => {
-    const pri: Record<string, number> = { position_open: 4, edge_detected: 3, live: 2, upcoming: 1 };
-    const pa = pri[a.status] ?? 0;
-    const pb = pri[b.status] ?? 0;
-    if (pa !== pb) return pb - pa;
-    // Within same status, sort by start time
-    const ta = a.gameStartTime ? new Date(a.gameStartTime).getTime() : Infinity;
-    const tb = b.gameStartTime ? new Date(b.gameStartTime).getTime() : Infinity;
-    return ta - tb;
+  // Sort: position_open → edge_detected → live
+  const sorted = [...active].sort((a, b) => {
+    const pri: Record<string, number> = { position_open: 3, edge_detected: 2, live: 1 };
+    return (pri[b.status] ?? 0) - (pri[a.status] ?? 0);
   });
-
-  const liveCount = markets.filter(m =>
-    m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open'
-  ).length;
 
   return (
     <div className="panel" style={{ overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="panel-header">
-        Watched Markets <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>
-          ({markets.length} markets{liveCount > 0 ? ` · ${liveCount} live` : ''})
-        </span>
+        Watched Markets <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>({active.length} live)</span>
       </div>
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {/* Header row */}
@@ -127,12 +157,10 @@ export function MarketsTable({ markets }: Props) {
         </div>
 
         {sorted.map(m => {
-          const isLive = m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open';
           const rowBg = m.status === 'position_open' ? 'rgba(6,182,212,0.05)' :
                         m.status === 'edge_detected'  ? 'rgba(6,182,212,0.03)' : 'transparent';
           const accentColor = m.status === 'position_open' ? 'var(--cyan)' :
                               m.status === 'edge_detected'  ? 'var(--green)' : 'transparent';
-          const countdown = m.gameStartTime ? new Date(m.gameStartTime).getTime() - Date.now() : 0;
 
           return (
             <div key={m.id} style={{
@@ -140,21 +168,17 @@ export function MarketsTable({ markets }: Props) {
               gridTemplateColumns: '2fr 72px 72px 56px 64px 100px',
               gap: 4, padding: '6px 6px',
               borderBottom: '1px solid var(--border-default)',
-              borderLeft: isLive ? `2px solid ${accentColor}` : '2px solid transparent',
+              borderLeft: m.status !== 'live' ? `2px solid ${accentColor}` : '2px solid transparent',
               alignItems: 'center',
               background: rowBg,
             }}>
               <div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-primary)', fontWeight: 500, marginBottom: 2 }}>
+                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.9)', fontWeight: 500, marginBottom: 2 }}>
                   {m.awayTeam && m.homeTeam ? `${m.awayTeam} @ ${m.homeTeam}` : m.title}
                 </div>
-                {m.gameData ? (
+                {m.gameData && (
                   <div style={{ fontSize: '0.6rem', color: 'var(--green)', fontWeight: 600 }}>
                     {m.gameData.awayTeam} {m.gameData.awayScore}–{m.gameData.homeScore} {m.gameData.homeTeam} · {m.gameData.period} {m.gameData.clock}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '0.55rem', color: 'var(--text-dim)' }}>
-                    {countdown > 0 ? formatCountdown(countdown) : 'Starting soon'}
                   </div>
                 )}
               </div>

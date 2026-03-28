@@ -49,7 +49,7 @@ async function fetchNBAMarkets(): Promise<WatchedMarket[]> {
       url.searchParams.set('active', 'true');
       url.searchParams.set('closed', 'false');
       url.searchParams.set('tag_slug', tag);
-      url.searchParams.set('limit', '100');
+      url.searchParams.set('limit', '200');
       url.searchParams.set('order', 'endDate');
       url.searchParams.set('ascending', 'true');
 
@@ -68,8 +68,8 @@ async function fetchNBAMarkets(): Promise<WatchedMarket[]> {
     }
   }));
 
-  // Filter to game events only (ending within next 7 days), deduplicate
-  const cutoff = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  // Filter to game events only (ending within next 10 days), deduplicate
+  const cutoff = Date.now() + 10 * 24 * 60 * 60 * 1000;
   const gameEvents = allEvents.filter(ev => {
     const slug = String(ev.slug ?? '');
     const endDate = String(ev.endDate ?? '');
@@ -277,9 +277,9 @@ export async function refreshMarkets(): Promise<void> {
       await enrichWithClobSpreads(markets);
     } catch { /* CLOB errors don't block market discovery */ }
 
-    // Keep live games + games starting within 36h (enough for upcoming tab's 24h view)
+    // Keep live games + games starting within 7 days
     const now = Date.now();
-    const H36 = 36 * 60 * 60 * 1000;
+    const H36 = 7 * 24 * 60 * 60 * 1000;
     const relevant = markets.filter(m => {
       if (m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open') return true;
       if (!m.gameStartTime) return false;
