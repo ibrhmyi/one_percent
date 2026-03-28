@@ -9,7 +9,7 @@
 import { updateBooksPrediction } from './aggregator';
 import { addMessage } from '../state';
 
-const POLL_INTERVAL_MS = 30_000; // 30 seconds
+const POLL_INTERVAL_MS = 15_000; // 15 seconds — fast enough to catch news drops
 const VERCEL_ODDS_URL = process.env.VERCEL_ODDS_URL || 'https://onepercentmarkets.vercel.app/api/odds/scrape';
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;

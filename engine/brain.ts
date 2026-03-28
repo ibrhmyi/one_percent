@@ -11,6 +11,7 @@ import { getOrders, placeExitOrder, updateOrder } from './order-manager';
 import { syncToSupabase } from './supabase-sync';
 import { refreshAllPredictions, getAllPredictions, getFairValue, updateBooksPrediction } from './predictions/aggregator';
 import { startPolling as startSportsbookPoller } from './predictions/sportsbook-poller';
+import { startInjuryMonitor, onInjuryUpdate } from './predictions/injury-monitor';
 
 const GAMMA_EVENTS_API = 'https://gamma-api.polymarket.com/events';
 
@@ -575,8 +576,22 @@ export async function startBrain() {
   // Start real-time WebSocket price feed
   startPriceFeed();
 
-  // Start sportsbook odds poller (calls Vercel endpoint every 30s for DK/FD odds)
+  // Start sportsbook odds poller (calls Vercel endpoint every 15s for DK/FD odds)
   startSportsbookPoller();
+
+  // Start injury monitor (polls ESPN every 2 min, triggers edge recalc on status changes)
+  startInjuryMonitor();
+  onInjuryUpdate((updates) => {
+    const significant = updates.filter(u => u.isSignificant);
+    if (significant.length > 0) {
+      // Injury news = immediate edge recalculation
+      console.log(`[Brain] ${significant.length} significant injury changes — triggering immediate edge scan`);
+      const edgeSkill = getSkills().find(s => s.id === 'basketball-edge');
+      if (edgeSkill && edgeSkill.status !== 'paused') {
+        edgeSkill.detect(engineState.watchedMarkets).catch(() => {});
+      }
+    }
+  });
 
   // Main cycle: every 1s
   setInterval(async () => {

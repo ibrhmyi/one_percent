@@ -1,13 +1,20 @@
 import { ConsensusResult, PreGameEdge, OddsAPIGame } from './types';
 import type { WatchedMarket } from '@/lib/types';
 
-// Polymarket taker fee — applied when EXITING a position
-const TAKER_FEE = 0.02;
+// Polymarket fees (as of March 2026):
+//   Taker: 0.75% peak on sports (dynamic, lower at extremes)
+//   Maker: -0.20% (rebate — you get paid for limit orders)
+// We use TAKER for worst-case (market order exit) and MAKER for best-case (limit order entry)
+const TAKER_FEE = 0.0075;   // 0.75% — paid when taking liquidity
+const MAKER_REBATE = 0.002;  // 0.20% — earned when providing liquidity
 
+// Min edge thresholds AFTER fees (taker 0.75%, maker rebate 0.20%)
+// With maker entry + taker exit, round-trip cost is ~0.55%
+// So edges >1% are genuinely profitable
 const MIN_EDGE: Record<string, number> = {
-  high: 0.04,    // was 0.03 — raised to survive fees
-  medium: 0.06,  // was 0.05
-  low: 0.09,     // was 0.08
+  high: 0.015,   // 1.5% — high confidence, multiple sharp sources agree
+  medium: 0.025, // 2.5% — medium confidence
+  low: 0.04,     // 4.0% — low confidence, only models available
 };
 
 /**
@@ -48,9 +55,12 @@ export function calculateKellySize(
 
   const p = fairValue;
   const q = 1 - p;
-  // Net payout accounts for taker fee on exit
+  // Net payout: win pays (1 - takerFee), entry via maker earns rebate
+  // Effective cost = targetPrice - MAKER_REBATE (we get paid to enter)
+  // Effective payout = 1 - TAKER_FEE (we pay to exit)
+  const effectiveCost = targetPrice * (1 - MAKER_REBATE);
   const netPayout = (1 - TAKER_FEE);
-  const b = (netPayout - targetPrice) / targetPrice;
+  const b = (netPayout - effectiveCost) / effectiveCost;
 
   if (b <= 0) return 0;
 
@@ -95,9 +105,14 @@ export function detectEdges(
     const yesFair = homeIsYes ? homeFair : awayFair;
     const noFair = homeIsYes ? awayFair : homeFair;
 
-    // Edge AFTER taker fee on exit
-    const yesEdge = yesFair - market.yesPrice - TAKER_FEE;
-    const noEdge = noFair - market.noPrice - TAKER_FEE;
+    // Edge AFTER fees: maker rebate on entry, taker fee on exit
+    // Net edge = fairValue - marketPrice - (taker fee) + (maker rebate on entry)
+    const yesEdge = yesFair - market.yesPrice - TAKER_FEE + (market.yesPrice * MAKER_REBATE);
+    const noEdge = noFair - market.noPrice - TAKER_FEE + (market.noPrice * MAKER_REBATE);
+
+    // Skip if Polymarket spread is too wide (can't enter/exit efficiently)
+    const polySpread = Math.abs(1 - market.yesPrice - market.noPrice);
+    if (polySpread > 0.08) continue; // 8% spread = too illiquid
 
     let side: 'YES' | 'NO';
     let fairValue: number;

@@ -38,6 +38,7 @@ export class NBALiveEdge implements Skill {
   // Foul detection: track when we last checked each game + which plays we've processed
   private lastFoulCheckAt: Map<string, number> = new Map();
   private seenPlayIds: Set<string> = new Set();
+  private readonly MAX_SEEN_PLAYS = 5000; // Bound memory — purge oldest when exceeded
 
   /**
    * INFORMATION VALUE of a scoring event.
@@ -107,6 +108,14 @@ export class NBALiveEdge implements Skill {
     for (const play of plays) {
       if (!play.id || this.seenPlayIds.has(play.id)) continue;
       this.seenPlayIds.add(play.id);
+      // Purge oldest entries to prevent unbounded memory growth
+      if (this.seenPlayIds.size > this.MAX_SEEN_PLAYS) {
+        const iter = this.seenPlayIds.values();
+        for (let i = 0; i < 1000; i++) iter.next();
+        const remaining = new Set<string>();
+        for (const v of iter) remaining.add(v);
+        this.seenPlayIds = remaining;
+      }
 
       const isCrunchTime = game.period >= 4 && secsLeft <= 300 && Math.abs(game.homeScore - game.awayScore) <= 6;
       const marketId = market.id;

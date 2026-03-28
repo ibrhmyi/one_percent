@@ -2,6 +2,7 @@ import type { Opportunity, Trade } from '@/lib/types';
 import { engineState, addMessage, getOpenTrade, updateAccount } from './state';
 import { calcKellySize } from './skills/nba-live-edge/win-probability';
 import { getSkill } from './skill-registry';
+import { placeOrder, cancelOrder } from './order-manager';
 
 const DRY_RUN = process.env.DRY_RUN !== 'false';
 
@@ -38,7 +39,7 @@ export async function enterPosition(opp: Opportunity): Promise<boolean> {
     exitReason: null,
     status: 'open',
     peakPrice: opp.marketPrice,
-    yesTokenId: '',
+    yesTokenId: opp.tokenId ?? '',
     noTokenId: '',
     isDryRun: DRY_RUN,
   };
@@ -51,11 +52,47 @@ export async function enterPosition(opp: Opportunity): Promise<boolean> {
       type: 'action',
     });
   } else {
-    addMessage({
-      text: `Entering: $${size.toFixed(2)} on ${opp.title.substring(0, 40)} ${opp.side.toUpperCase()} at $${opp.marketPrice.toFixed(2)}`,
-      type: 'action',
-    });
-    // TODO: actual CLOB order placement when LIVE
+    // LIVE: place actual CLOB order via order-manager
+    try {
+      const gameData = opp.gameData ?? { homeTeam: '', awayTeam: '' };
+      const order = await placeOrder({
+        conditionId: opp.marketId,
+        tokenId: opp.tokenId ?? '',
+        tokenSide: opp.side === 'yes' ? 'YES' : 'NO',
+        price: opp.marketPrice,
+        size,
+        sportKey: 'basketball',
+        homeTeam: gameData.homeTeam ?? '',
+        awayTeam: gameData.awayTeam ?? '',
+        commenceTime: new Date().toISOString(),
+        fairValue: opp.modelProbability,
+        edge: opp.edge,
+      });
+
+      if (order) {
+        trade.id = order.orderId; // Link trade to real order ID
+        addMessage({
+          text: `LIVE ORDER: $${size.toFixed(2)} on ${opp.title.substring(0, 40)} ${opp.side.toUpperCase()} @ ${(opp.marketPrice * 100).toFixed(0)}¢ | Order: ${order.orderId.substring(0, 12)}...`,
+          type: 'action',
+        });
+      } else {
+        trade.status = 'closed';
+        trade.exitReason = 'rejected';
+        addMessage({
+          text: `Order rejected — deployment cap or CLOB error`,
+          type: 'warning',
+        });
+        return false;
+      }
+    } catch (err) {
+      trade.status = 'closed';
+      trade.exitReason = 'rejected';
+      addMessage({
+        text: `Order failed: ${err instanceof Error ? err.message : String(err)}`,
+        type: 'warning',
+      });
+      return false;
+    }
   }
 
   // Update skill stats

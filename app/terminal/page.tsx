@@ -30,6 +30,7 @@ const DEFAULT_STATE = {
   scoringEvents: [] as any[],
   gameSchedule: [] as any[],
   latestMessage: null as any,
+  predictions: [] as any[],
   preGameWatchlist: [] as any[],
   preGameOrders: [] as any[],
   preGameSummary: null as any,
@@ -111,7 +112,7 @@ export default function Home() {
           </div>
           <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
             <div style={{ height: '100%', overflowY: 'auto' }}>
-              <OddsRanker watchlist={state.preGameWatchlist} summary={state.preGameSummary} />
+              <OddsRanker predictions={state.predictions ?? []} />
             </div>
           </div>
         </div>

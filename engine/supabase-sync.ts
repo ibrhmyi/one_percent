@@ -3,6 +3,7 @@ import { engineState } from './state';
 import { isPriceFeedConnected } from './price-feed';
 import { getSkill } from './skill-registry';
 import type { PreGameEdgeSkill } from './skills/basketball-edge/index';
+import { getAllPredictions } from './predictions/aggregator';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
@@ -104,6 +105,20 @@ export async function syncToSupabase(): Promise<void> {
       watched_markets: engineState.watchedMarkets,
       game_schedule: gameSchedule,
       scoring_events: scoringEvents,
+      predictions: getAllPredictions().map(p => ({
+        gameKey: p.gameKey,
+        homeTeam: p.homeTeam,
+        awayTeam: p.awayTeam,
+        fairHomeWinProb: p.fairHomeWinProb,
+        fairAwayWinProb: p.fairAwayWinProb,
+        bpiPrediction: p.bpiPrediction,
+        torvikPrediction: p.torvikPrediction,
+        booksPrediction: p.booksPrediction,
+        weights: p.weights,
+        sourcesAvailable: p.sourcesAvailable,
+        lastUpdated: p.lastUpdated,
+        league: p.league,
+      })),
       pre_game_watchlist: preGameInfo?.watchlist ?? [],
       pre_game_orders: preGameInfo?.orders ?? [],
       pre_game_summary: preGameInfo ? {

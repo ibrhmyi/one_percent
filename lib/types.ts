@@ -84,7 +84,7 @@ export interface Trade {
   skillIcon: string;
   enteredAt: string;
   exitedAt: string | null;
-  exitReason: 'target' | 'reversal' | 'stall' | 'timeout' | 'game_over' | null;
+  exitReason: 'target' | 'reversal' | 'stall' | 'timeout' | 'game_over' | 'rejected' | null;
   status: 'open' | 'closed';
   peakPrice: number;
   yesTokenId: string;
@@ -104,10 +104,12 @@ export interface SkillInfo {
   name: string;
   icon: string;
   description: string;
+  detailedDescription?: string; // Full strategy explanation, shown when expanded
   category: string;
   status: 'active' | 'idle' | 'error' | 'paused';
   pollIntervalMs: number;
   stats: SkillStats;
+  dataSources?: string[]; // e.g. ['ESPN BPI', 'DraftKings', 'FanDuel', 'Torvik']
 }
 
 export interface Skill extends SkillInfo {

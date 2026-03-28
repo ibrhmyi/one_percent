@@ -8,6 +8,7 @@ import { isNewMarket, markMarketSeen, getEarlyMarketConfig } from './market-watc
 import { fetchOrderbook } from '../../orderbook';
 import { placeOrder, cancelOrder, getOrders } from '../../order-manager';
 import { addMessage, engineState } from '../../state';
+import { updateBooksPrediction } from '../../predictions/aggregator';
 import type { WatchedMarket, Opportunity, Skill, SkillInfo, SkillStats } from '@/lib/types';
 import { OddsAPIGame, PreGameEdge, WatchlistEntry, AllocationDecision } from './types';
 import { appendFileSync, mkdirSync, existsSync } from 'fs';
@@ -50,7 +51,50 @@ export class PreGameEdgeSkill implements Skill {
   id = 'basketball-edge';
   name = 'Basketball Edge';
   icon = '📊';
-  description = 'Compares sportsbook consensus to Polymarket prices. Maintains ranked watchlist. Dynamically allocates capital to best opportunities.';
+  description = 'Pre-game edge detection across NBA, NCAAB & WNBA. Aggregates 4 data sources, detects mispricings, places maker orders.';
+  detailedDescription = `## Strategy Overview
+
+**Goal:** Find Polymarket basketball markets where the price is wrong relative to the true probability, then place limit orders to capture the difference.
+
+### Data Sources (4 feeds, updated continuously)
+- **ESPN BPI** — Institutional win probability model. Accounts for injuries, rest days, travel. Updated every 5 min.
+- **Bart Torvik T-Rank** — Gold standard for college basketball. Uses barthag ratings + Log5 formula. Updated every 30 min.
+- **DraftKings** — Sharp US sportsbook moneyline odds. Scraped via Vercel (US servers) every 15s. Catches news drops within seconds.
+- **FanDuel** — Second US sportsbook for cross-reference. Same 15s polling cadence.
+
+### How Fair Value is Calculated
+Sources are dynamically weighted based on availability and credibility:
+- **Books available + close to game:** Books 50%, BPI 35%, Torvik 15%
+- **Books available + far from game:** Books 30%, Models 70% (opening lines are weak)
+- **No books (5+ days out):** BPI 70%, Torvik 30% (NCAAB: Torvik 60%)
+
+### Edge Detection
+\`edge = fairValue - marketPrice - takerFee + makerRebate\`
+- **Taker fee:** 0.75% (paid when taking liquidity)
+- **Maker rebate:** 0.20% (earned when providing liquidity)
+- **Round-trip cost:** ~0.55% (maker entry + taker exit)
+- **Min edge thresholds:** High confidence 1.5%, Medium 2.5%, Low 4.0%
+
+### Execution Strategy — MAKER ONLY
+1. Calculate fair value from all available sources
+2. Compare to Polymarket price + check spread/depth
+3. If edge > threshold: place **limit order** below fair value (earn maker rebate)
+4. Never market-buy (taker fee eats into edge)
+5. If order fills: monitor and exit via limit order when price converges to fair value
+
+### News-Reactive Trading
+- DK/FD lines polled every 15s — when odds shift >3%, it signals breaking news
+- ESPN injury feed polled every 2 min — catches "OUT" status changes
+- When significant change detected: immediate edge recalculation
+- If Polymarket hasn't adjusted yet: place order in the gap (30-120 second window)
+
+### Risk Controls
+- Quarter Kelly sizing (0.25x) — never bet more than optimal fraction
+- Max 15% of bankroll per position
+- Skip if Polymarket spread > 8% (too illiquid)
+- Skip if bookmaker consensus spread > 10% (sources disagree)
+- Skip if game starts in < 5 minutes (too late to get filled)`;
+  dataSources = ['ESPN BPI', 'Bart Torvik', 'DraftKings', 'FanDuel', 'ESPN Injuries'];
   category = 'Basketball';
   status: 'active' | 'idle' | 'error' | 'paused' = 'active';
   pollIntervalMs = 60000;
@@ -222,6 +266,19 @@ export class PreGameEdgeSkill implements Skill {
       this.lastOddsFetchAt = Date.now();
       const stats = getRequestStats();
       console.log(`[PreGameEdge] Got ${this.cachedOdds.length} games. API budget: ${stats.totalRequestsUsed}/${stats.totalBudget} used.`);
+
+      // Feed sportsbook consensus into the aggregator
+      for (const game of this.cachedOdds) {
+        const consensus = calculateConsensus(game);
+        if (!consensus) continue;
+        const league = game.sport_key.includes('ncaab') ? 'NCAAB'
+          : game.sport_key.includes('wnba') ? 'WNBA' : 'NBA';
+        updateBooksPrediction(
+          game.home_team, game.away_team,
+          consensus.homeWinProb, consensus.awayWinProb,
+          consensus.numBookmakers, consensus.confidence, league
+        );
+      }
     }
 
     if (this.cachedOdds.length === 0) return [];
