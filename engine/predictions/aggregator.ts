@@ -19,6 +19,7 @@
 
 import { fetchBPIPredictions, BPIPrediction } from './espn-bpi';
 import { fetchTorvikRatings, predictMatchup } from './torvik';
+import { normalizeTeamName, teamsAreSame } from './team-aliases';
 import { addMessage, engineState } from '../state';
 
 export interface GamePrediction {
@@ -57,24 +58,15 @@ let bpiCache: BPIPrediction[] = [];
 
 function makeGameKey(home: string, away: string, date?: string): string {
   const dateStr = date ? `::${date.slice(0, 10)}` : '';
-  return `${normalize(home)}::${normalize(away)}${dateStr}`;
+  return `${normalizeTeamName(home)}::${normalizeTeamName(away)}${dateStr}`;
 }
 
 function normalize(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+  return normalizeTeamName(name);
 }
 
 function teamsMatch(a: string, b: string): boolean {
-  const na = normalize(a);
-  const nb = normalize(b);
-  if (na === nb) return true;
-  // Last word (mascot) match
-  const lastA = na.split(' ').pop() ?? '';
-  const lastB = nb.split(' ').pop() ?? '';
-  if (lastA.length >= 4 && lastA === lastB) return true;
-  // Substring match
-  if (na.includes(nb) || nb.includes(na)) return true;
-  return false;
+  return teamsAreSame(a, b);
 }
 
 // ── Core aggregation ──
