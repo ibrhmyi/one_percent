@@ -36,7 +36,7 @@ export function TradesPanel({ trades, mode }: Props) {
       {recent.length === 0 ? (
         <div style={{ color: DIM, fontSize: '0.7rem', flex: 1 }}>No trades yet</div>
       ) : (
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 2 }}>
           {recent.map(t => {
             const pnl = t.pnl ?? 0;
             const isOpen = t.status === 'open';
@@ -52,12 +52,12 @@ export function TradesPanel({ trades, mode }: Props) {
               : Date.now() - new Date(t.enteredAt).getTime();
 
             return (
-              <div key={t.id} style={{
-                background: 'var(--bg-card)',
+              <div key={t.id} className="card-interactive" style={{
+                background: 'var(--bg-card-elevated)',
                 border: '1px solid var(--border-default)',
                 borderLeft: `3px solid ${borderColor}`,
-                borderRadius: 4,
-                padding: '8px 10px',
+                borderRadius: 6,
+                padding: '10px 12px',
               }}>
                 {/* Header: Status + P&L */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>

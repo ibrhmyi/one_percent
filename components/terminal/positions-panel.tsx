@@ -64,7 +64,7 @@ export function PositionsPanel({ orders, summary }: Props) {
           {active.length} active · ${summary?.totalDeployed?.toFixed(0) ?? '0'} deployed
         </span>
       </div>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 2 }}>
         {active.map(order => {
           const side = order.tokenSide ?? (order.fairValue > 0.5 ? 'YES' : 'NO');
           const isFilled = order.status === 'filled' || order.status === 'partially_filled';
@@ -79,12 +79,12 @@ export function PositionsPanel({ orders, summary }: Props) {
             <a key={order.orderId} href={polyUrl} target="_blank" rel="noopener noreferrer"
               className="schedule-row-link"
               style={{ textDecoration: 'none', color: 'inherit' }}>
-              <div style={{
-                background: 'var(--bg-card)',
+              <div className="card-interactive" style={{
+                background: 'var(--bg-card-elevated)',
                 border: '1px solid var(--border-default)',
                 borderLeft: `3px solid ${isFilled ? 'var(--green)' : 'var(--cyan)'}`,
-                borderRadius: 4,
-                padding: '8px 10px',
+                borderRadius: 6,
+                padding: '10px 12px',
               }}>
                 {/* Teams + link */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>

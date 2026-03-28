@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { JetBrains_Mono, Inter } from "next/font/google";
+import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 
-const jetbrainsMono = JetBrains_Mono({
+const geistMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   display: "swap",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${jetbrainsMono.variable} ${inter.variable} antialiased`}>
+      <body className={`${geistMono.variable} ${inter.variable} antialiased`}>
         {children}
       </body>
     </html>

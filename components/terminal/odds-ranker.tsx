@@ -82,7 +82,7 @@ export function OddsRanker({ watchlist, summary }: Props) {
           {summary && ` · ${summary.apiRequestsUsed}/${summary.apiRequestsBudget} API`}
         </span>
       </div>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 2 }}>
         {watchlist.map((entry, i) => {
           const isMatched = entry.polymarketMatched;
           const isPositive = entry.bestSideEV > 0;
@@ -114,13 +114,16 @@ export function OddsRanker({ watchlist, summary }: Props) {
               : (entry.homeIsYes ? entry.consensus.awayWinProb : entry.consensus.homeWinProb))
             : 0;
 
+          const edgeVal = entry.bestSideEV * 100;
+          const edgeClass = edgeVal >= 6 ? 'edge-high' : edgeVal >= 3 ? 'edge-medium' : 'edge-low';
+
           const cardContent = (
-            <div style={{
-              background: 'var(--bg-card)',
+            <div className="card-interactive" style={{
+              background: 'var(--bg-card-elevated)',
               border: '1px solid var(--border-default)',
               borderLeft: `3px solid ${borderColor}`,
-              borderRadius: 4,
-              padding: '8px 10px',
+              borderRadius: 6,
+              padding: '10px 12px',
             }}>
               {/* Row 1: Rank + League + Countdown + Link */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -158,7 +161,7 @@ export function OddsRanker({ watchlist, summary }: Props) {
                   {isPositive && (
                     <div style={{ fontSize: '0.6rem', color: 'var(--cyan)', fontWeight: 600, marginTop: 2 }}>
                       BUY {entry.bestSide} {betMeaning ? `(${betMeaning})` : ''} @ {(entryPrice * 100).toFixed(0)}¢
-                      <span style={{ color: 'var(--green)', marginLeft: 8 }}>Edge +{(entry.bestSideEV * 100).toFixed(1)}%</span>
+                      <span className={edgeClass} style={{ marginLeft: 8, fontWeight: 700 }}>Edge +{(entry.bestSideEV * 100).toFixed(1)}%</span>
                       <span style={{ color: DIM, marginLeft: 8 }}>Exit {(fairPrice * 100).toFixed(0)}¢</span>
                     </div>
                   )}

@@ -21,7 +21,7 @@ export function TopBar({ latestMessage }: Props) {
   const typeColor: Record<string, string> = {
     info: 'var(--text-secondary)',
     idle: 'var(--text-dim)',
-    warning: 'var(--amber)',
+    warning: 'var(--cyan)',
     action: 'var(--cyan)',
     success: 'var(--green)',
     trade: 'var(--green)',
@@ -31,29 +31,44 @@ export function TopBar({ latestMessage }: Props) {
 
   return (
     <div style={{
-      height: '32px',
-      background: 'var(--bg-secondary)',
+      height: '36px',
+      background: 'var(--bg-card)',
       borderBottom: '1px solid var(--border-default)',
       display: 'flex', alignItems: 'center',
       overflow: 'hidden',
       fontSize: '0.7rem',
       fontFamily: 'var(--font-mono)',
+      flexShrink: 0,
     }}>
       {/* Logo */}
       <div style={{
         padding: '0 16px',
         borderRight: '1px solid var(--border-default)',
         whiteSpace: 'nowrap',
-        color: 'var(--cyan)',
-        fontWeight: 700,
-        fontSize: '0.8rem',
-        letterSpacing: '-0.02em',
+        display: 'flex', alignItems: 'center', gap: 8,
         flexShrink: 0,
       }}>
-        ONEPERCENT
+        <span style={{
+          color: 'var(--cyan)',
+          fontWeight: 700,
+          fontSize: '0.85rem',
+          letterSpacing: '-0.03em',
+        }}>
+          ONEPERCENT
+        </span>
+        <span style={{
+          fontSize: '0.5rem',
+          color: 'var(--text-dim)',
+          padding: '1px 5px',
+          border: '1px solid var(--border-default)',
+          borderRadius: 3,
+          letterSpacing: '0.05em',
+        }}>
+          v1.0
+        </span>
       </div>
 
-      {/* Sliding brain message */}
+      {/* Brain message */}
       <div style={{
         flex: 1,
         padding: '0 16px',
@@ -65,11 +80,11 @@ export function TopBar({ latestMessage }: Props) {
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
         {latestMessage?.timestamp && (
-          <span style={{ color: 'var(--text-dim)', flexShrink: 0 }}>
+          <span style={{ color: 'var(--text-dim)', flexShrink: 0, fontSize: '0.6rem' }}>
             {new Date(latestMessage.timestamp).toLocaleTimeString('en-US', { hour12: false })}
           </span>
         )}
-        <span style={{ color, overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayed}</span>
+        <span style={{ color, overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.65rem' }}>{displayed}</span>
       </div>
     </div>
   );
