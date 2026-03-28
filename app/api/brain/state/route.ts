@@ -129,12 +129,13 @@ function enrichPredictionsWithMarkets(predictions: any[], markets: any[]): any[]
     });
 
     if (market) {
-      // Determine which side is home (YES token = first team in title)
-      const titleNorm = normalize(market.title || '');
-      const homeNorm = normalize(pred.homeTeam || '');
-      const vsIdx = titleNorm.indexOf(' vs');
-      const beforeVs = vsIdx >= 0 ? titleNorm.slice(0, vsIdx) : '';
-      const homeIsYes = lastWord(homeNorm) ? beforeVs.includes(lastWord(homeNorm)!) : false;
+      // Determine which side is home (YES token = first team in Polymarket title)
+      // Polymarket title format: "Team1 vs. Team2" where Team1 = YES
+      // We need to determine if pred.homeTeam matches the YES team (first in title)
+      const mHome = normalize(market.homeTeam || '');  // Polymarket's "home" = first team = YES
+      const pHome = normalize(pred.homeTeam || '');
+      // Check if prediction's home team matches Polymarket's YES team
+      const homeIsYes = fuzzyMatch(mHome, pHome);
 
       const yesFair = homeIsYes ? pred.fairHomeWinProb : pred.fairAwayWinProb;
       const noFair = homeIsYes ? pred.fairAwayWinProb : pred.fairHomeWinProb;
