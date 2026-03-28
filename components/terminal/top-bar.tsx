@@ -58,16 +58,6 @@ export function TopBar({ latestMessage }: Props) {
         }}>
           ONEPERCENT
         </span>
-        <span style={{
-          fontSize: '0.5rem',
-          color: 'var(--text-dim)',
-          padding: '1px 5px',
-          border: '1px solid var(--border-default)',
-          borderRadius: 3,
-          letterSpacing: '0.05em',
-        }}>
-          alpha v1.1
-        </span>
       </div>
 
       {/* Brain message */}

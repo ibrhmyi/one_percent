@@ -67,7 +67,7 @@ export function GameSchedule({ games }: Props) {
 
   return (
     <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div className="panel-header">Today&apos;s Game Schedule <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>({filtered.length})</span></div>
+      <div className="panel-header">Today&apos;s Game Schedule <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>{filtered.length} games</span></div>
       {filtered.length === 0 ? (
         <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem', flex: 1 }}>No games in next 24h</div>
       ) : (
