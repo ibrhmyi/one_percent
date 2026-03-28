@@ -96,13 +96,12 @@ export function PositionsPanel({ orders, summary }: Props) {
                 {/* Teams */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                   <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
-                    {order.awayTeam} @ {order.homeTeam}
+                    {order.awayTeam} vs {order.homeTeam}
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     {order.orderId.startsWith('sim-') && (
                       <span style={{ fontSize: '0.45rem', color: DIM, padding: '1px 3px', border: '1px solid var(--border-default)', borderRadius: 2 }}>DRY</span>
                     )}
-                    <span style={{ fontSize: '0.5rem', color: DIM }}>↗</span>
                   </div>
                 </div>
 

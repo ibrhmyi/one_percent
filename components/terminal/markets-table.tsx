@@ -41,12 +41,14 @@ function useFlash(value: number) {
 
 function PriceCell({ price, side }: { price: number; side: 'yes' | 'no' }) {
   const flash = useFlash(price);
+  const arrow = flash === 'up' ? '▲' : flash === 'down' ? '▼' : '';
+  const flashColor = flash === 'up' ? 'var(--green)' : flash === 'down' ? 'var(--red)' : undefined;
   return (
     <span className={flash === 'up' ? 'flash-green' : flash === 'down' ? 'flash-red' : ''} style={{
-      color: side === 'yes' ? 'var(--green)' : 'var(--red)',
-      fontWeight: 700, fontFamily: 'var(--font-mono)',
+      color: flashColor ?? (side === 'yes' ? 'var(--green)' : 'var(--red)'),
+      fontWeight: 600, fontFamily: 'var(--font-mono)', fontSize: '0.65rem',
     }}>
-      {(price * 100).toFixed(1)}¢
+      {(price * 100).toFixed(1)}¢{arrow && <span style={{ fontSize: '0.45rem', marginLeft: 2 }}>{arrow}</span>}
     </span>
   );
 }
@@ -105,7 +107,7 @@ export function MarketsTable({ markets }: Props) {
               </div>
               <Countdown targetTime={next.gameStartTime!} />
               <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
-                {next.awayTeam ?? 'Away'} @ {next.homeTeam ?? 'Home'}
+                {next.awayTeam ?? 'Away'} vs {next.homeTeam ?? 'Home'}
               </div>
               <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>
                 {new Date(next.gameStartTime!).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}
@@ -162,8 +164,11 @@ export function MarketsTable({ markets }: Props) {
           const accentColor = m.status === 'position_open' ? 'var(--cyan)' :
                               m.status === 'edge_detected'  ? 'var(--green)' : 'transparent';
 
-          return (
-            <div key={m.id} style={{
+          const slug = (m as any).slug;
+          const polyUrl = slug ? `https://polymarket.com/event/${slug}` : undefined;
+
+          const row = (
+            <div style={{
               display: 'grid',
               gridTemplateColumns: '2fr 72px 72px 56px 64px 100px',
               gap: 4, padding: '6px 6px',
@@ -171,10 +176,14 @@ export function MarketsTable({ markets }: Props) {
               borderLeft: m.status !== 'live' ? `2px solid ${accentColor}` : '2px solid transparent',
               alignItems: 'center',
               background: rowBg,
-            }}>
+              cursor: polyUrl ? 'pointer' : 'default',
+              transition: 'background 0.15s',
+            }}
+              className={polyUrl ? 'schedule-row-link' : ''}
+            >
               <div>
                 <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.9)', fontWeight: 500, marginBottom: 2 }}>
-                  {m.awayTeam && m.homeTeam ? `${m.awayTeam} @ ${m.homeTeam}` : m.title}
+                  {m.awayTeam && m.homeTeam ? `${m.awayTeam} vs ${m.homeTeam}` : m.title}
                 </div>
                 {m.gameData && (
                   <div style={{ fontSize: '0.6rem', color: 'var(--green)', fontWeight: 600 }}>
@@ -184,7 +193,7 @@ export function MarketsTable({ markets }: Props) {
               </div>
               <PriceCell price={m.yesPrice} side="yes" />
               <PriceCell price={m.noPrice} side="no" />
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
                 {m.spread != null ? `${m.spread.toFixed(1)}¢` : '—'}
               </span>
               <span style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
@@ -192,6 +201,15 @@ export function MarketsTable({ markets }: Props) {
               </span>
               <Sparkline data={m.priceHistory} width={90} height={22} />
             </div>
+          );
+
+          return polyUrl ? (
+            <a key={m.id} href={polyUrl} target="_blank" rel="noopener noreferrer"
+              style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+              {row}
+            </a>
+          ) : (
+            <div key={m.id}>{row}</div>
           );
         })}
       </div>

@@ -49,8 +49,8 @@ function logSignal(edge: PreGameEdge, action: 'placed' | 'skipped', reason?: str
 
 export class PreGameEdgeSkill implements Skill {
   id = 'basketball-edge';
-  name = 'Basketball Edge';
-  icon = '📊';
+  name = 'Basketball Pre-Edge';
+  icon = '';
   description = 'Pre-game edge detection across NBA, NCAAB & WNBA. Aggregates 4 data sources, detects mispricings, places maker orders.';
   detailedDescription = `## Strategy Overview
 

@@ -22,8 +22,8 @@ import { WNBA_CONFIG } from './leagues/wnba';
  */
 export class BasketballSkill implements Skill {
   id = 'basketball';
-  name = 'Basketball Score Reactive';
-  icon = '\u{1F3C0}';
+  name = 'Basketball Live-Edge';
+  icon = '';
   description = 'Multi-league basketball skill. Watches ESPN for scoring events across NBA and NCAA. Buys the scoring team\'s token before the market adjusts. Focuses on close late-game situations where each basket causes large price swings.';
   category = 'Basketball';
   status: 'active' | 'idle' | 'error' | 'paused' = 'active';

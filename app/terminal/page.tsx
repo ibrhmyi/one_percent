@@ -117,7 +117,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* CENTER — Markets + Positions + Trades (equal thirds, tiny gap) */}
+        {/* CENTER — Markets + Trades + Positions (trades above positions) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 0, overflow: 'hidden' }}>
           <div style={{ flex: '1 1 0%', minHeight: 60, overflow: 'hidden' }}>
             <div style={{ height: '100%', overflowY: 'auto' }}>
@@ -126,18 +126,23 @@ export default function Home() {
           </div>
           <div style={{ flex: '1 1 0%', minHeight: 60, overflow: 'hidden' }}>
             <div style={{ height: '100%', overflowY: 'auto' }}>
-              <PositionsPanel orders={state.preGameOrders} summary={state.preGameSummary} />
+              <TradesPanel trades={state.trades} mode={state.account.mode} />
             </div>
           </div>
           <div style={{ flex: '1 1 0%', minHeight: 60, overflow: 'hidden' }}>
             <div style={{ height: '100%', overflowY: 'auto' }}>
-              <TradesPanel trades={state.trades} mode={state.account.mode} />
+              <PositionsPanel orders={state.preGameOrders} summary={state.preGameSummary} />
             </div>
           </div>
         </div>
 
-        {/* RIGHT — Account + Score Feed (fills all remaining space) + Skills */}
+        {/* RIGHT — Score Feed (top) + Account + Skills */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 0, overflow: 'hidden' }}>
+          <div style={{ flex: 1, minHeight: 60, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+              <ScoreFeed events={state.scoringEvents} />
+            </div>
+          </div>
           <div style={{ flexShrink: 0 }}>
             <AccountPanel
               account={state.account}
@@ -146,11 +151,6 @@ export default function Home() {
               preGameDeployed={state.preGameSummary?.totalDeployed ?? 0}
               skillStats={state.skills?.map((s: any) => s.stats) ?? []}
             />
-          </div>
-          <div style={{ flex: 1, minHeight: 60, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-              <ScoreFeed events={state.scoringEvents} />
-            </div>
           </div>
           <div style={{ flexShrink: 0 }}>
             <SkillsPanel skills={state.skills} />

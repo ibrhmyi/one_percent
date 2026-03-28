@@ -148,9 +148,11 @@ export function SkillCard({ skill }: Props) {
         {/* Header row */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-lg flex-shrink-0">
-              {skill.icon}
-            </div>
+            {skill.icon && (
+              <div className="w-9 h-9 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-lg flex-shrink-0">
+                {skill.icon}
+              </div>
+            )}
             <div>
               <h3 className="text-sm font-semibold text-white leading-tight">{skill.name}</h3>
               <div className="text-[10px] font-mono text-slate-600 mt-0.5 uppercase tracking-wider">
