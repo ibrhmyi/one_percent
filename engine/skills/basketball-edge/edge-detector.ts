@@ -55,11 +55,12 @@ export function calculateKellySize(
 
   const p = fairValue;
   const q = 1 - p;
-  // Net payout: win pays (1 - takerFee), entry via maker earns rebate
-  // Effective cost = targetPrice - MAKER_REBATE (we get paid to enter)
-  // Effective payout = 1 - TAKER_FEE (we pay to exit)
-  const effectiveCost = targetPrice * (1 - MAKER_REBATE);
-  const netPayout = (1 - TAKER_FEE);
+  // Both fees treated as flat rates on trade value:
+  //   Entry (maker): earn MAKER_REBATE → effective cost = targetPrice - 0.002
+  //   Exit (taker): pay TAKER_FEE → effective payout = 1.0 - 0.0075
+  // Round-trip cost per dollar: 0.0075 - 0.002 = 0.0055 (0.55%)
+  const effectiveCost = targetPrice - MAKER_REBATE;
+  const netPayout = 1.0 - TAKER_FEE;
   const b = (netPayout - effectiveCost) / effectiveCost;
 
   if (b <= 0) return 0;
@@ -105,10 +106,12 @@ export function detectEdges(
     const yesFair = homeIsYes ? homeFair : awayFair;
     const noFair = homeIsYes ? awayFair : homeFair;
 
-    // Edge AFTER fees: maker rebate on entry, taker fee on exit
-    // Net edge = fairValue - marketPrice - (taker fee) + (maker rebate on entry)
-    const yesEdge = yesFair - market.yesPrice - TAKER_FEE + (market.yesPrice * MAKER_REBATE);
-    const noEdge = noFair - market.noPrice - TAKER_FEE + (market.noPrice * MAKER_REBATE);
+    // Edge AFTER round-trip fees (both flat):
+    //   maker entry: -0.002 (rebate), taker exit: +0.0075
+    //   net cost = 0.0055 per trade
+    const ROUND_TRIP = TAKER_FEE - MAKER_REBATE; // 0.0055
+    const yesEdge = yesFair - market.yesPrice - ROUND_TRIP;
+    const noEdge = noFair - market.noPrice - ROUND_TRIP;
 
     // Skip if Polymarket spread is too wide (can't enter/exit efficiently)
     const polySpread = Math.abs(1 - market.yesPrice - market.noPrice);

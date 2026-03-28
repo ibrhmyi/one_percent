@@ -138,8 +138,14 @@ Sources are dynamically weighted based on availability and credibility:
     if (this.status === 'paused') return;
 
     const bankroll = parseFloat(process.env.BANKROLL || '10000');
+    // Polymarket sports fees (March 2026):
+    //   Taker: 0.75% flat on trade value
+    //   Maker: -0.20% rebate (you get paid)
+    // Both treated as flat rates on trade value for consistency
     const TAKER_FEE = 0.0075;
     const MAKER_REBATE = 0.002;
+    // Net round-trip cost: taker exit (0.75%) - maker entry rebate (0.20%) = 0.55%
+    const ROUND_TRIP_FEE = TAKER_FEE - MAKER_REBATE;
 
     for (const market of markets) {
       // Get fair value from aggregator (BPI + Torvik + DK/FD combined)
@@ -155,9 +161,9 @@ Sources are dynamically weighted based on availability and credibility:
       const yesFair = prediction.fairHomeWinProb;
       const noFair = prediction.fairAwayWinProb;
 
-      // Edge after fees (maker entry rebate, taker exit fee)
-      const yesEdge = yesFair - market.yesPrice - TAKER_FEE + (market.yesPrice * MAKER_REBATE);
-      const noEdge = noFair - market.noPrice - TAKER_FEE + (market.noPrice * MAKER_REBATE);
+      // Edge after round-trip fees (maker entry + taker exit)
+      const yesEdge = yesFair - market.yesPrice - ROUND_TRIP_FEE;
+      const noEdge = noFair - market.noPrice - ROUND_TRIP_FEE;
 
       let side: 'YES' | 'NO';
       let fairValue: number;
@@ -182,7 +188,7 @@ Sources are dynamically weighted based on availability and credibility:
       );
       if (alreadyOrdered) continue;
 
-      // Min edge thresholds
+      // Min edge thresholds (after fees)
       const minEdges: Record<string, number> = { high: 0.015, medium: 0.025, low: 0.04 };
       if (edge < (minEdges[confidence] ?? 0.025)) continue;
       if (marketPrice >= fairValue) continue;
@@ -194,32 +200,36 @@ Sources are dynamically weighted based on availability and credibility:
         continue;
       }
 
-      // Kelly sizing with maker-adjusted cost
-      const kellySize = calculateKellySize(fairValue, marketPrice, bankroll);
+      // MAKER PRICING: Place limit order 1-2¢ below the best ask
+      // This ensures we're providing liquidity (maker) not taking it (taker)
+      // makerPrice = midpoint between market price and fair value, rounded down to nearest cent
+      const makerPrice = Math.floor((marketPrice - 0.01) * 100) / 100;
+      if (makerPrice <= 0.01 || makerPrice >= fairValue) continue;
+
+      // Kelly sizing uses maker price (our actual entry cost)
+      const kellySize = calculateKellySize(fairValue, makerPrice, bankroll);
       if (kellySize < 5) continue;
 
-      // Check order book depth before placing — make sure there's enough liquidity
+      // Check order book depth before placing
+      let liquidityOk = true;
       try {
         const book = await fetchOrderbook(tokenId);
         const simulation = simulateBuy(book.asks, kellySize);
-        if (!simulation.wouldFill) {
-          console.log(`[QuickScan] Skip ${market.homeTeam} vs ${market.awayTeam}: insufficient liquidity ($${simulation.liquidityWithin3Cents.toFixed(0)} available, need $${kellySize.toFixed(0)})`);
-          continue;
-        }
-        if (simulation.slippage > 0.02) {
-          console.log(`[QuickScan] Skip ${market.homeTeam} vs ${market.awayTeam}: slippage ${(simulation.slippage * 100).toFixed(1)}% would eat the edge`);
-          continue;
+        if (simulation.liquidityWithin3Cents < kellySize * 0.5) {
+          console.log(`[QuickScan] Skip ${market.homeTeam} vs ${market.awayTeam}: thin liquidity ($${simulation.liquidityWithin3Cents.toFixed(0)} within 3¢)`);
+          liquidityOk = false;
         }
       } catch {
-        // If orderbook fetch fails, proceed with caution (smaller size)
-        console.log(`[QuickScan] Orderbook unavailable for ${market.homeTeam} vs ${market.awayTeam}, proceeding with reduced size`);
+        // Orderbook fetch failed — proceed but log it
+        console.log(`[QuickScan] Orderbook unavailable for ${market.homeTeam} vs ${market.awayTeam}`);
       }
+      if (!liquidityOk) continue;
 
       const order = await placeOrder({
         conditionId: market.conditionId,
         tokenId,
         tokenSide: side,
-        price: marketPrice,
+        price: makerPrice,  // MAKER price, not market price
         size: kellySize,
         sportKey: market.category?.toLowerCase() === 'ncaa' ? 'basketball_ncaab' : 'basketball_nba',
         homeTeam: market.homeTeam,
@@ -234,7 +244,7 @@ Sources are dynamically weighted based on availability and credibility:
       if (order) {
         const sources = prediction.sourcesAvailable.join('+');
         addMessage({
-          text: `[EDGE] ${market.homeTeam} vs ${market.awayTeam} | BUY ${side} @ ${(marketPrice * 100).toFixed(0)}¢ | Fair: ${(fairValue * 100).toFixed(0)}% [${sources}] | Edge: +${(edge * 100).toFixed(1)}% | $${kellySize.toFixed(0)}`,
+          text: `[EDGE] ${market.homeTeam} vs ${market.awayTeam} | MAKER BUY ${side} @ ${(makerPrice * 100).toFixed(0)}¢ (ask: ${(marketPrice * 100).toFixed(0)}¢) | Fair: ${(fairValue * 100).toFixed(0)}% [${sources}] | Edge: +${(edge * 100).toFixed(1)}% | $${kellySize.toFixed(0)}`,
           type: 'action',
         });
         engineState.trades.push({
@@ -242,7 +252,7 @@ Sources are dynamically weighted based on availability and credibility:
           marketId: market.id,
           marketTitle: `${market.homeTeam} vs ${market.awayTeam}`,
           side: side.toLowerCase() as 'yes' | 'no',
-          entryPrice: marketPrice,
+          entryPrice: makerPrice,
           entryAmount: kellySize,
           exitPrice: null,
           exitAmount: null,

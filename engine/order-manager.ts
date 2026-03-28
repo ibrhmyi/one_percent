@@ -145,8 +145,12 @@ async function getClobClient() {
 function getTotalDeployed(): number {
   let total = 0;
   for (const order of orders.values()) {
-    if (order.status === 'resting' || order.status === 'partially_filled') {
-      total += order.size - order.filledSize;
+    if (order.status === 'resting') {
+      total += order.size; // Full order size still at risk
+    } else if (order.status === 'partially_filled') {
+      total += order.size; // Full size committed (unfilled portion + filled portion)
+    } else if (order.status === 'filled') {
+      total += order.filledSize; // Capital is deployed in this position until exit
     }
   }
   return total;
