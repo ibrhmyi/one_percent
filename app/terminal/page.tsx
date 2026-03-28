@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { AccessGate } from '@/components/access-gate';
 import { TopBar } from '@/components/terminal/top-bar';
 import { BottomBar } from '@/components/terminal/bottom-bar';
 import { ScoreFeed } from '@/components/terminal/score-feed';
@@ -58,6 +59,7 @@ export default function Home() {
   }, [fetchState]);
 
   return (
+    <AccessGate>
     <div style={{
       height: '100vh',
       background: 'var(--bg-primary)',
@@ -165,5 +167,6 @@ export default function Home() {
         lastCycleAt={state.lastCycleAt}
       />
     </div>
+    </AccessGate>
   );
 }
