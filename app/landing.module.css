@@ -1,0 +1,387 @@
+.page {
+  background: #000;
+  color: #f8fafc;
+  font-family: 'Geist Sans', var(--font-sans), -apple-system, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === VIDEO GRID === */
+.videoGrid {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 1px;
+  z-index: 0;
+  opacity: 0.3;
+}
+
+.videoCell {
+  position: relative;
+  overflow: hidden;
+  background: #030712;
+}
+
+.videoCell video {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 115%; height: 115%;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.cellOverlay {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.liveBadge {
+  position: absolute;
+  top: 8px; left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: #ef4444;
+}
+
+.dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+
+.channel {
+  position: absolute;
+  top: 8px; right: 8px;
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  color: rgba(8, 145, 178, 0.45);
+  letter-spacing: 1px;
+}
+
+.gameInfo {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 6px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.9));
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.matchup {
+  font-family: var(--font-mono), monospace;
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
+.score {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  color: #0891b2;
+  font-weight: 500;
+}
+
+.oddsTag {
+  position: absolute;
+  bottom: 26px; left: 8px;
+  font-family: var(--font-mono), monospace;
+  font-size: 7px;
+  color: #22c55e;
+  opacity: 0.6;
+}
+
+.cellScanline {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 3px,
+    rgba(255, 255, 255, 0.008) 3px, rgba(255, 255, 255, 0.008) 6px
+  );
+}
+
+/* === OVERLAYS === */
+.dimOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 5;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.82) 100%);
+  pointer-events: none;
+}
+
+.scanBeam {
+  position: fixed;
+  left: 0; width: 100%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(8, 145, 178, 0.12) 30%, rgba(8, 145, 178, 0.2) 50%, rgba(8, 145, 178, 0.12) 70%, transparent);
+  z-index: 6;
+  pointer-events: none;
+  animation: scanBeam 10s ease-in-out infinite;
+}
+
+/* === LOGO === */
+.logo {
+  position: fixed;
+  top: 24px; left: 28px;
+  z-index: 25;
+  font-family: 'Geist Sans', var(--font-sans), sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  color: rgba(248, 250, 252, 0.7);
+  text-decoration: none;
+  opacity: 0;
+  animation: fadeIn 0.8s ease forwards 0.2s;
+}
+
+/* === NAV === */
+.topNav {
+  position: fixed;
+  top: 20px; right: 28px;
+  z-index: 25;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  opacity: 0;
+  animation: fadeIn 0.8s ease forwards 0.3s;
+}
+
+.navBtn {
+  font-family: 'Geist Sans', var(--font-sans), sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  padding: 9px 18px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.navBtnPrimary {
+  background: #0891b2;
+  color: #fff;
+  font-weight: 500;
+  border: none;
+}
+.navBtnPrimary:hover { opacity: 0.85; }
+
+.navBtnSecondary {
+  background: transparent;
+  color: rgba(248, 250, 252, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.navBtnSecondary:hover {
+  color: rgba(248, 250, 252, 0.7);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* === GLASS CARD === */
+.heroGlass {
+  position: fixed;
+  z-index: 20;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 520px;
+  padding: 44px 44px 36px;
+  text-align: center;
+  backdrop-filter: blur(60px) saturate(1.4);
+  -webkit-backdrop-filter: blur(60px) saturate(1.4);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  animation: fadeUp 0.9s ease forwards 0.1s;
+}
+
+.headline {
+  font-size: 36px;
+  font-weight: 600;
+  letter-spacing: -1px;
+  line-height: 1.35;
+  color: #f8fafc;
+  margin-bottom: 14px;
+}
+.headline span { color: #0891b2; }
+
+.description {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(248, 250, 252, 0.4);
+  margin-bottom: 30px;
+  font-weight: 400;
+}
+
+.emailRow {
+  display: flex;
+  gap: 0;
+  margin-bottom: 30px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
+  padding: 4px;
+}
+
+.emailRow input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 12px 20px;
+  color: #fff;
+  font-family: 'Geist Sans', var(--font-sans), sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  outline: none;
+  border-radius: 100px;
+}
+.emailRow input::placeholder { color: rgba(255, 255, 255, 0.2); }
+
+.btnWaitlist {
+  background: #0891b2;
+  border: none;
+  border-radius: 100px;
+  padding: 12px 24px;
+  color: #fff;
+  font-family: 'Geist Sans', var(--font-sans), sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+}
+.btnWaitlist:hover { opacity: 0.85; }
+
+/* Skills */
+.skillsSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.skillLive {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #f8fafc;
+}
+
+.liveDot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+.skillsDivider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.skillsUpcoming {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.upcomingLabel {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.18);
+}
+
+.upcomingList {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.25);
+  font-weight: 400;
+}
+
+/* === TICKER === */
+.tickerBar {
+  position: fixed;
+  bottom: 0; left: 0;
+  width: 100%; height: 28px;
+  z-index: 15;
+  background: rgba(0, 0, 0, 0.7);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  animation: fadeIn 0.8s ease forwards 0.5s;
+}
+
+.tickerTrack {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  animation: tickerScroll 35s linear infinite;
+  white-space: nowrap;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: rgba(8, 145, 178, 0.3);
+  letter-spacing: 0.5px;
+}
+
+.up { color: rgba(34, 197, 94, 0.5); }
+.down { color: rgba(239, 68, 68, 0.4); }
+
+/* === ANIMATIONS === */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translate(-50%, -47%); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes scanBeam {
+  0% { top: -2px; opacity: 0; }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
+  100% { top: 100vh; opacity: 0; }
+}
+
+@keyframes tickerScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@media (max-width: 640px) {
+  .heroGlass { width: 90%; padding: 32px 24px 28px; }
+  .headline { font-size: 26px; }
+  .skillsSection { flex-direction: column; gap: 12px; }
+}
