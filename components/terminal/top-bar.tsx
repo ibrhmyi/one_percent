@@ -32,7 +32,9 @@ export function TopBar({ latestMessage }: Props) {
   return (
     <div style={{
       height: '36px',
-      background: 'var(--bg-card)',
+      background: 'rgba(20, 25, 34, 0.8)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
       borderBottom: '1px solid var(--border-default)',
       display: 'flex', alignItems: 'center',
       overflow: 'hidden',

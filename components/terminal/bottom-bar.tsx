@@ -26,7 +26,9 @@ export function BottomBar({ wsConnected, isRunning, cycleCount, uptimeSeconds, l
   return (
     <div style={{
       flexShrink: 0,
-      background: 'var(--bg-card)',
+      background: 'rgba(20, 25, 34, 0.8)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
       border: '1px solid var(--border-default)',
       borderRadius: 8,
       margin: '0 4px 4px 4px',

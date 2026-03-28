@@ -405,6 +405,20 @@
   100% { transform: translateX(-50%); }
 }
 
+/* Landscape mobile / short screens */
+@media (max-height: 500px) {
+  .heroGlass { padding: 16px 24px 14px; width: 420px; border-radius: 16px; }
+  .headline { font-size: 20px; margin-bottom: 8px; }
+  .description { font-size: 11px; margin-bottom: 12px; line-height: 1.5; }
+  .emailRow { margin-bottom: 12px; padding: 3px; }
+  .emailRow input { padding: 8px 14px; font-size: 12px; }
+  .btnWaitlist { padding: 8px 16px; font-size: 11px; }
+  .skillsSection { gap: 10px; }
+  .skillLive { font-size: 11px; }
+  .upcomingLabel { font-size: 8px; }
+  .upcomingList { font-size: 11px; gap: 6px; }
+}
+
 @media (max-width: 640px) {
   .hideMobile { display: none !important; }
   .videoGrid {

@@ -20,7 +20,9 @@
   --red-dim: #7f1d1d;
   --red-glow: rgba(239,68,68,0.15);
   --cyan: #0891b2;
+  --cyan-dark: #0e7490;
   --cyan-glow: rgba(8,145,178,0.2);
+  --cyan-gradient: linear-gradient(135deg, #0e7490 0%, #0891b2 50%, #0e7490 100%);
   --purple: #a78bfa;
 }
 
@@ -67,6 +69,17 @@ html, body {
   border-bottom: 1px solid var(--border-default);
   padding-bottom: 8px;
   margin-bottom: 10px;
+  position: relative;
+}
+.panel-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 24px;
+  height: 1px;
+  background: var(--cyan-gradient);
+  background-size: 200% 200%;
 }
 
 /* Badge */
