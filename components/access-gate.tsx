@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-const ACCESS_CODES = ['alpha', 'beta', 'pi'];
+const ACCESS_CODES = ['alphabetapi'];
 const COOKIE_NAME = 'op_access';
 const COOKIE_DAYS = 365;
 
@@ -59,41 +59,30 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
       fontFamily: 'var(--font-sans), -apple-system, sans-serif',
     }}>
       <div style={{
-        width: 360,
-        padding: '40px 36px',
+        width: 340,
+        maxWidth: '90vw',
+        padding: '36px 32px',
         textAlign: 'center',
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.06)',
-        borderRadius: 20,
-        backdropFilter: 'blur(40px)',
+        background: 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 16,
+        backdropFilter: 'blur(60px)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
       }}>
         <div style={{
           fontSize: 13,
-          fontWeight: 400,
-          letterSpacing: 3,
-          color: 'rgba(255,255,255,0.7)',
-          marginBottom: 32,
-        }}>
-          ONEPERCENT
-        </div>
-
-        <div style={{
-          fontSize: 14,
-          color: 'rgba(255,255,255,0.4)',
+          color: 'rgba(255,255,255,0.45)',
           marginBottom: 24,
           lineHeight: 1.6,
+          letterSpacing: 0.5,
         }}>
-          Terminal access is restricted.
+          Enter access code for live demo
         </div>
 
         <form onSubmit={handleSubmit} style={{
           display: 'flex',
-          gap: 0,
-          background: 'rgba(255,255,255,0.04)',
-          border: `1px solid ${error ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
-          borderRadius: 100,
-          padding: 4,
-          transition: 'border-color 0.2s',
+          flexDirection: 'column',
+          gap: 12,
         }}>
           <input
             type="text"
@@ -102,29 +91,36 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
             placeholder="Access code"
             autoFocus
             style={{
-              flex: 1,
-              background: 'transparent',
-              border: 'none',
-              padding: '12px 20px',
+              width: '100%',
+              boxSizing: 'border-box',
+              background: 'rgba(255,255,255,0.04)',
+              border: `1px solid ${error ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
+              padding: '12px 16px',
               color: '#fff',
               fontSize: 14,
               outline: 'none',
-              borderRadius: 100,
+              borderRadius: 8,
               fontFamily: 'inherit',
+              transition: 'border-color 0.2s',
+              textAlign: 'center',
+              letterSpacing: 1,
             }}
           />
           <button type="submit" style={{
-            background: 'linear-gradient(135deg, #0e7490, #0891b2, #0e7490)',
-            backgroundSize: '200% 200%',
+            width: '100%',
+            background: 'linear-gradient(135deg, #0e7490, #0891b2, #06a5c7, #0891b2, #0e7490)',
+            backgroundSize: '300% 300%',
+            animation: 'gradientShift 4s ease infinite',
             border: 'none',
-            borderRadius: 100,
+            borderRadius: 8,
             padding: '12px 24px',
             color: '#fff',
             fontSize: 14,
             fontWeight: 500,
             cursor: 'pointer',
-            whiteSpace: 'nowrap',
             fontFamily: 'inherit',
+            letterSpacing: 0.5,
+            transition: 'opacity 0.2s',
           }}>
             Enter
           </button>
@@ -140,6 +136,14 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
           </div>
         )}
       </div>
+
+      <style>{`
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
     </div>
   );
 }
