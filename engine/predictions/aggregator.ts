@@ -386,6 +386,22 @@ function recalculate(pred: GamePrediction): void {
   const hasTorvik = pred.torvikPrediction !== null;
   const hasBooks = pred.booksPrediction !== null;
 
+  // Check for home/away flip between BPI and books (runs every recalculate)
+  if (hasBPI && hasBooks) {
+    const bpiHome = pred.bpiPrediction!.homeWinProb;
+    const booksHome = pred.booksPrediction!.homeWinProb;
+    const normalDiff = Math.abs(bpiHome - booksHome);
+    const flippedDiff = Math.abs(bpiHome - pred.booksPrediction!.awayWinProb);
+
+    if (normalDiff > 0.15 && flippedDiff < normalDiff) {
+      // Flip the books prediction to align with BPI's home/away
+      const tmp = pred.booksPrediction!.homeWinProb;
+      pred.booksPrediction!.homeWinProb = pred.booksPrediction!.awayWinProb;
+      pred.booksPrediction!.awayWinProb = tmp;
+      console.log(`[Aggregator] FLIP FIX (recalc): ${pred.homeTeam} vs ${pred.awayTeam} — Books flipped to align with BPI`);
+    }
+  }
+
   const weights = calculateWeights(hasBPI, hasTorvik, hasBooks, pred.league);
   pred.weights = weights;
 
