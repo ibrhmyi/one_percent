@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { SoundToggle } from '@/components/sound-toggle';
 import styles from './landing.module.css';
 
 const games = [
@@ -34,6 +35,25 @@ const tickerItems = [
 
 export default function LandingPage() {
   const scoresRef = useRef<Map<number, { a: number; b: number }>>(new Map());
+  const [email, setEmail] = useState('');
+  const [waitlistMsg, setWaitlistMsg] = useState('');
+
+  const handleWaitlist = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      setWaitlistMsg(data.message || data.error || 'Done!');
+      if (!data.error) setEmail('');
+    } catch {
+      setWaitlistMsg('Failed to join. Try again.');
+    }
+  };
 
   useEffect(() => {
     // Initialize scores
@@ -86,6 +106,7 @@ export default function LandingPage() {
 
       {/* Nav */}
       <div className={styles.topNav}>
+        <SoundToggle src="/ambient.mp3" />
         <Link href="/blog" className={`${styles.navBtn} ${styles.navBtnSecondary}`}>Blog</Link>
         <Link href="/terminal" className={`${styles.navBtn} ${styles.navBtnPrimary}`}>Terminal</Link>
       </div>
@@ -98,10 +119,15 @@ export default function LandingPage() {
         <p className={styles.description}>
           Watches every sports market 24/7, detects momentum shifts and mispriced odds before the crowd reacts, AI trades in real-time.
         </p>
-        <form className={styles.emailRow} onSubmit={e => e.preventDefault()}>
-          <input type="email" placeholder="your@email.com" />
+        <form className={styles.emailRow} onSubmit={handleWaitlist}>
+          <input type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} />
           <button type="submit" className={styles.btnWaitlist}>Join waitlist</button>
         </form>
+        {waitlistMsg && (
+          <div style={{ fontSize: '12px', color: 'rgba(8,145,178,0.8)', marginTop: -20, marginBottom: 20 }}>
+            {waitlistMsg}
+          </div>
+        )}
         <div className={styles.skillsSection}>
           <div className={styles.skillLive}>
             <div className={styles.liveDot} />
