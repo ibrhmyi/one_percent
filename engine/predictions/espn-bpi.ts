@@ -174,7 +174,15 @@ export async function fetchBPIPredictions(leagues: Array<'NBA' | 'NCAAB' | 'WNBA
     for (let i = 0; i < dateStrings.length; i += 3) {
       const batch = dateStrings.slice(i, i + 3);
       const results = await Promise.all(batch.map(ds => fetchEventIds(league, ds)));
-      for (const events of results) allEvents.push(...events);
+      for (let j = 0; j < results.length; j++) {
+        // Tag each event with the date we fetched it for (ESPN date format: YYYYMMDD -> YYYY-MM-DD)
+        const fetchDate = batch[j];
+        const isoDate = `${fetchDate.slice(0,4)}-${fetchDate.slice(4,6)}-${fetchDate.slice(6,8)}`;
+        for (const evt of results[j]) {
+          if (!evt.date) evt.date = isoDate;
+        }
+        allEvents.push(...results[j]);
+      }
       if (i + 3 < dateStrings.length) await new Promise(r => setTimeout(r, 200));
     }
 
