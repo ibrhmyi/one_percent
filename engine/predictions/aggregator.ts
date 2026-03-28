@@ -79,27 +79,42 @@ function teamsMatch(a: string, b: string): boolean {
 
 // ── Core aggregation ──
 
+/**
+ * Dynamic weight calculation — prioritizes the BEST available source.
+ *
+ * Hierarchy (best to worst):
+ *   1. Pinnacle/sportsbooks — real money, sharpest lines in the world
+ *   2. Torvik (NCAAB only) — gold standard college basketball model
+ *   3. ESPN BPI — institutional model, good baseline
+ *
+ * As better sources become available, weaker sources get proportionally
+ * less weight. Pinnacle dominates when present because no model beats
+ * the closing line.
+ */
 function calculateWeights(
   hasBPI: boolean,
   hasTorvik: boolean,
   hasBooks: boolean,
   league: 'NBA' | 'NCAAB' | 'WNBA'
 ): { bpi: number; torvik: number; books: number } {
+  // Pinnacle/books available — they dominate
   if (hasBooks && hasBPI && hasTorvik) {
-    return { bpi: 0.35, torvik: 0.15, books: 0.50 };
+    // All three: books dominate, models supplement
+    return { bpi: 0.10, torvik: 0.10, books: 0.80 };
   }
   if (hasBooks && hasBPI) {
-    return { bpi: 0.35, torvik: 0, books: 0.65 };
+    return { bpi: 0.15, torvik: 0, books: 0.85 };
   }
   if (hasBooks && hasTorvik) {
-    return { bpi: 0, torvik: 0.35, books: 0.65 };
+    return { bpi: 0, torvik: 0.15, books: 0.85 };
   }
   if (hasBooks) {
     return { bpi: 0, torvik: 0, books: 1.0 };
   }
+
+  // No books — models only (lower confidence, higher edge thresholds apply)
   if (hasBPI && hasTorvik) {
-    // For NCAAB, Torvik is more credible than BPI
-    if (league === 'NCAAB') return { bpi: 0.40, torvik: 0.60, books: 0 };
+    if (league === 'NCAAB') return { bpi: 0.35, torvik: 0.65, books: 0 };
     return { bpi: 0.70, torvik: 0.30, books: 0 };
   }
   if (hasBPI) {
@@ -360,6 +375,14 @@ function recalculate(pred: GamePrediction): void {
   if (hasBPI) pred.sourcesAvailable.push('BPI');
   if (hasTorvik) pred.sourcesAvailable.push('Torvik');
   if (hasBooks) pred.sourcesAvailable.push('Pinnacle');
+
+  // Flag major disagreements between sources (likely home/away flip or matching error)
+  if (hasBooks && hasBPI) {
+    const disagree = Math.abs(pred.booksPrediction!.homeWinProb - pred.bpiPrediction!.homeWinProb);
+    if (disagree > 0.15) {
+      console.log(`[Aggregator] WARNING: ${pred.homeTeam} vs ${pred.awayTeam} — BPI (${(pred.bpiPrediction!.homeWinProb*100).toFixed(0)}%) disagrees with Pinnacle (${(pred.booksPrediction!.homeWinProb*100).toFixed(0)}%) by ${(disagree*100).toFixed(0)}%. Possible home/away mismatch.`);
+    }
+  }
 
   pred.lastUpdated = new Date().toISOString();
 }
