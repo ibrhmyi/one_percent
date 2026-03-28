@@ -296,7 +296,19 @@ export function updateBooksPrediction(
 
   if (existing) {
     const prevFair = existing.fairHomeWinProb;
-    existing.booksPrediction = booksData;
+
+    // If books prediction already exists, AVERAGE with new data (don't overwrite)
+    // This handles Pinnacle + Kambi feeding in separately
+    if (existing.booksPrediction && numBooks >= 2) {
+      existing.booksPrediction = {
+        homeWinProb: (existing.booksPrediction.homeWinProb + homeWinProb) / 2,
+        awayWinProb: (existing.booksPrediction.awayWinProb + awayWinProb) / 2,
+        numBooks: Math.max(existing.booksPrediction.numBooks, numBooks),
+        confidence,
+      };
+    } else {
+      existing.booksPrediction = booksData;
+    }
     recalculate(existing);
 
     // Change detection: if fair value shifted >2%, log it

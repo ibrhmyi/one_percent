@@ -13,6 +13,7 @@ import { refreshAllPredictions, getAllPredictions, getFairValue, updateBooksPred
 import { startPolling as startSportsbookPoller } from './predictions/sportsbook-poller';
 import { startInjuryMonitor, onInjuryUpdate } from './predictions/injury-monitor';
 import { startPinnaclePoller } from './predictions/pinnacle';
+import { startKambiPoller } from './predictions/kambi';
 
 const GAMMA_EVENTS_API = 'https://gamma-api.polymarket.com/events';
 
@@ -580,6 +581,9 @@ export async function startBrain() {
 
   // Start Pinnacle poller — sharpest odds in the world, free, no geo-blocking
   startPinnaclePoller();
+
+  // Start Kambi/Unibet poller — second independent book source
+  startKambiPoller();
 
   // Start sportsbook odds poller (DK/FD via Vercel — may fail due to geo-blocking)
   startSportsbookPoller();

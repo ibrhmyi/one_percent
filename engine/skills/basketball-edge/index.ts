@@ -94,7 +94,7 @@ Sources are dynamically weighted based on availability and credibility:
 - Skip if Polymarket spread > 8% (too illiquid)
 - Skip if bookmaker consensus spread > 10% (sources disagree)
 - Skip if game starts in < 5 minutes (too late to get filled)`;
-  dataSources = ['Pinnacle', 'ESPN BPI', 'Bart Torvik', 'ESPN Injuries'];
+  dataSources = ['Pinnacle', 'Kambi/Unibet', 'ESPN BPI', 'Bart Torvik', 'ESPN Injuries'];
   category = 'Basketball';
   status: 'active' | 'idle' | 'error' | 'paused' = 'active';
   pollIntervalMs = 60000;
