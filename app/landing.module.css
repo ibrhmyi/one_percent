@@ -175,12 +175,12 @@
 }
 
 .navBtnPrimary {
-  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #0891b2 100%);
+  background: linear-gradient(135deg, #0e7490 0%, #0891b2 50%, #0e7490 100%);
   background-size: 200% 200%;
   color: #fff;
   font-weight: 500;
-  border: 1px solid rgba(8, 145, 178, 0.3);
-  box-shadow: 0 0 20px rgba(8, 145, 178, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+  border: 1px solid rgba(8, 145, 178, 0.25);
+  box-shadow: 0 0 16px rgba(8, 145, 178, 0.12), inset 0 1px 0 rgba(255,255,255,0.08);
   animation: shimmer 3s ease infinite;
 }
 .navBtnPrimary:hover {
@@ -225,7 +225,14 @@
   color: #f8fafc;
   margin-bottom: 14px;
 }
-.headline span { color: #0891b2; }
+.headline span {
+  background: linear-gradient(135deg, #0e7490 0%, #22d3ee 40%, #0891b2 70%, #0e7490 100%);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 4s ease infinite;
+}
 
 .description {
   font-size: 14px;
@@ -260,9 +267,9 @@
 .emailRow input::placeholder { color: rgba(255, 255, 255, 0.2); }
 
 .btnWaitlist {
-  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #0891b2 100%);
+  background: linear-gradient(135deg, #0e7490 0%, #0891b2 50%, #0e7490 100%);
   background-size: 200% 200%;
-  border: 1px solid rgba(8, 145, 178, 0.3);
+  border: 1px solid rgba(8, 145, 178, 0.25);
   border-radius: 100px;
   padding: 12px 24px;
   color: #fff;
@@ -401,8 +408,8 @@
 @media (max-width: 640px) {
   .hideMobile { display: none !important; }
   .videoGrid {
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
   }
   .heroGlass { width: 92%; padding: 28px 20px 24px; }
   .headline { font-size: 28px; letter-spacing: -0.5px; }
