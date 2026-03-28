@@ -267,11 +267,30 @@ export function updateBooksPrediction(
   league: 'NBA' | 'NCAAB' | 'WNBA' = 'NBA',
   gameDate?: string
 ): void {
-  // Try with date first, then without for backwards compat
+  // Try to find existing prediction: exact key with date, without date, or fuzzy match
   const keyWithDate = gameDate ? makeGameKey(homeTeam, awayTeam, gameDate) : '';
   const keyWithout = makeGameKey(homeTeam, awayTeam);
-  const key = (keyWithDate && predictions.has(keyWithDate)) ? keyWithDate : keyWithout;
-  const existing = predictions.get(key);
+
+  let key: string;
+  let existing: GamePrediction | undefined;
+
+  if (keyWithDate && predictions.has(keyWithDate)) {
+    key = keyWithDate;
+    existing = predictions.get(key);
+  } else if (predictions.has(keyWithout)) {
+    key = keyWithout;
+    existing = predictions.get(key);
+  } else {
+    // Fuzzy match — find existing prediction by team names + date proximity
+    const found = getFairValue(homeTeam, awayTeam, gameDate);
+    if (found) {
+      key = found.gameKey;
+      existing = predictions.get(key);
+    } else {
+      key = keyWithDate || keyWithout;
+      existing = undefined;
+    }
+  }
 
   const booksData = { homeWinProb, awayWinProb, numBooks, confidence };
 
