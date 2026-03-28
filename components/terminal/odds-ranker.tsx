@@ -32,24 +32,18 @@ interface Props {
   predictions: Prediction[];
 }
 
-// ── Shared terminal text sizes (same as GameSchedule) ──
-const TITLE_SIZE = '0.7rem';
-const DATA_SIZE = '0.55rem';
-const BADGE_SIZE = '0.45rem';
-const DIM = 'rgba(255,255,255,0.3)';
-const DIMMER = 'rgba(255,255,255,0.15)';
-
 function formatCountdown(iso: string | null | undefined): string {
   if (!iso) return '';
-  const diffMs = new Date(iso).getTime() - Date.now();
-  if (diffMs < 0) return 'LIVE';
-  const totalSec = Math.floor(diffMs / 1000);
-  const d = Math.floor(totalSec / 86400);
-  const h = Math.floor((totalSec % 86400) / 3600);
-  const m = Math.floor((totalSec % 3600) / 60);
-  const s = totalSec % 60;
-  if (d > 0) return `${d}d ${h}h ${m}m`;
-  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const diff = Math.floor((new Date(iso).getTime() - Date.now()) / 1000);
+  if (diff <= 0) return 'LIVE';
+  const h = Math.floor(diff / 3600);
+  const m = Math.floor((diff % 3600) / 60);
+  const s = diff % 60;
+  if (h >= 24) {
+    const d = Math.floor(h / 24);
+    return `${d}d ${h % 24}h ${m}m`;
+  }
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 function Countdown({ target }: { target: string | null | undefined }) {
@@ -60,26 +54,25 @@ function Countdown({ target }: { target: string | null | undefined }) {
   }, []);
   if (!target) return null;
   const text = formatCountdown(target);
-  const isLive = text === 'LIVE';
-  if (isLive) {
+  if (text === 'LIVE') {
     return (
       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
         <span className="pulse-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', display: 'inline-block' }} />
-        <span style={{ color: 'var(--green)', fontWeight: 700, fontSize: DATA_SIZE }}>LIVE</span>
+        <span style={{ color: 'var(--green)', fontWeight: 700, fontSize: '0.62rem' }}>LIVE</span>
       </span>
     );
   }
   return (
-    <span style={{ color: DIM, fontSize: DATA_SIZE, fontFamily: 'var(--font-mono)' }}>
+    <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontFamily: 'var(--font-mono)' }}>
       {text}
     </span>
   );
 }
 
-function formatVol(v: number | null | undefined): string {
-  if (v == null || v === 0) return '$0';
+function formatVol(v?: number) {
+  if (!v) return '—';
   if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
-  if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}k`;
+  if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`;
   return `$${v.toFixed(0)}`;
 }
 
@@ -91,12 +84,12 @@ export function OddsRanker({ predictions }: Props) {
   return (
     <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="panel-header">
-        Odds Ranker <span style={{ color: DIM, fontWeight: 400 }}>{matched.length} games</span>
+        Odds Ranker <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>{matched.length} games</span>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {matched.length === 0 && (
-          <div style={{ color: DIM, fontSize: DATA_SIZE, padding: 12 }}>
+          <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem', padding: 12 }}>
             Loading predictions...
           </div>
         )}
@@ -105,25 +98,26 @@ export function OddsRanker({ predictions }: Props) {
           const edgeVal = (pred.bestEdge ?? 0) * 100;
           const leagueLabel = pred.league === 'NCAAB' ? 'NCAA' : pred.league;
           const sources = pred.sourcesAvailable ?? [];
-          const spreadVal = pred.spread != null ? pred.spread : 0;
 
-          // Fair in game listing order: away vs home
           const awayFair = pred.fairAwayWinProb;
           const homeFair = pred.fairHomeWinProb;
-          const awayName = pred.awayTeam.split(' ').pop() ?? pred.awayTeam;
-          const homeName = pred.homeTeam.split(' ').pop() ?? pred.homeTeam;
+          const awayLast = pred.awayTeam.split(' ').pop() ?? pred.awayTeam;
+          const homeLast = pred.homeTeam.split(' ').pop() ?? pred.homeTeam;
 
-          const content = (
-            <div className="schedule-row-link" style={{
+          const polyUrl = pred.polymarketUrl;
+
+          const inner = (
+            <div className={polyUrl ? 'schedule-row-link' : ''} style={{
               padding: '8px 6px',
               borderBottom: '1px solid var(--border-default)',
               borderLeft: '2px solid transparent',
+              cursor: polyUrl ? 'pointer' : 'default',
               transition: 'background 0.15s',
             }}>
-              {/* Row 1: Teams (left) + Countdown (right) — same layout as Game Schedule */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              {/* Row 1: Badges (top left) + Countdown (top right) */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <span style={{ fontSize: BADGE_SIZE, color: DIM, padding: '1px 3px', borderRadius: 2, border: '1px solid var(--border-default)' }}>{leagueLabel}</span>
+                  <span style={{ fontSize: '0.45rem', color: 'var(--text-dim)', padding: '1px 3px', borderRadius: 2, border: '1px solid var(--border-default)' }}>{leagueLabel}</span>
                   {sources.map(s => {
                     const label = s.startsWith('Books') ? 'Pinnacle' : s;
                     const isBooks = s.startsWith('Books') || s === 'Pinnacle';
@@ -138,58 +132,69 @@ export function OddsRanker({ predictions }: Props) {
                       }}>{label}</span>
                     );
                   })}
-                  <span style={{ fontSize: TITLE_SIZE, fontWeight: 600, color: 'rgba(255,255,255,0.9)', marginLeft: 2 }}>
-                    {pred.awayTeam}
-                  </span>
-                  <span style={{ color: DIM, fontSize: DATA_SIZE }}>vs</span>
-                  <span style={{ fontSize: TITLE_SIZE, fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
-                    {pred.homeTeam}
-                  </span>
                 </div>
                 <Countdown target={pred.gameStartTime} />
               </div>
 
-              {/* Row 2: YES · NO · SPRD · VOL — exact same style as Game Schedule */}
-              <div style={{ display: 'flex', alignItems: 'center', fontSize: DATA_SIZE, fontFamily: 'var(--font-mono)', gap: 0, marginBottom: 4 }}>
-                <span style={{ color: DIM }}>YES </span>
-                <span style={{ color: 'var(--green)', fontWeight: 600 }}>{((pred.yesPrice ?? 0) * 100).toFixed(1)}¢</span>
-                <span style={{ color: DIMMER, margin: '0 5px' }}>·</span>
-                <span style={{ color: DIM }}>NO </span>
-                <span style={{ color: 'var(--red)', fontWeight: 600 }}>{((pred.noPrice ?? 0) * 100).toFixed(1)}¢</span>
-                <span style={{ color: DIMMER, margin: '0 5px' }}>·</span>
-                <span style={{ color: DIM }}>SPRD </span>
-                <span style={{ color: DIM }}>{spreadVal.toFixed(1)}¢</span>
+              {/* Row 2: Team names — flows as one line, wraps naturally */}
+              <div style={{ fontSize: '0.73rem', fontWeight: 600, marginBottom: 4 }}>
+                <span style={{ color: 'rgba(255,255,255,0.9)' }}>{pred.awayTeam}</span>
+                <span style={{ color: 'var(--text-dim)', margin: '0 4px' }}>vs</span>
+                <span style={{ color: 'rgba(255,255,255,0.9)' }}>{pred.homeTeam}</span>
+              </div>
+
+              {/* Row 3: YES / NO / SPRD / VOL — exact same style as Game Schedule */}
+              <div style={{ display: 'flex', gap: 10, fontSize: '0.62rem', marginBottom: 3 }}>
+                <span>
+                  <span style={{ color: 'var(--text-dim)' }}>YES </span>
+                  <span style={{ color: 'var(--green)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                    {((pred.yesPrice ?? 0) * 100).toFixed(1)}¢
+                  </span>
+                </span>
+                <span>
+                  <span style={{ color: 'var(--text-dim)' }}>NO </span>
+                  <span style={{ color: 'var(--red)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                    {((pred.noPrice ?? 0) * 100).toFixed(1)}¢
+                  </span>
+                </span>
+                <span>
+                  <span style={{ color: 'var(--text-dim)' }}>SPRD </span>
+                  <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                    {(pred.spread ?? 0).toFixed(1)}¢
+                  </span>
+                </span>
                 <span style={{ marginLeft: 'auto' }}>
-                  <span style={{ color: DIM }}>VOL </span>
-                  <span style={{ color: DIM }}>{formatVol(pred.volume)}</span>
+                  <span style={{ color: 'var(--text-dim)' }}>VOL </span>
+                  <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                    {formatVol(pred.volume)}
+                  </span>
                 </span>
               </div>
 
-              {/* Row 3: Fair probability (away first) + Edge */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: DATA_SIZE, fontFamily: 'var(--font-mono)' }}>
-                <span style={{ color: DIM }}>
-                  Fair: {awayName} {(awayFair * 100).toFixed(0)}% · {homeName} {(homeFair * 100).toFixed(0)}%
+              {/* Row 4: Fair + Edge on same line */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.62rem' }}>
+                <span style={{ color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>
+                  Fair: {awayLast} {(awayFair * 100).toFixed(0)}% · {homeLast} {(homeFair * 100).toFixed(0)}%
                 </span>
                 {edgeVal > 0.5 ? (
-                  <span style={{ color: 'var(--cyan)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  <span style={{ color: 'var(--cyan)', fontWeight: 600, fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
                     BUY {pred.bestSide} +{edgeVal.toFixed(1)}%
                   </span>
                 ) : (
-                  <span style={{ color: DIMMER }}>—</span>
+                  <span style={{ color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>—</span>
                 )}
               </div>
             </div>
           );
 
-          if (pred.polymarketUrl) {
-            return (
-              <a key={pred.gameKey} href={pred.polymarketUrl} target="_blank" rel="noopener noreferrer"
-                style={{ textDecoration: 'none', color: 'inherit' }}>
-                {content}
-              </a>
-            );
-          }
-          return <div key={pred.gameKey}>{content}</div>;
+          return polyUrl ? (
+            <a key={pred.gameKey} href={polyUrl} target="_blank" rel="noopener noreferrer"
+              style={{ textDecoration: 'none', display: 'block' }}>
+              {inner}
+            </a>
+          ) : (
+            <div key={pred.gameKey}>{inner}</div>
+          );
         })}
       </div>
     </div>

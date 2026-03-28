@@ -19,12 +19,6 @@ interface GameEntry {
 }
 interface Props { games: GameEntry[]; }
 
-// ── Shared terminal text sizes ──
-const TITLE_SIZE = '0.7rem';
-const DATA_SIZE = '0.55rem';
-const BADGE_SIZE = '0.45rem';
-const DIM = 'rgba(255,255,255,0.3)';
-
 function useNow() {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -38,24 +32,23 @@ function formatCountdown(startTime: string, now: number) {
   if (!startTime) return '—';
   const diff = Math.floor((new Date(startTime).getTime() - now) / 1000);
   if (diff <= 0) return 'Starting';
-  const d = Math.floor(diff / 86400);
-  const h = Math.floor((diff % 86400) / 3600);
+  const h = Math.floor(diff / 3600);
   const m = Math.floor((diff % 3600) / 60);
   const s = diff % 60;
-  if (d > 0) return `${d}d ${h}h ${m}m`;
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
 function formatVol(v?: number) {
-  if (!v) return '$0';
+  if (!v) return '—';
   if (v >= 1e6) return `$${(v/1e6).toFixed(1)}M`;
-  if (v >= 1e3) return `$${(v/1e3).toFixed(0)}k`;
+  if (v >= 1e3) return `$${(v/1e3).toFixed(0)}K`;
   return `$${v.toFixed(0)}`;
 }
 
 export function GameSchedule({ games }: Props) {
   const now = useNow();
 
+  // Only show games within 24 hours or currently live, sorted: live first, then earliest start
   const H24 = 24 * 60 * 60 * 1000;
   const filtered = games.filter(g => {
     if (g.status === 'live') return true;
@@ -63,8 +56,10 @@ export function GameSchedule({ games }: Props) {
     const diff = new Date(g.startTime).getTime() - now;
     return diff > -4 * 60 * 60 * 1000 && diff < H24;
   }).sort((a, b) => {
+    // Live games first
     if (a.status === 'live' && b.status !== 'live') return -1;
     if (b.status === 'live' && a.status !== 'live') return 1;
+    // Then by start time ascending (soonest first)
     const aTime = a.startTime ? new Date(a.startTime).getTime() : Infinity;
     const bTime = b.startTime ? new Date(b.startTime).getTime() : Infinity;
     return aTime - bTime;
@@ -72,9 +67,9 @@ export function GameSchedule({ games }: Props) {
 
   return (
     <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div className="panel-header">Today&apos;s Game Schedule <span style={{ color: DIM, fontWeight: 400 }}>{filtered.length} games</span></div>
+      <div className="panel-header">Today&apos;s Game Schedule <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>{filtered.length} games</span></div>
       {filtered.length === 0 ? (
-        <div style={{ color: DIM, fontSize: DATA_SIZE, flex: 1, padding: 12 }}>No games in next 24h</div>
+        <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem', flex: 1 }}>No games in next 24h</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, minHeight: 0, overflowY: 'auto' }}>
           {filtered.map(g => {
@@ -90,16 +85,19 @@ export function GameSchedule({ games }: Props) {
                 cursor: polyUrl ? 'pointer' : 'default',
                 transition: 'background 0.15s',
               }}>
-                {/* Row 1: teams + countdown */}
+                {/* Row 1: teams + status */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <div style={{ fontSize: TITLE_SIZE, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ color: 'rgba(255,255,255,0.9)' }}>{g.awayTeam}</span>
-                    <span style={{ color: DIM, fontSize: DATA_SIZE }}>vs</span>
-                    <span style={{ color: 'rgba(255,255,255,0.9)' }}>{g.homeTeam}</span>
+                  <div style={{ fontSize: '0.73rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>{g.awayTeam}</span>
+                    <span style={{ color: 'var(--text-dim)', margin: '0 1px' }}>vs</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>{g.homeTeam}</span>
+                    {polyUrl && (
+                      <span style={{ color: 'var(--text-dim)', fontSize: '0.6rem', opacity: 0.6 }}>↗</span>
+                    )}
                     {isLive && g.awayScore !== undefined && (
                       <span style={{ color: 'var(--text-primary)', marginLeft: 8, fontWeight: 700 }}>
                         {g.awayScore}–{g.homeScore}
-                        <span style={{ color: DIM, fontWeight: 400, marginLeft: 5, fontSize: DATA_SIZE }}>
+                        <span style={{ color: 'var(--text-dim)', fontWeight: 400, marginLeft: 5 }}>
                           {g.period} {g.clock}
                         </span>
                       </span>
@@ -109,41 +107,47 @@ export function GameSchedule({ games }: Props) {
                     {isLive ? (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span className="pulse-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green)', display: 'inline-block' }} />
-                        <span style={{ color: 'var(--green)', fontWeight: 700, fontSize: DATA_SIZE }}>LIVE</span>
+                        <span style={{ color: 'var(--green)', fontWeight: 700, fontSize: '0.62rem' }}>LIVE</span>
                       </span>
                     ) : (
-                      <span style={{ color: DIM, fontSize: DATA_SIZE, fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ color: 'var(--text-dim)', fontSize: '0.65rem', fontFamily: 'var(--font-mono)' }}>
                         {formatCountdown(g.startTime, now)}
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Row 2: YES · NO · SPRD · VOL */}
-                <div style={{ display: 'flex', alignItems: 'center', fontSize: DATA_SIZE, fontFamily: 'var(--font-mono)', gap: 0 }}>
+                {/* Row 2: price / spread / volume */}
+                <div style={{ display: 'flex', gap: 10, fontSize: '0.62rem' }}>
                   {g.yesPrice != null && (
-                    <>
-                      <span style={{ color: DIM }}>YES </span>
-                      <span style={{ color: 'var(--green)', fontWeight: 600 }}>{(g.yesPrice * 100).toFixed(1)}¢</span>
-                    </>
+                    <span>
+                      <span style={{ color: 'var(--text-dim)' }}>YES </span>
+                      <span style={{ color: 'var(--green)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                        {(g.yesPrice * 100).toFixed(1)}¢
+                      </span>
+                    </span>
                   )}
                   {g.noPrice != null && (
-                    <>
-                      <span style={{ color: 'rgba(255,255,255,0.15)', margin: '0 5px' }}>·</span>
-                      <span style={{ color: DIM }}>NO </span>
-                      <span style={{ color: 'var(--red)', fontWeight: 600 }}>{(g.noPrice * 100).toFixed(1)}¢</span>
-                    </>
+                    <span>
+                      <span style={{ color: 'var(--text-dim)' }}>NO </span>
+                      <span style={{ color: 'var(--red)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                        {(g.noPrice * 100).toFixed(1)}¢
+                      </span>
+                    </span>
                   )}
                   {g.spread != null && (
-                    <>
-                      <span style={{ color: 'rgba(255,255,255,0.15)', margin: '0 5px' }}>·</span>
-                      <span style={{ color: DIM }}>SPRD </span>
-                      <span style={{ color: DIM }}>{g.spread.toFixed(1)}¢</span>
-                    </>
+                    <span>
+                      <span style={{ color: 'var(--text-dim)' }}>SPRD </span>
+                      <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                        {g.spread.toFixed(1)}¢
+                      </span>
+                    </span>
                   )}
                   <span style={{ marginLeft: 'auto' }}>
-                    <span style={{ color: DIM }}>VOL </span>
-                    <span style={{ color: DIM }}>{formatVol(g.volume)}</span>
+                    <span style={{ color: 'var(--text-dim)' }}>VOL </span>
+                    <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                      {formatVol(g.volume)}
+                    </span>
                   </span>
                 </div>
               </div>
