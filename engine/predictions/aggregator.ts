@@ -386,7 +386,10 @@ function recalculate(pred: GamePrediction): void {
   const hasTorvik = pred.torvikPrediction !== null;
   const hasBooks = pred.booksPrediction !== null;
 
-  // Check for home/away flip between BPI and books (runs every recalculate)
+  // Check for home/away flips between ALL source pairs.
+  // Use BPI as the reference (it gets home/away from ESPN which uses actual venue).
+  // Any other source that disagrees by >15% AND would agree if flipped → auto-flip.
+
   if (hasBPI && hasBooks) {
     const bpiHome = pred.bpiPrediction!.homeWinProb;
     const booksHome = pred.booksPrediction!.homeWinProb;
@@ -394,11 +397,24 @@ function recalculate(pred: GamePrediction): void {
     const flippedDiff = Math.abs(bpiHome - pred.booksPrediction!.awayWinProb);
 
     if (normalDiff > 0.15 && flippedDiff < normalDiff) {
-      // Flip the books prediction to align with BPI's home/away
       const tmp = pred.booksPrediction!.homeWinProb;
       pred.booksPrediction!.homeWinProb = pred.booksPrediction!.awayWinProb;
       pred.booksPrediction!.awayWinProb = tmp;
-      console.log(`[Aggregator] FLIP FIX (recalc): ${pred.homeTeam} vs ${pred.awayTeam} — Books flipped to align with BPI`);
+      console.log(`[Aggregator] FLIP FIX: ${pred.homeTeam} vs ${pred.awayTeam} — Books flipped to align with BPI`);
+    }
+  }
+
+  if (hasBPI && hasTorvik) {
+    const bpiHome = pred.bpiPrediction!.homeWinProb;
+    const torvikHome = pred.torvikPrediction!.homeWinProb;
+    const normalDiff = Math.abs(bpiHome - torvikHome);
+    const flippedDiff = Math.abs(bpiHome - pred.torvikPrediction!.awayWinProb);
+
+    if (normalDiff > 0.15 && flippedDiff < normalDiff) {
+      const tmp = pred.torvikPrediction!.homeWinProb;
+      pred.torvikPrediction!.homeWinProb = pred.torvikPrediction!.awayWinProb;
+      pred.torvikPrediction!.awayWinProb = tmp;
+      console.log(`[Aggregator] FLIP FIX: ${pred.homeTeam} vs ${pred.awayTeam} — Torvik flipped to align with BPI`);
     }
   }
 
