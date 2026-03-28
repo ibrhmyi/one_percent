@@ -71,7 +71,17 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
       }}>
         <div style={{
           fontSize: 13,
-          color: 'rgba(255,255,255,0.45)',
+          fontWeight: 400,
+          letterSpacing: 3,
+          color: 'rgba(255,255,255,0.7)',
+          marginBottom: 20,
+        }}>
+          ONEPERCENT
+        </div>
+
+        <div style={{
+          fontSize: 13,
+          color: 'rgba(255,255,255,0.4)',
           marginBottom: 24,
           lineHeight: 1.6,
           letterSpacing: 0.5,

@@ -117,7 +117,7 @@ export default function LandingPage() {
           Real-time edge detection for <span>prediction markets</span>
         </div>
         <p className={styles.description}>
-          Watches every sports market 24/7, detects momentum shifts and mispriced odds before the crowd reacts, AI trades in real-time.
+          Watches every sports market 24/7, detects momentum shifts and mispriced odds before the crowd reacts, AI trades real-time.
         </p>
         <form className={styles.emailRow} onSubmit={handleWaitlist}>
           <input type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} />
