@@ -100,7 +100,23 @@ export async function GET() {
 
 /** Match predictions with Polymarket markets to show edge */
 function enrichPredictionsWithMarkets(predictions: any[], markets: any[]): any[] {
-  return predictions.map(pred => {
+  // Deduplicate predictions — keep the one with more sources
+  const deduped: any[] = [];
+  const seen = new Set<string>();
+  // Sort so multi-source predictions come first
+  const sorted = [...predictions].sort((a, b) =>
+    (b.sourcesAvailable?.length ?? 0) - (a.sourcesAvailable?.length ?? 0)
+  );
+  for (const pred of sorted) {
+    const teams = [normalize(pred.homeTeam || ''), normalize(pred.awayTeam || '')].sort().join('::');
+    const dateKey = pred.gameDate || '';
+    const key = `${teams}::${dateKey}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(pred);
+  }
+
+  return deduped.map(pred => {
     // Try to find a matching Polymarket market
     // MUST match: both teams AND same game date (within 1 day tolerance)
     const predDate = pred.gameStartTime ? new Date(pred.gameStartTime).toISOString().slice(0, 10) : '';
@@ -139,10 +155,14 @@ function enrichPredictionsWithMarkets(predictions: any[], markets: any[]): any[]
 
       const yesFair = homeIsYes ? pred.fairHomeWinProb : pred.fairAwayWinProb;
       const noFair = homeIsYes ? pred.fairAwayWinProb : pred.fairHomeWinProb;
-      // Skip edge calculation for settled markets (price at extremes)
+      // Skip edge calculation for settled markets or LIVE games
+      // Pre-game predictions are meaningless once the game starts
       const isSettled = (market.yesPrice >= 0.95 || market.yesPrice <= 0.05);
-      const yesEdge = isSettled ? 0 : yesFair - (market.yesPrice || 0.5);
-      const noEdge = isSettled ? 0 : noFair - (market.noPrice || 0.5);
+      const gameStartTime = market.gameStartTime || market.marketEndTime;
+      const isLive = gameStartTime ? new Date(gameStartTime).getTime() < Date.now() : false;
+      const skipEdge = isSettled || isLive;
+      const yesEdge = skipEdge ? 0 : yesFair - (market.yesPrice || 0.5);
+      const noEdge = skipEdge ? 0 : noFair - (market.noPrice || 0.5);
 
       return {
         ...pred,
