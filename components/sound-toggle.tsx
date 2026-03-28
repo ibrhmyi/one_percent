@@ -30,7 +30,21 @@ export function SoundToggle({ src }: Props) {
     };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
+
+    // Autoplay after 5 seconds (requires user interaction first on most browsers)
+    const autoplayTimer = setTimeout(() => {
+      audio.play().then(() => setPlaying(true)).catch(() => {
+        // Browser blocked autoplay — wait for first user click anywhere
+        const startOnClick = () => {
+          audio.play().then(() => setPlaying(true)).catch(() => {});
+          document.removeEventListener('click', startOnClick);
+        };
+        document.addEventListener('click', startOnClick, { once: true });
+      });
+    }, 5000);
+
     return () => {
+      clearTimeout(autoplayTimer);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.pause();
     };

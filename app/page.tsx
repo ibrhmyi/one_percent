@@ -82,7 +82,7 @@ export default function LandingPage() {
       {/* Video Grid Background */}
       <div className={styles.videoGrid}>
         {games.map((game, i) => (
-          <div key={i} className={styles.videoCell}>
+          <div key={i} className={`${styles.videoCell} ${i >= 6 ? styles.hideMobile : ''}`}>
             <video src={game.vid} autoPlay muted loop playsInline preload="auto" />
             <div className={styles.cellOverlay}>
               <div className={styles.cellScanline} />

@@ -175,12 +175,18 @@
 }
 
 .navBtnPrimary {
-  background: #0891b2;
+  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #0891b2 100%);
+  background-size: 200% 200%;
   color: #fff;
   font-weight: 500;
-  border: none;
+  border: 1px solid rgba(8, 145, 178, 0.3);
+  box-shadow: 0 0 20px rgba(8, 145, 178, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+  animation: shimmer 3s ease infinite;
 }
-.navBtnPrimary:hover { opacity: 0.85; }
+.navBtnPrimary:hover {
+  box-shadow: 0 0 30px rgba(8, 145, 178, 0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+  transform: translateY(-1px);
+}
 
 .navBtnSecondary {
   background: transparent;
@@ -254,8 +260,9 @@
 .emailRow input::placeholder { color: rgba(255, 255, 255, 0.2); }
 
 .btnWaitlist {
-  background: #0891b2;
-  border: none;
+  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #0891b2 100%);
+  background-size: 200% 200%;
+  border: 1px solid rgba(8, 145, 178, 0.3);
   border-radius: 100px;
   padding: 12px 24px;
   color: #fff;
@@ -263,10 +270,15 @@
   font-weight: 500;
   font-size: 14px;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
+  box-shadow: 0 0 16px rgba(8, 145, 178, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+  animation: shimmer 3s ease infinite;
 }
-.btnWaitlist:hover { opacity: 0.85; }
+.btnWaitlist:hover {
+  box-shadow: 0 0 28px rgba(8, 145, 178, 0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+  transform: translateY(-1px);
+}
 
 /* Skills */
 .skillsSection {
@@ -353,6 +365,12 @@
 .down { color: rgba(239, 68, 68, 0.4); }
 
 /* === ANIMATIONS === */
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translate(-50%, -47%); }
   to { opacity: 1; transform: translate(-50%, -50%); }
@@ -381,16 +399,21 @@
 }
 
 @media (max-width: 640px) {
+  .hideMobile { display: none !important; }
+  .videoGrid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
   .heroGlass { width: 92%; padding: 28px 20px 24px; }
-  .headline { font-size: 24px; letter-spacing: -0.5px; }
+  .headline { font-size: 28px; letter-spacing: -0.5px; }
   .description { font-size: 13px; margin-bottom: 20px; }
-  .emailRow { flex-direction: column; border-radius: 16px; gap: 0; }
-  .emailRow input { border-radius: 16px; padding: 14px 16px; text-align: center; }
-  .btnWaitlist { border-radius: 16px; margin: 0; width: 100%; padding: 14px; }
+  .emailRow { border-radius: 100px; padding: 3px; }
+  .emailRow input { padding: 10px 14px; font-size: 13px; }
+  .btnWaitlist { padding: 10px 18px; font-size: 12px; }
   .skillsSection { flex-direction: column; gap: 10px; }
   .skillsDivider { width: 40px; height: 1px; }
   .upcomingList { flex-wrap: wrap; justify-content: center; gap: 8px; }
-  .topNav { gap: 4px; top: 16px; right: 16px; }
-  .logo { top: 20px; left: 16px; font-size: 11px; }
-  .navBtn { font-size: 12px; padding: 7px 14px; }
+  .topNav { gap: 4px; top: 14px; right: 12px; }
+  .logo { top: 16px; left: 12px; font-size: 12px; letter-spacing: 2.5px; }
+  .navBtn { font-size: 11px; padding: 7px 14px; }
 }
