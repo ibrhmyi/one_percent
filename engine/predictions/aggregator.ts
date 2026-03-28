@@ -383,5 +383,15 @@ export function getBPICache(): BPIPrediction[] {
 /** Run a full refresh cycle — BPI first (creates entries), then Torvik (supplements) */
 export async function refreshAllPredictions(): Promise<void> {
   await refreshBPI();    // Creates predictions from ESPN data
-  await refreshTorvik(); // Supplements NCAAB predictions + creates from Polymarket markets
+  // Force Torvik to run if BPI just created new predictions
+  // (Torvik needs BPI's NCAAB predictions to exist before it can supplement them)
+  if (predictions.size > 0) {
+    await refreshTorvik(); // Supplements NCAAB predictions + creates from Polymarket markets
+  }
+}
+
+/** Force a Torvik refresh regardless of throttle (used after initial BPI load) */
+export async function forceTorvikRefresh(): Promise<void> {
+  lastTorvikFetchAt = 0; // Reset throttle
+  await refreshTorvik();
 }
