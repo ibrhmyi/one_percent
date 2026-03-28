@@ -125,8 +125,10 @@ function enrichPredictionsWithMarkets(predictions: any[], markets: any[]): any[]
 
       const yesFair = homeIsYes ? pred.fairHomeWinProb : pred.fairAwayWinProb;
       const noFair = homeIsYes ? pred.fairAwayWinProb : pred.fairHomeWinProb;
-      const yesEdge = yesFair - (market.yesPrice || 0.5);
-      const noEdge = noFair - (market.noPrice || 0.5);
+      // Skip edge calculation for settled markets (price at extremes)
+      const isSettled = (market.yesPrice >= 0.95 || market.yesPrice <= 0.05);
+      const yesEdge = isSettled ? 0 : yesFair - (market.yesPrice || 0.5);
+      const noEdge = isSettled ? 0 : noFair - (market.noPrice || 0.5);
 
       return {
         ...pred,

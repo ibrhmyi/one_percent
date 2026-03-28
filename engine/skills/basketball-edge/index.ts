@@ -147,7 +147,26 @@ Sources are dynamically weighted based on availability and credibility:
     // Net round-trip cost: taker exit (0.75%) - maker entry rebate (0.20%) = 0.55%
     const ROUND_TRIP_FEE = TAKER_FEE - MAKER_REBATE;
 
+    // Check how much capital is already deployed
+    const existingOrders = getOrders();
+    const totalDeployed = existingOrders
+      .filter(o => o.status !== 'cancelled')
+      .reduce((sum, o) => sum + o.size, 0);
+    const maxDeployment = bankroll * 0.40; // Max 40% of bankroll deployed at once
+    if (totalDeployed >= maxDeployment) return; // Already at max deployment
+
     for (const market of markets) {
+      // CRITICAL: Skip games that already started or are about to start
+      // Pre-game predictions are meaningless once the game tips off
+      if (market.gameStartTime) {
+        const minsUntilStart = (new Date(market.gameStartTime).getTime() - Date.now()) / 60000;
+        if (minsUntilStart < 5) continue; // Game started or starting in <5 min
+      }
+      // Also skip if market shows live game data (score > 0)
+      if (market.gameData && (market.gameData.homeScore > 0 || market.gameData.awayScore > 0)) continue;
+      // Skip settled markets (price at extremes = game already decided)
+      if (market.yesPrice >= 0.95 || market.yesPrice <= 0.05) continue;
+
       // Get fair value from aggregator (BPI + Torvik + DK/FD combined)
       const prediction = getFairValue(market.homeTeam, market.awayTeam);
       if (!prediction) continue;
@@ -200,14 +219,20 @@ Sources are dynamically weighted based on availability and credibility:
         continue;
       }
 
-      // MAKER PRICING: Place limit order 1-2¢ below the best ask
-      // This ensures we're providing liquidity (maker) not taking it (taker)
-      // makerPrice = midpoint between market price and fair value, rounded down to nearest cent
+      // Check if we've hit deployment cap (re-check after each order)
+      const currentDeployed = getOrders()
+        .filter(o => o.status !== 'cancelled')
+        .reduce((sum, o) => sum + o.size, 0);
+      const remainingCapital = maxDeployment - currentDeployed;
+      if (remainingCapital < 5) break; // No more capital to deploy
+
+      // MAKER PRICING: Place limit order 1¢ below the best ask
       const makerPrice = Math.floor((marketPrice - 0.01) * 100) / 100;
       if (makerPrice <= 0.01 || makerPrice >= fairValue) continue;
 
-      // Kelly sizing uses maker price (our actual entry cost)
-      const kellySize = calculateKellySize(fairValue, makerPrice, bankroll);
+      // Kelly sizing uses maker price, capped by remaining capital
+      let kellySize = calculateKellySize(fairValue, makerPrice, bankroll);
+      kellySize = Math.min(kellySize, remainingCapital); // Don't exceed remaining
       if (kellySize < 5) continue;
 
       // Check order book depth before placing
