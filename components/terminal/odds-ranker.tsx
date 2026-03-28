@@ -144,15 +144,21 @@ export function OddsRanker({ predictions }: Props) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ fontSize: '0.45rem', color: DIM, padding: '1px 3px', borderRadius: 2, border: '1px solid var(--border-default)' }}>{leagueLabel}</span>
                   <Countdown target={pred.gameStartTime} />
-                  {sources.map(s => (
-                    <span key={s} style={{
-                      fontSize: '0.4rem',
-                      color: s.startsWith('Books') ? 'var(--green)' : s === 'BPI' ? 'var(--cyan)' : 'rgba(255,200,100,0.7)',
-                      padding: '0px 3px',
-                      borderRadius: 2,
-                      border: `1px solid ${s.startsWith('Books') ? 'rgba(34,197,94,0.2)' : s === 'BPI' ? 'rgba(8,145,178,0.2)' : 'rgba(255,200,100,0.15)'}`,
-                    }}>{s}</span>
-                  ))}
+                  {sources.map(s => {
+                    // Display "Pinnacle" instead of "Books(1)" for clarity
+                    const label = s.startsWith('Books') ? 'Pinnacle' : s;
+                    const isBooks = s.startsWith('Books');
+                    const isBPI = s === 'BPI';
+                    return (
+                      <span key={s} style={{
+                        fontSize: '0.4rem',
+                        color: isBooks ? 'var(--green)' : isBPI ? 'var(--cyan)' : 'rgba(255,200,100,0.7)',
+                        padding: '0px 3px',
+                        borderRadius: 2,
+                        border: `1px solid ${isBooks ? 'rgba(34,197,94,0.2)' : isBPI ? 'rgba(8,145,178,0.2)' : 'rgba(255,200,100,0.15)'}`,
+                      }}>{label}</span>
+                    );
+                  })}
                 </div>
                 {isMatched && <span style={{ fontSize: '0.45rem', color: DIM }}>↗</span>}
               </div>

@@ -347,7 +347,7 @@ function recalculate(pred: GamePrediction): void {
   pred.sourcesAvailable = [];
   if (hasBPI) pred.sourcesAvailable.push('BPI');
   if (hasTorvik) pred.sourcesAvailable.push('Torvik');
-  if (hasBooks) pred.sourcesAvailable.push(`Books(${pred.booksPrediction!.numBooks})`);
+  if (hasBooks) pred.sourcesAvailable.push('Pinnacle');
 
   pred.lastUpdated = new Date().toISOString();
 }
