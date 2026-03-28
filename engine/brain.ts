@@ -12,6 +12,7 @@ import { syncToSupabase } from './supabase-sync';
 import { refreshAllPredictions, getAllPredictions, getFairValue, updateBooksPrediction } from './predictions/aggregator';
 import { startPolling as startSportsbookPoller } from './predictions/sportsbook-poller';
 import { startInjuryMonitor, onInjuryUpdate } from './predictions/injury-monitor';
+import { startPinnaclePoller } from './predictions/pinnacle';
 
 const GAMMA_EVENTS_API = 'https://gamma-api.polymarket.com/events';
 
@@ -577,7 +578,10 @@ export async function startBrain() {
   // Start real-time WebSocket price feed
   startPriceFeed();
 
-  // Start sportsbook odds poller (calls Vercel endpoint every 15s for DK/FD odds)
+  // Start Pinnacle poller — sharpest odds in the world, free, no geo-blocking
+  startPinnaclePoller();
+
+  // Start sportsbook odds poller (DK/FD via Vercel — may fail due to geo-blocking)
   startSportsbookPoller();
 
   // Start injury monitor (polls ESPN every 2 min, triggers edge recalc on status changes)
