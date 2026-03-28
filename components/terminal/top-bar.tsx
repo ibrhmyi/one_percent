@@ -66,7 +66,7 @@ export function TopBar({ latestMessage }: Props) {
           borderRadius: 3,
           letterSpacing: '0.05em',
         }}>
-          v1.0
+          alpha v1.1
         </span>
       </div>
 

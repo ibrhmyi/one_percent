@@ -51,7 +51,7 @@ export function BottomBar({ wsConnected, isRunning, cycleCount, uptimeSeconds, l
       {sep}
       {latency !== null && <><span>LAT <span style={{ color: latency > 500 ? 'var(--red)' : 'var(--text-secondary)' }}>{latency}ms</span></span>{sep}</>}
       <span>UP <span style={{ color: 'var(--text-secondary)' }}>{formatUptime(uptimeSeconds)}</span></span>
-      <span style={{ color: 'var(--text-dim)', marginLeft: 'auto', fontSize: '0.55rem', letterSpacing: '0.05em' }}>1% ENGINE v1.0</span>
+      <span style={{ color: 'var(--text-dim)', marginLeft: 'auto', fontSize: '0.55rem', letterSpacing: '0.05em' }}>1% ENGINE alpha v1.1</span>
     </div>
   );
 }

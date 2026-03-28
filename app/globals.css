@@ -69,17 +69,6 @@ html, body {
   border-bottom: 1px solid var(--border-default);
   padding-bottom: 8px;
   margin-bottom: 10px;
-  position: relative;
-}
-.panel-header::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 24px;
-  height: 1px;
-  background: var(--cyan-gradient);
-  background-size: 200% 200%;
 }
 
 /* Badge */
