@@ -168,7 +168,9 @@ Sources are dynamically weighted based on availability and credibility:
       if (market.yesPrice >= 0.95 || market.yesPrice <= 0.05) continue;
 
       // Get fair value from aggregator (BPI + Torvik + DK/FD combined)
-      const prediction = getFairValue(market.homeTeam, market.awayTeam);
+      // Pass game date to prevent cross-game team name collisions
+      const gameDate = market.gameStartTime ? new Date(market.gameStartTime).toISOString().slice(0, 10) : undefined;
+      const prediction = getFairValue(market.homeTeam, market.awayTeam, gameDate);
       if (!prediction) continue;
       if (prediction.sourcesAvailable.length === 0) continue;
 

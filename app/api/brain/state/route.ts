@@ -102,17 +102,30 @@ export async function GET() {
 function enrichPredictionsWithMarkets(predictions: any[], markets: any[]): any[] {
   return predictions.map(pred => {
     // Try to find a matching Polymarket market
+    // MUST match: both teams AND same game date (within 1 day tolerance)
+    const predDate = pred.gameStartTime ? new Date(pred.gameStartTime).toISOString().slice(0, 10) : '';
+
     const market = markets.find((m: any) => {
       const mHome = normalize(m.homeTeam || '');
       const mAway = normalize(m.awayTeam || '');
       const pHome = normalize(pred.homeTeam || '');
       const pAway = normalize(pred.awayTeam || '');
 
-      // Direct match
-      if (fuzzyMatch(mHome, pHome) && fuzzyMatch(mAway, pAway)) return true;
-      // Reversed
-      if (fuzzyMatch(mHome, pAway) && fuzzyMatch(mAway, pHome)) return true;
-      return false;
+      // Check date proximity (must be within 1 day)
+      if (predDate && m.gameStartTime) {
+        const mDate = new Date(m.gameStartTime).toISOString().slice(0, 10);
+        if (predDate !== mDate) {
+          // Allow 1 day tolerance for timezone differences
+          const predTime = new Date(pred.gameStartTime).getTime();
+          const mTime = new Date(m.gameStartTime).getTime();
+          if (Math.abs(predTime - mTime) > 36 * 60 * 60 * 1000) return false; // >36h apart = different game
+        }
+      }
+
+      // Both teams must match (not just one)
+      const directMatch = fuzzyMatch(mHome, pHome) && fuzzyMatch(mAway, pAway);
+      const reversedMatch = fuzzyMatch(mHome, pAway) && fuzzyMatch(mAway, pHome);
+      return directMatch || reversedMatch;
     });
 
     if (market) {

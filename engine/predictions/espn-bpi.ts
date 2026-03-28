@@ -17,6 +17,7 @@ export interface BPIPrediction {
   awayExpectedPts: number;
   matchupQuality: number; // 0-100 competitiveness
   lastModified: string;   // ISO timestamp
+  gameDate: string;        // YYYY-MM-DD for game disambiguation
   league: 'NBA' | 'NCAAB' | 'WNBA';
 }
 
@@ -35,6 +36,7 @@ const PREDICTOR_BASE: Record<string, string> = {
 interface ESPNEvent {
   id: string;
   name: string;
+  date?: string; // ISO date string from scoreboard
   competitions: Array<{
     competitors: Array<{
       homeAway: string;
@@ -236,6 +238,7 @@ export async function fetchBPIPredictions(leagues: Array<'NBA' | 'NCAAB' | 'WNBA
             awayExpectedPts: findStat(awayStats, 'teamExpectedPts'),
             matchupQuality: findStat(homeStats, 'matchupQuality') || findStat(awayStats, 'matchupQuality'),
             lastModified: predictor.lastModified ?? new Date().toISOString(),
+            gameDate: event.date ? new Date(event.date).toISOString().slice(0, 10) : '',
             league,
           } as BPIPrediction;
         })

@@ -22,9 +22,10 @@ import { fetchTorvikRatings, predictMatchup } from './torvik';
 import { addMessage, engineState } from '../state';
 
 export interface GamePrediction {
-  gameKey: string;           // "homeTeam-awayTeam" normalized key
+  gameKey: string;           // "homeTeam::awayTeam::YYYY-MM-DD" normalized key
   homeTeam: string;
   awayTeam: string;
+  gameDate: string;          // YYYY-MM-DD for disambiguation
   fairHomeWinProb: number;   // Weighted consensus: 0-1
   fairAwayWinProb: number;
 
@@ -54,8 +55,9 @@ let bpiCache: BPIPrediction[] = [];
 
 // ── Matching helpers ──
 
-function makeGameKey(home: string, away: string): string {
-  return `${normalize(home)}::${normalize(away)}`;
+function makeGameKey(home: string, away: string, date?: string): string {
+  const dateStr = date ? `::${date.slice(0, 10)}` : '';
+  return `${normalize(home)}::${normalize(away)}${dateStr}`;
 }
 
 function normalize(name: string): string {
@@ -149,7 +151,7 @@ export async function refreshBPI(): Promise<void> {
 
     // Update aggregated predictions
     for (const bpi of newPredictions) {
-      const key = makeGameKey(bpi.homeTeam, bpi.awayTeam);
+      const key = makeGameKey(bpi.homeTeam, bpi.awayTeam, bpi.gameDate);
       const existing = predictions.get(key);
 
       const bpiData = {
@@ -164,6 +166,7 @@ export async function refreshBPI(): Promise<void> {
       } else {
         const pred: GamePrediction = {
           gameKey: key,
+          gameDate: bpi.gameDate || '',
           homeTeam: bpi.homeTeam,
           awayTeam: bpi.awayTeam,
           fairHomeWinProb: bpi.homeWinProb,
@@ -215,13 +218,15 @@ export async function refreshTorvik(): Promise<void> {
     );
 
     for (const market of ncaaMarkets) {
-      const key = makeGameKey(market.homeTeam, market.awayTeam);
+      const mDate = market.gameStartTime ? new Date(market.gameStartTime).toISOString().slice(0, 10) : '';
+      const key = makeGameKey(market.homeTeam, market.awayTeam, mDate);
       if (predictions.has(key)) continue; // Already have a prediction
 
       const torvik = predictMatchup(market.homeTeam, market.awayTeam);
       if (torvik) {
         const pred: GamePrediction = {
           gameKey: key,
+          gameDate: mDate,
           homeTeam: market.homeTeam,
           awayTeam: market.awayTeam,
           fairHomeWinProb: torvik.homeWinProb,
@@ -259,9 +264,13 @@ export function updateBooksPrediction(
   awayWinProb: number,
   numBooks: number,
   confidence: string,
-  league: 'NBA' | 'NCAAB' | 'WNBA' = 'NBA'
+  league: 'NBA' | 'NCAAB' | 'WNBA' = 'NBA',
+  gameDate?: string
 ): void {
-  const key = makeGameKey(homeTeam, awayTeam);
+  // Try with date first, then without for backwards compat
+  const keyWithDate = gameDate ? makeGameKey(homeTeam, awayTeam, gameDate) : '';
+  const keyWithout = makeGameKey(homeTeam, awayTeam);
+  const key = (keyWithDate && predictions.has(keyWithDate)) ? keyWithDate : keyWithout;
   const existing = predictions.get(key);
 
   const booksData = { homeWinProb, awayWinProb, numBooks, confidence };
@@ -282,6 +291,7 @@ export function updateBooksPrediction(
   } else {
     const pred: GamePrediction = {
       gameKey: key,
+      gameDate: gameDate || '',
       homeTeam,
       awayTeam,
       fairHomeWinProb: homeWinProb,
@@ -323,25 +333,37 @@ function recalculate(pred: GamePrediction): void {
   pred.lastUpdated = new Date().toISOString();
 }
 
-/** Get fair value for a specific game */
-export function getFairValue(homeTeam: string, awayTeam: string): GamePrediction | null {
-  // Try exact key first
-  const key = makeGameKey(homeTeam, awayTeam);
-  if (predictions.has(key)) return predictions.get(key)!;
+/** Get fair value for a specific game. Requires both teams to match.
+ *  If gameDate is provided, only matches games on that date (prevents cross-game collisions).
+ */
+export function getFairValue(homeTeam: string, awayTeam: string, gameDate?: string): GamePrediction | null {
+  // Try exact key with date first
+  if (gameDate) {
+    const keyWithDate = makeGameKey(homeTeam, awayTeam, gameDate);
+    if (predictions.has(keyWithDate)) return predictions.get(keyWithDate)!;
+    // Try reversed
+    const keyRevDate = makeGameKey(awayTeam, homeTeam, gameDate);
+    if (predictions.has(keyRevDate)) {
+      const pred = predictions.get(keyRevDate)!;
+      return { ...pred, fairHomeWinProb: pred.fairAwayWinProb, fairAwayWinProb: pred.fairHomeWinProb };
+    }
+  }
 
-  // Fuzzy match
+  // Fuzzy match — require BOTH teams to match
+  // If gameDate provided, also check date proximity
   for (const [, pred] of predictions) {
+    // Date filter: if we have both dates, they must be within 36 hours
+    if (gameDate && pred.gameDate) {
+      const predTime = new Date(pred.gameDate).getTime();
+      const queryTime = new Date(gameDate).getTime();
+      if (Math.abs(predTime - queryTime) > 36 * 60 * 60 * 1000) continue;
+    }
+
     if (teamsMatch(pred.homeTeam, homeTeam) && teamsMatch(pred.awayTeam, awayTeam)) {
       return pred;
     }
-    // Try reversed (home/away might be swapped)
     if (teamsMatch(pred.homeTeam, awayTeam) && teamsMatch(pred.awayTeam, homeTeam)) {
-      // Swap probabilities
-      return {
-        ...pred,
-        fairHomeWinProb: pred.fairAwayWinProb,
-        fairAwayWinProb: pred.fairHomeWinProb,
-      };
+      return { ...pred, fairHomeWinProb: pred.fairAwayWinProb, fairAwayWinProb: pred.fairHomeWinProb };
     }
   }
 

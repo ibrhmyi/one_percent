@@ -315,7 +315,8 @@ export async function refreshMarkets(): Promise<void> {
 
     // Enrich markets with aggregated fair values
     for (const market of markets) {
-      const prediction = getFairValue(market.homeTeam, market.awayTeam);
+      const gameDate = market.gameStartTime ? new Date(market.gameStartTime).toISOString().slice(0, 10) : undefined;
+      const prediction = getFairValue(market.homeTeam, market.awayTeam, gameDate);
       if (prediction) {
         market.aiEstimate = prediction.fairHomeWinProb;
         // Calculate edge vs Polymarket price
