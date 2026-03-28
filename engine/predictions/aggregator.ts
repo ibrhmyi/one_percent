@@ -312,17 +312,43 @@ export function updateBooksPrediction(
   if (existing) {
     const prevFair = existing.fairHomeWinProb;
 
+    // AUTO-DETECT HOME/AWAY FLIP:
+    // If BPI exists and the new books data disagrees by >15%, check if flipping
+    // the books data brings them into better alignment.
+    // Different sources use different home/away conventions — this catches misalignment.
+    let adjustedHomeProb = homeWinProb;
+    let adjustedAwayProb = awayWinProb;
+
+    if (existing.bpiPrediction) {
+      const bpiHome = existing.bpiPrediction.homeWinProb;
+      const normalDiff = Math.abs(bpiHome - homeWinProb);
+      const flippedDiff = Math.abs(bpiHome - awayWinProb);
+
+      if (normalDiff > 0.15 && flippedDiff < normalDiff) {
+        // Flipping brings them closer — the sources have opposite home/away
+        console.log(`[Aggregator] FLIP FIX: ${existing.homeTeam} vs ${existing.awayTeam} — Pinnacle home/away was inverted (BPI=${(bpiHome*100).toFixed(0)}%, Books=${(homeWinProb*100).toFixed(0)}% → flipped to ${(awayWinProb*100).toFixed(0)}%)`);
+        adjustedHomeProb = awayWinProb;
+        adjustedAwayProb = homeWinProb;
+      }
+    }
+
+    const adjustedBooksData = {
+      homeWinProb: adjustedHomeProb,
+      awayWinProb: adjustedAwayProb,
+      numBooks,
+      confidence,
+    };
+
     // If books prediction already exists, AVERAGE with new data (don't overwrite)
-    // This handles Pinnacle + Kambi feeding in separately
     if (existing.booksPrediction && numBooks >= 2) {
       existing.booksPrediction = {
-        homeWinProb: (existing.booksPrediction.homeWinProb + homeWinProb) / 2,
-        awayWinProb: (existing.booksPrediction.awayWinProb + awayWinProb) / 2,
+        homeWinProb: (existing.booksPrediction.homeWinProb + adjustedHomeProb) / 2,
+        awayWinProb: (existing.booksPrediction.awayWinProb + adjustedAwayProb) / 2,
         numBooks: Math.max(existing.booksPrediction.numBooks, numBooks),
         confidence,
       };
     } else {
-      existing.booksPrediction = booksData;
+      existing.booksPrediction = adjustedBooksData;
     }
     recalculate(existing);
 
