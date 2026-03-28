@@ -32,53 +32,50 @@ interface Props {
   predictions: Prediction[];
 }
 
-const DIM = 'rgba(255,255,255,0.35)';
+const DIM = 'rgba(255,255,255,0.3)';
+const DIMMER = 'rgba(255,255,255,0.2)';
 const MONO: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: '0.6rem' };
 
 function formatCountdown(iso: string | null | undefined): string {
   if (!iso) return '';
   const diffMs = new Date(iso).getTime() - Date.now();
   if (diffMs < 0) return 'LIVE';
-  const totalMin = Math.floor(diffMs / 60000);
-  const d = Math.floor(totalMin / 1440);
-  const h = Math.floor((totalMin % 1440) / 60);
-  const m = totalMin % 60;
-  if (d > 0) return `${d}d ${h}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+  const totalSec = Math.floor(diffMs / 1000);
+  const d = Math.floor(totalSec / 86400);
+  const h = Math.floor((totalSec % 86400) / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  return `${m}m ${s}s`;
 }
 
 function Countdown({ target }: { target: string | null | undefined }) {
   const [, setTick] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 30000);
+    const id = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
   if (!target) return null;
   const text = formatCountdown(target);
   const isLive = text === 'LIVE';
-  return <span style={{ color: isLive ? 'var(--green)' : 'var(--cyan)', fontSize: '0.5rem' }}>{text}</span>;
+  return (
+    <span style={{
+      color: isLive ? 'var(--green)' : DIM,
+      fontSize: '0.5rem',
+      fontFamily: 'var(--font-mono)',
+      letterSpacing: '0.02em',
+    }}>
+      {text}
+    </span>
+  );
 }
 
 export function OddsRanker({ predictions }: Props) {
-  const [filter, setFilter] = useState<'all' | 'matched' | 'edge'>('all');
-
-  const filtered = predictions.filter(p => {
-    if (filter === 'matched') return p.polymarketMatched;
-    if (filter === 'edge') return p.polymarketMatched && (p.bestEdge ?? 0) > 0.02;
-    return true;
-  });
-
-  // Sort: matched with edge first, then matched, then unmatched
-  const sorted = [...filtered].sort((a, b) => {
-    const aMatched = a.polymarketMatched ? 1 : 0;
-    const bMatched = b.polymarketMatched ? 1 : 0;
-    if (aMatched !== bMatched) return bMatched - aMatched;
-    return (b.bestEdge ?? 0) - (a.bestEdge ?? 0);
-  });
-
-  const matchedCount = predictions.filter(p => p.polymarketMatched).length;
-  const edgeCount = predictions.filter(p => p.polymarketMatched && (p.bestEdge ?? 0) > 0.02).length;
+  // Only show matched predictions, sorted by edge (highest first)
+  const matched = predictions
+    .filter(p => p.polymarketMatched)
+    .sort((a, b) => (b.bestEdge ?? 0) - (a.bestEdge ?? 0));
 
   return (
     <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -86,68 +83,38 @@ export function OddsRanker({ predictions }: Props) {
         <span>
           Odds Ranker
           <span style={{ color: DIM, fontWeight: 400, marginLeft: 6, fontSize: '0.6rem' }}>
-            {predictions.length} games
+            {matched.length} games
           </span>
         </span>
-        {/* Filter tabs */}
-        <div style={{ display: 'flex', gap: 2 }}>
-          {(['all', 'matched', 'edge'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{
-              background: filter === f ? 'rgba(255,255,255,0.08)' : 'transparent',
-              border: '1px solid ' + (filter === f ? 'rgba(255,255,255,0.15)' : 'transparent'),
-              borderRadius: 3,
-              padding: '1px 6px',
-              fontSize: '0.5rem',
-              color: filter === f ? 'rgba(255,255,255,0.8)' : DIM,
-              cursor: 'pointer',
-              textTransform: 'uppercase',
-              letterSpacing: '0.03em',
-            }}>
-              {f === 'all' ? `All (${predictions.length})` :
-               f === 'matched' ? `Matched (${matchedCount})` :
-               `Edge (${edgeCount})`}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 2 }}>
-        {sorted.length === 0 && (
+        {matched.length === 0 && (
           <div style={{ color: DIM, fontSize: '0.6rem', padding: '12px 0', textAlign: 'center' }}>
-            {filter === 'edge' ? 'No positive-edge games found' :
-             filter === 'matched' ? 'No Polymarket matches yet' :
-             'Loading predictions...'}
+            Loading predictions...
           </div>
         )}
 
-        {sorted.map((pred) => {
-          const isMatched = pred.polymarketMatched;
-          const hasEdge = isMatched && (pred.bestEdge ?? 0) > 0.02;
+        {matched.map((pred) => {
           const edgeVal = (pred.bestEdge ?? 0) * 100;
-
           const leagueLabel = pred.league === 'NCAAB' ? 'NCAA' : pred.league;
-
-          // Source badges
           const sources = pred.sourcesAvailable ?? [];
-
-          const borderColor = hasEdge ? 'var(--cyan)' : isMatched ? 'rgba(255,255,255,0.1)' : 'transparent';
+          const spreadVal = pred.spread != null ? pred.spread : null;
+          const volK = pred.volume != null ? pred.volume / 1000 : null;
 
           const content = (
             <div className="card-interactive" style={{
               border: '1px solid var(--border-default)',
-              borderLeft: `3px solid ${borderColor}`,
               borderRadius: 6,
               padding: '8px 10px',
             }}>
-              {/* Row 1: League + Countdown + Sources */}
+              {/* Row 1: League + Sources (left) | Countdown (right) */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <span style={{ fontSize: '0.45rem', color: DIM, padding: '1px 3px', borderRadius: 2, border: '1px solid var(--border-default)' }}>{leagueLabel}</span>
-                  <Countdown target={pred.gameStartTime} />
                   {sources.map(s => {
-                    // Display "Pinnacle" instead of "Books(1)" for clarity
                     const label = s.startsWith('Books') ? 'Pinnacle' : s;
-                    const isBooks = s.startsWith('Books');
+                    const isBooks = s.startsWith('Books') || s === 'Pinnacle';
                     const isBPI = s === 'BPI';
                     return (
                       <span key={s} style={{
@@ -160,7 +127,7 @@ export function OddsRanker({ predictions }: Props) {
                     );
                   })}
                 </div>
-                {isMatched && <span style={{ fontSize: '0.45rem', color: DIM }}>↗</span>}
+                <Countdown target={pred.gameStartTime} />
               </div>
 
               {/* Teams */}
@@ -173,35 +140,37 @@ export function OddsRanker({ predictions }: Props) {
                 Fair: {pred.homeTeam.split(' ').pop()} {(pred.fairHomeWinProb * 100).toFixed(0)}% · {pred.awayTeam.split(' ').pop()} {(pred.fairAwayWinProb * 100).toFixed(0)}%
               </div>
 
-              {/* Polymarket match */}
-              {isMatched ? (
-                <>
-                  <div style={{ ...MONO, marginBottom: 3 }}>
-                    <span style={{ color: 'var(--green)' }}>YES {((pred.yesPrice ?? 0) * 100).toFixed(0)}¢</span>
-                    <span style={{ color: DIM, margin: '0 6px' }}>·</span>
-                    <span style={{ color: 'var(--red)' }}>NO {((pred.noPrice ?? 0) * 100).toFixed(0)}¢</span>
-                    {pred.volume != null && (
-                      <span style={{ color: DIM, marginLeft: 8, fontSize: '0.5rem' }}>
-                        Vol ${(pred.volume / 1000).toFixed(0)}k
-                      </span>
-                    )}
-                  </div>
+              {/* Market data: YES · NO · Spread · Vol */}
+              <div style={{ ...MONO, display: 'flex', alignItems: 'center', gap: 0, marginBottom: 3, flexWrap: 'wrap' }}>
+                <span style={{ color: 'var(--green)' }}>YES {((pred.yesPrice ?? 0) * 100).toFixed(0)}¢</span>
+                <span style={{ color: DIMMER, margin: '0 5px' }}>·</span>
+                <span style={{ color: 'var(--red)' }}>NO {((pred.noPrice ?? 0) * 100).toFixed(0)}¢</span>
+                {spreadVal != null && (
+                  <>
+                    <span style={{ color: DIMMER, margin: '0 5px' }}>·</span>
+                    <span style={{ color: DIM, fontSize: '0.5rem' }}>Spread {spreadVal.toFixed(0)}¢</span>
+                  </>
+                )}
+                {volK != null && (
+                  <>
+                    <span style={{ color: DIMMER, margin: '0 5px' }}>·</span>
+                    <span style={{ color: DIM, fontSize: '0.5rem' }}>Vol ${volK >= 1000 ? `${(volK/1000).toFixed(1)}M` : `${volK.toFixed(0)}k`}</span>
+                  </>
+                )}
+              </div>
 
-                  {hasEdge ? (
-                    <div style={{ fontSize: '0.6rem', color: 'var(--cyan)', fontWeight: 600 }}>
-                      BUY {pred.bestSide}
-                      <span style={{
-                        marginLeft: 8,
-                        fontWeight: 700,
-                        color: edgeVal >= 5 ? 'var(--green)' : 'var(--cyan)',
-                      }}>+{edgeVal.toFixed(1)}%</span>
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: '0.5rem', color: DIM }}>No edge (fair ≈ market)</div>
-                  )}
-                </>
+              {/* Edge — always show */}
+              {edgeVal > 0.5 ? (
+                <div style={{ fontSize: '0.6rem', fontWeight: 600 }}>
+                  <span style={{ color: 'var(--cyan)' }}>BUY {pred.bestSide}</span>
+                  <span style={{
+                    marginLeft: 8,
+                    fontWeight: 700,
+                    color: edgeVal >= 5 ? 'var(--green)' : edgeVal >= 2 ? 'var(--cyan)' : DIM,
+                  }}>+{edgeVal.toFixed(1)}%</span>
+                </div>
               ) : (
-                <div style={{ fontSize: '0.5rem', color: DIM }}>Awaiting Polymarket</div>
+                <div style={{ fontSize: '0.5rem', color: DIMMER }}>Fair ≈ market</div>
               )}
             </div>
           );
