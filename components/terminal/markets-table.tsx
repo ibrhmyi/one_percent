@@ -131,11 +131,15 @@ export function MarketsTable({ markets }: Props) {
               <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>
                 {new Date(next.gameStartTime!).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit', hour12: true })}
               </div>
-              {upcoming.length > 1 && (
-                <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginTop: 4 }}>
-                  +{upcoming.length - 1} more game{upcoming.length > 2 ? 's' : ''} today
-                </div>
-              )}
+              {(() => {
+                const todayEnd = Date.now() + 24 * 60 * 60 * 1000;
+                const todayGames = upcoming.filter(m => new Date(m.gameStartTime!).getTime() < todayEnd);
+                return todayGames.length > 1 ? (
+                  <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)', marginTop: 4 }}>
+                    +{todayGames.length - 1} more game{todayGames.length > 2 ? 's' : ''} in next 24h
+                  </div>
+                ) : null;
+              })()}
             </div>
           ) : (
             <div style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>
