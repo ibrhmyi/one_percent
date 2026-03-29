@@ -362,11 +362,24 @@ export class BasketballSkill implements Skill {
         clock: game.clock
       });
 
-      // The scoring team's current token price
-      // Home team = YES token, Away team = NO token
-      const scoringTeamPrice = scoringTeam === 'home' ? market.yesPrice
-                             : scoringTeam === 'away' ? market.noPrice
-                             : market.yesPrice;
+      // Determine which Polymarket side (YES/NO) corresponds to the ESPN home team.
+      // Polymarket YES = first team in title (market.homeTeam).
+      // ESPN home team might be either the YES or NO side.
+      const espnHomeLower = game.homeTeam.toLowerCase();
+      const marketHomeLower = market.homeTeam.toLowerCase();
+      // Check if ESPN's home team matches Polymarket's YES team (market.homeTeam)
+      const espnHomeIsYes = marketHomeLower.includes(espnHomeLower.split(' ').pop() ?? '') ||
+                            espnHomeLower.includes(marketHomeLower.split(' ').pop() ?? '');
+
+      // The scoring team's Polymarket token price
+      let scoringTeamPrice: number;
+      if (scoringTeam === 'home') {
+        scoringTeamPrice = espnHomeIsYes ? market.yesPrice : market.noPrice;
+      } else if (scoringTeam === 'away') {
+        scoringTeamPrice = espnHomeIsYes ? market.noPrice : market.yesPrice;
+      } else {
+        scoringTeamPrice = market.yesPrice;
+      }
 
       const info = this.calculateInformationValue(scoringTeamPrice, secondsRemaining, league.modelParams);
 

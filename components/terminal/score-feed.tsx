@@ -18,6 +18,8 @@ interface ScoringEvent {
 }
 interface Props { events: ScoringEvent[]; }
 
+const DIM = 'rgba(255,255,255,0.3)';
+
 export function ScoreFeed({ events }: Props) {
   // Show last 30 minutes of events
   const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
@@ -58,20 +60,18 @@ export function ScoreFeed({ events }: Props) {
                 padding: '5px 8px',
                 fontSize: '0.65rem',
               }}>
-                {/* Time + Period */}
+                {/* Time + Period + Score change */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
                   <span style={{ color: 'var(--text-dim)', fontSize: '0.55rem' }}>
                     {new Date(ev.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+                    <span style={{ marginLeft: 6 }}>{ev.period} {ev.clock}</span>
                   </span>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.55rem' }}>{ev.period} {ev.clock}</span>
+                  {scorer && pts > 0 && (
+                    <span style={{ color: DIM, fontSize: '0.55rem', fontWeight: 600 }}>
+                      {scorer} +{pts}
+                    </span>
+                  )}
                 </div>
-
-                {/* Score change — who scored */}
-                {scorer && pts > 0 && (
-                  <div style={{ color: 'var(--cyan)', fontSize: '0.6rem', fontWeight: 600, marginBottom: 1 }}>
-                    {scorer} +{pts}
-                  </div>
-                )}
 
                 {/* Score line — in market order */}
                 <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
