@@ -165,6 +165,36 @@ export class BasketballSkill implements Skill {
         }
       );
 
+      // Log ALL fouls that lead to free throws in Live Scores
+      const isFreeThrowFoul = play.type?.toLowerCase().includes('foul') ||
+        play.description?.toLowerCase().includes('free throw') ||
+        play.description?.toLowerCase().includes('foul');
+
+      if (isFreeThrowFoul) {
+        // Determine which team fouled (the OTHER team shoots free throws)
+        const foulingTeamDesc = play.description ?? '';
+
+        addCycleLog({
+          timestamp: new Date().toISOString(),
+          gameId: game.id,
+          homeTeam: game.homeTeam,
+          awayTeam: game.awayTeam,
+          homeScore: game.homeScore,
+          awayScore: game.awayScore,
+          period: `Q${game.period}`,
+          clock: game.clock,
+          secondsRemaining: secsLeft,
+          modelProbability: market.yesPrice, // current price as reference
+          marketPrice: market.yesPrice,
+          edge: 0,
+          ev: 0,
+          fee: 0,
+          kellySize: 0,
+          action: 'skip',
+          reason: `[${league.name}] FOUL: ${foulingTeamDesc.slice(0, 60)} | Q${game.period} ${game.clock}${isCrunchTime ? ' [CRUNCH]' : ''}`
+        });
+      }
+
       if (isCrunchTime) {
         addMessage({
           text: `[${league.name}] CRUNCH FOUL: ${play.description} | Q${game.period} ${game.clock} | ${game.awayTeam} ${game.awayScore}-${game.homeScore} ${game.homeTeam}`,
@@ -435,7 +465,7 @@ export class BasketballSkill implements Skill {
           fee: TAKER_FEE,
           kellySize: isTradeable ? 0.5 : 0,
           action: isTradeable ? 'enter' : 'skip',
-          reason: `[${league.name}] ${scoringTeam === 'home' ? game.homeTeam : game.awayTeam} scored +${pointsScored} | ${trueSource}: ${(trueScoringTeamProb * 100).toFixed(1)}% | Market: ${(scoringTeamPrice * 100).toFixed(1)}c | Edge: ${(liveEdge * 100).toFixed(1)}%`
+          reason: `[${league.name}] ${scoringTeam === 'home' ? game.homeTeam : game.awayTeam} scored +${pointsScored} | ${trueSource}: ${(trueScoringTeamProb * 100).toFixed(1)}% | Market: ${(scoringTeamPrice * 100).toFixed(1)}c | Spike: ${(info.informationValue * 100).toFixed(1)}% | Edge: ${(liveEdge * 100).toFixed(1)}%`
         });
 
         // Log the scoring event to disk

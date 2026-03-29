@@ -37,7 +37,8 @@ export function ScoreFeed({ events }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {reversed.map((ev, i) => {
             const edgePct = (ev.edge * 100).toFixed(1);
-            const isSignificant = Math.abs(ev.edge) > 0.015;
+            const isFoul = ev.reason?.includes('FOUL:');
+            const isSignificant = !isFoul && Math.abs(ev.edge) > 0.015;
             const isPositive = ev.edge > 0;
 
             // Determine who scored — use scoringTeam if available, otherwise infer
@@ -66,11 +67,15 @@ export function ScoreFeed({ events }: Props) {
                     {new Date(ev.timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
                     <span style={{ marginLeft: 6 }}>{ev.period} {ev.clock}</span>
                   </span>
-                  {scorer && pts > 0 && (
+                  {isFoul ? (
+                    <span style={{ color: 'rgba(255,200,100,0.7)', fontSize: '0.55rem', fontWeight: 600 }}>
+                      FOUL
+                    </span>
+                  ) : scorer && pts > 0 ? (
                     <span style={{ color: DIM, fontSize: '0.55rem', fontWeight: 600 }}>
                       {scorer} +{pts}
                     </span>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Score line — in market order */}
@@ -78,17 +83,23 @@ export function ScoreFeed({ events }: Props) {
                   {team1} {score1} — {score2} {team2}
                 </div>
 
-                {/* Model · Market · Edge */}
-                <div style={{ display: 'flex', gap: 8, fontSize: '0.6rem', flexWrap: 'wrap' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Model {(ev.modelProb * 100).toFixed(1)}%</span>
-                  <span style={{ color: 'var(--text-secondary)' }}>Market {(ev.marketPrice * 100).toFixed(0)}¢</span>
-                  <span style={{
-                    color: isSignificant ? 'var(--cyan)' : 'var(--text-dim)',
-                    fontWeight: isSignificant ? 600 : 400,
-                  }}>
-                    Edge {isPositive ? '+' : ''}{edgePct}%
-                  </span>
-                </div>
+                {/* Model · Market · Edge (or foul description) */}
+                {isFoul ? (
+                  <div style={{ fontSize: '0.55rem', color: 'rgba(255,200,100,0.5)' }}>
+                    {ev.reason?.replace(/^\[.*?\]\s*FOUL:\s*/, '').slice(0, 80)}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8, fontSize: '0.6rem', flexWrap: 'wrap' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>Model {(ev.modelProb * 100).toFixed(1)}%</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>Market {(ev.marketPrice * 100).toFixed(0)}¢</span>
+                    <span style={{
+                      color: isSignificant ? 'var(--cyan)' : 'var(--text-dim)',
+                      fontWeight: isSignificant ? 600 : 400,
+                    }}>
+                      Edge {isPositive ? '+' : ''}{edgePct}%
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}
