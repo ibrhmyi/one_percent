@@ -84,11 +84,16 @@ function Countdown({ targetTime }: { targetTime: string }) {
 }
 
 export function MarketsTable({ markets }: Props) {
+  const now = Date.now();
   const active = markets.filter(m => {
-    // Show games with confirmed live status or active positions
     if (m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open') return true;
-    // Show games with live ESPN data (score > 0 means game confirmed in progress)
+    // Show games with live ESPN data
     if (m.gameData && (m.gameData.homeScore > 0 || m.gameData.awayScore > 0)) return true;
+    // Show games that have started (within last 4 hours) — they're live even without ESPN data
+    if (m.gameStartTime) {
+      const elapsed = now - new Date(m.gameStartTime).getTime();
+      if (elapsed > 0 && elapsed < 4 * 60 * 60 * 1000) return true;
+    }
     return false;
   });
 
