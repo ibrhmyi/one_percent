@@ -474,6 +474,11 @@ export class BasketballSkill implements Skill {
       // NO SCORING EVENT? Skip opportunity generation.
       if (!scoringTeam) continue;
 
+      // Skip markets at extreme prices — outcome is essentially decided, no real edge
+      if (market.yesPrice >= 0.93 || market.yesPrice <= 0.07) {
+        continue;
+      }
+
       // SCORING EVENT DETECTED — but is the information valuable enough to trade?
       if (!info.tradeable) {
         addMessage({
@@ -484,7 +489,13 @@ export class BasketballSkill implements Skill {
       }
 
       // TRADEABLE SCORING EVENT
-      const side: 'yes' | 'no' = scoringTeam === 'home' ? 'yes' : 'no';
+      // Map scoring team to the correct Polymarket side (YES/NO)
+      let side: 'yes' | 'no';
+      if (scoringTeam === 'home') {
+        side = espnHomeIsYes ? 'yes' : 'no';
+      } else {
+        side = espnHomeIsYes ? 'no' : 'yes';
+      }
       const tokenId = side === 'yes' ? market.yesTokenId : market.noTokenId;
 
       addMessage({
