@@ -252,8 +252,11 @@ export async function refreshMarkets(): Promise<void> {
 
         // Match against all leagues — multi-strategy matching
         const game = allGames.find(g => {
-          // Strategy 1: Exact abbreviation match from slug
-          const gameAbbrs = new Set([g.homeAbbr.toLowerCase(), g.awayAbbr.toLowerCase()]);
+          // Strategy 1: Abbreviation match from slug (exact or 3-letter prefix)
+          // ESPN uses "UTAH" but Polymarket slug uses "uta"
+          const homeAbbrL = g.homeAbbr.toLowerCase();
+          const awayAbbrL = g.awayAbbr.toLowerCase();
+          const gameAbbrs = new Set([homeAbbrL, awayAbbrL, homeAbbrL.slice(0, 3), awayAbbrL.slice(0, 3)]);
           const abbrMatch = gameAbbrs.has(abbrA) && gameAbbrs.has(abbrB);
 
           if (!abbrMatch) {
