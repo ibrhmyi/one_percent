@@ -221,21 +221,48 @@ export async function refreshMarkets(): Promise<void> {
   try {
     const markets = await fetchNBAMarkets();
 
-    // Enrich with actual ESPN start times — fetch all leagues
+    // Enrich with actual ESPN start times — fetch today's scoreboard only (fast)
     try {
-      const { fetchScoreboard } = await import('./skills/basketball/espn-api');
-      const espnPaths = [
-        { path: 'basketball/nba', league: 'NBA', prefix: 'nba' },
-        { path: 'basketball/mens-college-basketball', league: 'NCAA', prefix: 'ncaa' },
-        { path: 'basketball/wnba', league: 'WNBA', prefix: 'wnba' },
-      ];
+      const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports';
       const allGames: ESPNGame[] = [];
-      for (const { path, league } of espnPaths) {
+
+      // Fetch today's scoreboard for each league (1 call each, fast)
+      const espnUrls = [
+        { url: `${ESPN_BASE}/basketball/nba/scoreboard`, league: 'NBA' },
+        { url: `${ESPN_BASE}/basketball/mens-college-basketball/scoreboard`, league: 'NCAA' },
+      ];
+
+      await Promise.all(espnUrls.map(async ({ url, league }) => {
         try {
-          const g = await fetchScoreboard(path, league);
-          allGames.push(...g);
-        } catch { /* skip failed league */ }
-      }
+          const res = await fetch(url, { signal: AbortSignal.timeout(5000), cache: 'no-store' });
+          if (!res.ok) return;
+          const data = await res.json();
+          for (const event of data?.events ?? []) {
+            const comp = event.competitions?.[0];
+            if (!comp) continue;
+            const home = comp.competitors?.find((c: any) => c.homeAway === 'home');
+            const away = comp.competitors?.find((c: any) => c.homeAway === 'away');
+            if (!home || !away) continue;
+            const state = (event.status?.type?.state ?? 'pre') as 'pre' | 'in' | 'post';
+            allGames.push({
+              id: String(event.id),
+              name: String(event.name ?? ''),
+              homeTeam: String(home.team?.shortDisplayName || home.team?.displayName || ''),
+              awayTeam: String(away.team?.shortDisplayName || away.team?.displayName || ''),
+              homeAbbr: String(home.team?.abbreviation ?? '').toLowerCase(),
+              awayAbbr: String(away.team?.abbreviation ?? '').toLowerCase(),
+              homeScore: parseInt(home.score ?? '0', 10),
+              awayScore: parseInt(away.score ?? '0', 10),
+              period: event.status?.period ?? 1,
+              clock: event.status?.displayClock ?? '',
+              state,
+              secondsRemaining: 0,
+              scheduledStart: String(event.date ?? ''),
+              league,
+            });
+          }
+        } catch { /* skip */ }
+      }));
 
       for (const market of markets) {
         // Strip league prefix from slug: nba-lal-ind-2026-03-25 → lal-ind-2026-03-25
