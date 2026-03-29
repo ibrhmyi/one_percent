@@ -26,7 +26,7 @@ export function ScoreFeed({ events }: Props) {
 
   return (
     <div className="panel" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-      <div className="panel-header">Live Score Feed</div>
+      <div className="panel-header">Live Scores</div>
       {reversed.length === 0 ? (
         <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem', padding: '8px 0' }}>
           Waiting for live games...

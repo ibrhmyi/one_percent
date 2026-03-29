@@ -84,7 +84,7 @@ export function OddsRanker({ predictions }: Props) {
   return (
     <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="panel-header">
-        Odds Ranker <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>{matched.length} games</span>
+        Pre-Game Odds <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>{matched.length} games</span>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1, minHeight: 0, overflowY: 'auto' }}>

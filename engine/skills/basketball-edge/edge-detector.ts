@@ -49,7 +49,7 @@ export function calculateKellySize(
   targetPrice: number,
   bankroll: number
 ): number {
-  const kellyFraction = parseFloat(process.env.KELLY_FRACTION || '0.25');
+  const kellyFraction = parseFloat(process.env.KELLY_FRACTION || '0.50');
   const maxPositionPct = 0.15;
   const minBet = parseFloat(process.env.MIN_KELLY_BET || '5');
 

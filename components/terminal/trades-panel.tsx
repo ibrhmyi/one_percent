@@ -32,7 +32,7 @@ export function TradesPanel({ trades, mode }: Props) {
   const recent = [...trades].reverse().slice(0, 10);
   return (
     <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div className="panel-header">Recent Trades</div>
+      <div className="panel-header">Live Trades</div>
       {recent.length === 0 ? (
         <div style={{ color: DIM, fontSize: '0.7rem', flex: 1 }}>No trades yet</div>
       ) : (
@@ -77,7 +77,7 @@ export function TradesPanel({ trades, mode }: Props) {
                   {t.marketTitle ?? '—'}
                 </div>
                 <div style={{ fontSize: '0.55rem', color: DIM, marginBottom: 6 }}>
-                  Bought {t.side?.toUpperCase()} · {tokens} shares
+                  Bought {t.side?.toUpperCase()} ${t.entryAmount.toFixed(0)} · {Math.round(tokens)} shares
                 </div>
 
                 {/* Price row */}

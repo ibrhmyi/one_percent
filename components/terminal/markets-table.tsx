@@ -84,9 +84,13 @@ function Countdown({ targetTime }: { targetTime: string }) {
 }
 
 export function MarketsTable({ markets }: Props) {
-  const active = markets.filter(m =>
-    m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open'
-  );
+  const now = Date.now();
+  const active = markets.filter(m => {
+    if (m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open') return true;
+    // Also show games that have started (gameStartTime in the past) even if status is still 'upcoming'
+    if (m.gameStartTime && new Date(m.gameStartTime).getTime() < now) return true;
+    return false;
+  });
 
   // No live markets — show countdown to next game
   if (active.length === 0) {
@@ -98,7 +102,7 @@ export function MarketsTable({ markets }: Props) {
 
     return (
       <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        <div className="panel-header" style={{ textAlign: 'left' }}>Watched Markets</div>
+        <div className="panel-header" style={{ textAlign: 'left' }}>Watched Games</div>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {next ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
@@ -137,7 +141,7 @@ export function MarketsTable({ markets }: Props) {
   return (
     <div className="panel" style={{ overflow: 'hidden', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="panel-header">
-        Watched Markets <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>({active.length} live)</span>
+        Watched Games <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>({active.length} live)</span>
       </div>
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {/* Header row */}

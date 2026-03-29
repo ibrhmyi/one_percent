@@ -47,10 +47,8 @@ export function BottomBar({ wsConnected, isRunning, cycleCount, uptimeSeconds, l
       {sep}
       <span>CYCLE <span style={{ color: 'var(--text-secondary)' }}>{cycleCount.toLocaleString()}</span></span>
       {sep}
-      <span>GAMES <span style={{ color: liveGames > 0 ? 'var(--green)' : 'var(--text-secondary)' }}>{liveGames}</span><span style={{ color: 'var(--text-dim)' }}>/{totalGames}</span></span>
-      {sep}
       {latency !== null && <><span>LAT <span style={{ color: latency > 500 ? 'var(--red)' : 'var(--text-secondary)' }}>{latency}ms</span></span>{sep}</>}
-      <span>UP <span style={{ color: 'var(--text-secondary)' }}>{formatUptime(uptimeSeconds)}</span></span>
+      <span>KELLY <span style={{ color: 'var(--text-secondary)' }}>50%</span></span>
       <span style={{ color: 'var(--text-dim)', marginLeft: 'auto', fontSize: '0.55rem', letterSpacing: '0.05em' }}>1% ENGINE alpha v1.1</span>
     </div>
   );
