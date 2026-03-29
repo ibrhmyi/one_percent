@@ -15,6 +15,9 @@ export async function checkExits(): Promise<void> {
   if (openTrades.length === 0) return;
 
   for (const trade of openTrades) {
+    // Skip pre-game trades — they have their own exit logic (exit before game starts)
+    if (trade.skillId === 'basketball-edge') continue;
+
     const market = engineState.watchedMarkets.find(m => m.id === trade.marketId);
     const currentPrice = getCurrentPrice(trade, market);
     if (currentPrice === null) continue;
@@ -48,7 +51,7 @@ export async function checkExits(): Promise<void> {
 }
 
 function getCurrentPrice(trade: Trade, market: WatchedMarket | undefined): number | null {
-  if (!market) return null;
+  if (!market) return trade.entryPrice; // Fallback to entry price if market not found
   return trade.side === 'yes' ? market.yesPrice : market.noPrice;
 }
 
