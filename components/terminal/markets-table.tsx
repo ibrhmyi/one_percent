@@ -86,11 +86,17 @@ function Countdown({ targetTime }: { targetTime: string }) {
 export function MarketsTable({ markets }: Props) {
   const now = Date.now();
   const active = markets.filter(m => {
-    // Skip settled/finished games (price at extremes = game decided)
-    if (m.yesPrice >= 0.95 || m.yesPrice <= 0.05) return false;
+    // Skip finished games
     if ((m as any).gameFinished) return false;
 
-    if (m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open') return true;
+    // Always show games with live ESPN data (even if price is at extremes)
+    if (m.gameData && (m.gameData.homeScore > 0 || m.gameData.awayScore > 0)) return true;
+    if (m.status === 'live') return true;
+
+    // Skip settled prices for non-live games
+    if (m.yesPrice >= 0.95 || m.yesPrice <= 0.05) return false;
+
+    if (m.status === 'edge_detected' || m.status === 'position_open') return true;
     // Show games with live ESPN data
     if (m.gameData && (m.gameData.homeScore > 0 || m.gameData.awayScore > 0)) return true;
     // Show games that have started (within last 4 hours) — they're live even without ESPN data
