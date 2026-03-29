@@ -91,9 +91,6 @@ export function GameSchedule({ games }: Props) {
                     <span style={{ color: 'var(--text-secondary)' }}>{g.awayTeam}</span>
                     <span style={{ color: 'var(--text-dim)', margin: '0 1px' }}>vs</span>
                     <span style={{ color: 'var(--text-secondary)' }}>{g.homeTeam}</span>
-                    {polyUrl && (
-                      <span style={{ color: 'var(--text-dim)', fontSize: '0.6rem', opacity: 0.6 }}>↗</span>
-                    )}
                     {isLive && g.awayScore !== undefined && (
                       <span style={{ color: 'var(--text-primary)', marginLeft: 8, fontWeight: 700 }}>
                         {g.awayScore}–{g.homeScore}
