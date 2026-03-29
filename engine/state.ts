@@ -22,6 +22,23 @@ export const engineState: EngineState = {
 
 let messageIdCounter = 0;
 
+// Price history for sparklines — keyed by market ID, stores last 60 YES prices
+const marketPriceHistory: Map<string, number[]> = new Map();
+const MAX_PRICE_HISTORY = 60;
+
+/** Record a price snapshot for sparkline display */
+export function recordPrice(marketId: string, yesPrice: number) {
+  const history = marketPriceHistory.get(marketId) ?? [];
+  history.push(yesPrice);
+  if (history.length > MAX_PRICE_HISTORY) history.shift();
+  marketPriceHistory.set(marketId, history);
+}
+
+/** Get price history for a market */
+export function getPriceHistory(marketId: string): number[] {
+  return marketPriceHistory.get(marketId) ?? [];
+}
+
 export function addMessage(msg: Omit<BrainMessage, 'id' | 'timestamp'>) {
   const message: BrainMessage = {
     id: String(++messageIdCounter),

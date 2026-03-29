@@ -45,7 +45,7 @@ export function SkillsPanel({ skills }: Props) {
           <div key={skill.id} style={{ padding: '8px 0', borderBottom: '1px solid var(--border-default)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 5 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                <span style={{ fontSize: '0.9rem', flexShrink: 0 }}>{skill.icon}</span>
+                {skill.icon && <span style={{ fontSize: '0.9rem', flexShrink: 0 }}>{skill.icon}</span>}
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {skill.name}

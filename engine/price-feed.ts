@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { engineState } from './state';
+import { engineState, recordPrice } from './state';
 
 /**
  * POLYMARKET CLOB WebSocket Price Feed
@@ -66,6 +66,7 @@ function handleMessage(raw: Buffer | string): void {
         if (market.yesTokenId === assetId) {
           market.yesPrice = price;
           market.lastUpdated = new Date().toISOString();
+          recordPrice(market.id, price);
         } else if (market.noTokenId === assetId) {
           market.noPrice = price;
           market.lastUpdated = new Date().toISOString();

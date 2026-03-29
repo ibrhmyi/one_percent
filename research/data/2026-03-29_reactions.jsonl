@@ -1,0 +1,7 @@
+{"timestamp":"2026-03-29T00:00:04.590Z","gameId":"401810932","game":"76ers @ Hornets","trigger":"score","offsetMs":20000,"period":4,"clock":"10:27","secsLeft":627,"homeScore":97,"awayScore":95,"yesPrice":0.33,"noPrice":0.71}
+{"timestamp":"2026-03-29T00:00:09.587Z","gameId":"401856574","game":"Iowa @ Illinois","trigger":"score","offsetMs":40000,"period":2,"clock":"8:07","secsLeft":487,"homeScore":50,"awayScore":49,"yesPrice":0.5,"noPrice":0.5}
+{"timestamp":"2026-03-29T00:00:09.916Z","gameId":"401810932","game":"76ers @ Hornets","trigger":"foul","offsetMs":20000,"period":4,"clock":"10:27","secsLeft":627,"homeScore":97,"awayScore":95,"yesPrice":0.5,"noPrice":0.5}
+{"timestamp":"2026-03-29T00:00:14.592Z","gameId":"401810932","game":"76ers @ Hornets","trigger":"score","offsetMs":30000,"period":4,"clock":"10:27","secsLeft":627,"homeScore":97,"awayScore":95,"yesPrice":0.5,"noPrice":0.5}
+{"timestamp":"2026-03-29T00:00:19.916Z","gameId":"401810932","game":"76ers @ Hornets","trigger":"foul","offsetMs":30000,"period":4,"clock":"10:27","secsLeft":627,"homeScore":97,"awayScore":95,"yesPrice":0.5,"noPrice":0.5}
+{"timestamp":"2026-03-29T00:00:24.591Z","gameId":"401810932","game":"76ers @ Hornets","trigger":"score","offsetMs":40000,"period":4,"clock":"10:27","secsLeft":627,"homeScore":97,"awayScore":95,"yesPrice":0.5,"noPrice":0.5}
+{"timestamp":"2026-03-29T00:00:29.917Z","gameId":"401810932","game":"76ers @ Hornets","trigger":"foul","offsetMs":40000,"period":4,"clock":"10:27","secsLeft":627,"homeScore":97,"awayScore":95,"yesPrice":0.5,"noPrice":0.5}

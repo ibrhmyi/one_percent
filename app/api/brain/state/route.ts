@@ -54,7 +54,7 @@ export async function GET() {
   }
 
   // Fallback: start local brain
-  const { engineState } = await import('@/engine/state');
+  const { engineState, getPriceHistory } = await import('@/engine/state');
   const { startBrain, waitForInitialLoad } = await import('@/engine/brain');
   const { isPriceFeedConnected } = await import('@/engine/price-feed');
   const { getSkill } = await import('@/engine/skill-registry');
@@ -74,7 +74,10 @@ export async function GET() {
     lastCycleAt: engineState.lastCycleAt,
     wsConnected: isPriceFeedConnected(),
     account: engineState.account,
-    watchedMarkets: engineState.watchedMarkets,
+    watchedMarkets: engineState.watchedMarkets.map(m => ({
+      ...m,
+      priceHistory: getPriceHistory(m.id),
+    })),
     trades: engineState.trades,
     messages: engineState.messages.slice(-50),
     skills: engineState.skills.map(s => ({

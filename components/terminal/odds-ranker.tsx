@@ -178,7 +178,7 @@ export function OddsRanker({ predictions }: Props) {
                 </span>
                 {edgeVal > 0.5 ? (
                   <span style={{ color: 'var(--cyan)', fontWeight: 600, fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
-                    BUY {pred.bestSide} +{edgeVal.toFixed(1)}%
+                    Edge +{edgeVal.toFixed(1)}%
                   </span>
                 ) : (
                   <span style={{ color: 'var(--text-dim)', fontFamily: 'var(--font-mono)' }}>—</span>
