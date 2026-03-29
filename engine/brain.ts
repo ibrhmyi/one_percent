@@ -610,16 +610,13 @@ export async function runCycle(): Promise<void> {
 // Boot
 // ─────────────────────────────────────────────
 
-// Use global to survive module re-evaluation in Next.js
-const globalKey = '__onepercent_brain_started__';
-let started = (globalThis as any)[globalKey] === true;
+let started = false;
 let initialLoadDone = false;
 let initialLoadPromise: Promise<void> | null = null;
 
 export async function startBrain() {
-  if (started || (globalThis as any)[globalKey]) return;
+  if (started) return;
   started = true;
-  (globalThis as any)[globalKey] = true;
   engineState.isRunning = true;
 
   registerSkill(new BasketballSkill());
