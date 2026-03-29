@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 interface Skill {
   id: string;
@@ -14,18 +14,40 @@ interface Skill {
 interface Props { skills: Skill[]; }
 
 export function SkillsPanel({ skills }: Props) {
-  const [pending, setPending] = useState<string | null>(null);
+  // Track local overrides so toggle is instant and doesn't flicker on poll
+  const [overrides, setOverrides] = useState<Record<string, string>>({});
+  const pendingRef = useRef<Set<string>>(new Set());
+
+  function getStatus(skill: Skill): string {
+    return overrides[skill.id] ?? skill.status;
+  }
 
   async function toggle(skill: Skill) {
-    const next = skill.status === 'paused' ? 'active' : 'paused';
-    // Optimistic update — change UI immediately, don't wait for server
-    skill.status = next;
-    setPending(skill.id);
-    fetch('/api/brain/skills', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: skill.id, status: next }),
-    }).finally(() => setPending(null));
+    const current = getStatus(skill);
+    const next = current === 'paused' ? 'active' : 'paused';
+
+    // Instant local update
+    setOverrides(prev => ({ ...prev, [skill.id]: next }));
+    pendingRef.current.add(skill.id);
+
+    try {
+      await fetch('/api/brain/skills', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: skill.id, status: next }),
+      });
+    } finally {
+      // Keep the override until the server catches up (next poll will match)
+      pendingRef.current.delete(skill.id);
+      // Clear override after 3 seconds (server should have caught up by then)
+      setTimeout(() => {
+        setOverrides(prev => {
+          const copy = { ...prev };
+          delete copy[skill.id];
+          return copy;
+        });
+      }, 3000);
+    }
   }
 
   return (
@@ -34,7 +56,8 @@ export function SkillsPanel({ skills }: Props) {
       {skills.length === 0 ? (
         <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>No skills loaded</div>
       ) : skills.map(skill => {
-        const isOn = skill.status !== 'paused';
+        const effectiveStatus = getStatus(skill);
+        const isOn = effectiveStatus !== 'paused';
         const winRate = skill.stats.trades > 0
           ? ((skill.stats.wins / skill.stats.trades) * 100).toFixed(0)
           : null;
@@ -49,15 +72,13 @@ export function SkillsPanel({ skills }: Props) {
                     {skill.name}
                   </div>
                   <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)' }}>
-                    {skill.category} · {skill.pollIntervalMs}ms
+                    {skill.category} · {skill.pollIntervalMs >= 1000 ? `${skill.pollIntervalMs / 1000}s` : `${skill.pollIntervalMs}ms`}
                   </div>
                 </div>
               </div>
 
-              {/* Sliding rectangle toggle */}
               <button
                 onClick={() => toggle(skill)}
-                disabled={pending === skill.id}
                 title={isOn ? 'Click to disable' : 'Click to enable'}
                 style={{
                   flexShrink: 0,
@@ -67,14 +88,12 @@ export function SkillsPanel({ skills }: Props) {
                   borderRadius: 3,
                   border: `1px solid ${isOn ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.35)'}`,
                   background: isOn ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
-                  cursor: pending === skill.id ? 'default' : 'pointer',
-                  opacity: pending === skill.id ? 0.6 : 1,
+                  cursor: 'pointer',
                   overflow: 'hidden',
                   padding: 0,
                   transition: 'border-color 0.2s, background 0.2s',
                 }}
               >
-                {/* Sliding fill block */}
                 <span style={{
                   position: 'absolute',
                   top: 2, bottom: 2,
@@ -84,7 +103,6 @@ export function SkillsPanel({ skills }: Props) {
                   left: isOn ? 'calc(50% - 2px)' : '2px',
                   transition: 'left 0.22s cubic-bezier(.4,0,.2,1), background 0.2s',
                 }} />
-                {/* Labels */}
                 <span style={{
                   position: 'absolute', inset: 0,
                   display: 'flex', alignItems: 'center',

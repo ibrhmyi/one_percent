@@ -88,9 +88,9 @@ export function GameSchedule({ games }: Props) {
                 {/* Row 1: teams + status */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                   <div style={{ fontSize: '0.73rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>{g.awayTeam}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.9)' }}>{g.awayTeam}</span>
                     <span style={{ color: 'var(--text-dim)', margin: '0 1px' }}>vs</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>{g.homeTeam}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.9)' }}>{g.homeTeam}</span>
                     {isLive && g.awayScore !== undefined && (
                       <span style={{ color: 'var(--text-primary)', marginLeft: 8, fontWeight: 700 }}>
                         {g.awayScore}–{g.homeScore}

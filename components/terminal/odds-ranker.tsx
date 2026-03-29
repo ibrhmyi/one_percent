@@ -70,7 +70,7 @@ function Countdown({ target }: { target: string | null | undefined }) {
 }
 
 function formatVol(v?: number) {
-  if (!v) return '—';
+  if (!v || v === 0) return '$0';
   if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
   if (v >= 1e3) return `$${(v / 1e3).toFixed(0)}K`;
   return `$${v.toFixed(0)}`;

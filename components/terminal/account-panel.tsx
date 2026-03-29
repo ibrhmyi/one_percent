@@ -80,7 +80,7 @@ export function AccountPanel({ account, trades, preGameOrderCount, preGameDeploy
       ))}
 
       <div style={{ marginTop: 6, paddingTop: 4, borderTop: '1px solid var(--border-default)', fontSize: '0.6rem', color: DIM }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Kelly</span><span>25% (quarter)</span></div>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Kelly</span><span>50% (half)</span></div>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Min Bet</span><span>$5</span></div>
       </div>
     </div>
