@@ -291,9 +291,11 @@ export async function refreshMarkets(): Promise<void> {
             );
             if (!matchesHome || !matchesAway) return false;
           }
-          // Date filter if available
+          // Date filter with 1-day tolerance (games crossing midnight UTC)
           if (slugDate && g.scheduledStart) {
-            return g.scheduledStart.substring(0, 10) === slugDate;
+            const slugTime = new Date(slugDate + 'T12:00:00Z').getTime();
+            const gameTime = new Date(g.scheduledStart).getTime();
+            return Math.abs(gameTime - slugTime) < 36 * 60 * 60 * 1000; // within 36 hours
           }
           return true;
         });
