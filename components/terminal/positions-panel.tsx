@@ -63,15 +63,17 @@ export function PositionsPanel({ orders, summary }: Props) {
         {active.map(order => {
           const side = order.tokenSide ?? (order.fairValue > 0.5 ? 'YES' : 'NO');
           const isFilled = order.status === 'filled' || order.status === 'partially_filled';
-          const fillPrice = isFilled ? order.avgFillPrice : order.price;
+          // Avg fill price — accounts for fills across multiple price levels
+          const fillPrice = isFilled && order.avgFillPrice > 0 ? order.avgFillPrice : order.price;
           const edgePct = (order.edge * 100).toFixed(1);
-          const tokens = Math.round(order.size / order.price);
-          const currentPrice = order.currentPrice ?? order.price;
+          const tokens = Math.round((isFilled ? order.filledSize : order.size) / fillPrice);
+          const dollarAmount = isFilled ? order.filledSize : order.size;
+          const currentPrice = order.currentPrice ?? fillPrice;
           const unrealizedPnl = isFilled ? (currentPrice - fillPrice) * tokens : 0;
           const pnlStr = unrealizedPnl >= 0 ? `+$${unrealizedPnl.toFixed(2)}` : `-$${Math.abs(unrealizedPnl).toFixed(2)}`;
           const polyUrl = order.slug
             ? `https://polymarket.com/event/${order.slug}`
-            : `https://polymarket.com/search?query=${encodeURIComponent(order.homeTeam + ' ' + order.awayTeam)}`;
+            : undefined;
 
           return (
             <a key={order.orderId} href={polyUrl} target="_blank" rel="noopener noreferrer"
@@ -79,7 +81,6 @@ export function PositionsPanel({ orders, summary }: Props) {
               style={{ textDecoration: 'none', color: 'inherit' }}>
               <div className="card-interactive" style={{
                 border: '1px solid var(--border-default)',
-                borderLeft: isFilled ? '3px solid var(--green)' : '3px solid transparent',
                 borderRadius: 6,
                 padding: '10px 12px',
               }}>
@@ -93,16 +94,16 @@ export function PositionsPanel({ orders, summary }: Props) {
                   )}
                 </div>
 
-                {/* Position: Bought YES $188 · 1510 shares */}
-                <div style={{ fontSize: '0.6rem', color: 'var(--cyan)', marginBottom: 4 }}>
-                  {isFilled ? 'Bought' : 'Buy'} {side} ${order.size.toFixed(0)} · {tokens.toFixed(0)} shares
+                {/* Position — gray, taker style */}
+                <div style={{ fontSize: '0.6rem', color: DIM, marginBottom: 4 }}>
+                  Bought {side} ${dollarAmount.toFixed(0)} · {tokens} shares
                 </div>
 
                 {/* Entry · Limit Exit · Edge in one row */}
                 <div style={{ display: 'flex', gap: 12, fontSize: '0.6rem', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
                   <span>
                     <span style={{ color: DIM, fontSize: '0.5rem' }}>Entry </span>
-                    <span style={{ color: 'rgba(255,255,255,0.9)' }}>{(fillPrice * 100).toFixed(0)}¢</span>
+                    <span style={{ color: 'rgba(255,255,255,0.9)' }}>{(fillPrice * 100).toFixed(1)}¢</span>
                   </span>
                   <span>
                     <span style={{ color: DIM, fontSize: '0.5rem' }}>Limit Exit </span>
@@ -114,18 +115,14 @@ export function PositionsPanel({ orders, summary }: Props) {
                   </span>
                 </div>
 
-                {/* Status + P&L */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: 10, fontSize: '0.55rem' }}>
-                    {isFilled && (
-                      <>
-                        <span style={{ color: DIM }}>Now {(currentPrice * 100).toFixed(0)}¢</span>
-                        <span style={{ color: unrealizedPnl >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600 }}>{pnlStr}</span>
-                      </>
-                    )}
+                {/* P&L */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.55rem' }}>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <span style={{ color: DIM }}>Now {(currentPrice * 100).toFixed(1)}¢</span>
+                    <span style={{ color: unrealizedPnl >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600 }}>{pnlStr}</span>
                   </div>
-                  <span style={{ fontSize: '0.55rem', fontWeight: 600, color: isFilled ? 'var(--green)' : DIM }}>
-                    {isFilled ? '● FILLED' : '○ RESTING'}
+                  <span style={{ color: DIM }}>
+                    {isFilled ? 'Filled' : `Pending · ${((order.filledSize / order.size) * 100).toFixed(0)}%`}
                   </span>
                 </div>
               </div>

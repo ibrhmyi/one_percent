@@ -141,11 +141,13 @@ export default function Home() {
               </div>
             </div>
           )}
-          <div style={{ flex: '1 1 0%', minHeight: 60, overflow: 'hidden' }}>
-            <div style={{ height: '100%', overflowY: 'auto' }}>
-              <TradesPanel trades={state.trades} mode={state.account.mode} />
+          {liveOn && (
+            <div style={{ flex: '1 1 0%', minHeight: 60, overflow: 'hidden' }}>
+              <div style={{ height: '100%', overflowY: 'auto' }}>
+                <TradesPanel trades={state.trades} mode={state.account.mode} />
+              </div>
             </div>
-          </div>
+          )}
           {preOn && (
             <div style={{ flex: '1 1 0%', minHeight: 60, overflow: 'hidden' }}>
               <div style={{ height: '100%', overflowY: 'auto' }}>
