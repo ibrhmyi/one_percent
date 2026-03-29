@@ -82,6 +82,7 @@ export function PositionsPanel({ orders, summary }: Props) {
               <div className="card-interactive" style={{
                 background: 'rgba(255,255,255,0.02)',
                 border: '1px solid var(--border-default)',
+                borderLeft: `3px solid ${unrealizedPnl > 0 ? 'var(--green)' : unrealizedPnl < 0 ? 'var(--red)' : 'var(--border-default)'}`,
                 borderRadius: 6,
                 padding: '10px 12px',
               }}>
@@ -90,7 +91,7 @@ export function PositionsPanel({ orders, summary }: Props) {
                   <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
                     {order.awayTeam} vs {order.homeTeam}
                   </span>
-                  <span style={{ fontSize: '0.5rem', color: 'var(--cyan)', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                  <span style={{ fontSize: '0.5rem', color: DIM, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
                     OPEN {new Date(order.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
                   </span>
                 </div>

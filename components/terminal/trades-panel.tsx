@@ -51,7 +51,7 @@ export function TradesPanel({ trades, mode }: Props) {
                   <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
                     {t.marketTitle ?? '—'}
                   </span>
-                  <span style={{ fontSize: '0.5rem', color: isOpen ? 'var(--cyan)' : isLoss ? 'var(--red)' : isProfit ? 'var(--green)' : DIM, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                  <span style={{ fontSize: '0.5rem', color: DIM, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
                     {isOpen
                       ? `OPEN ${new Date(t.enteredAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`
                       : `CLOSED ${t.exitedAt ? new Date(t.exitedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : ''}`
