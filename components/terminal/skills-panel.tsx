@@ -18,16 +18,14 @@ export function SkillsPanel({ skills }: Props) {
 
   async function toggle(skill: Skill) {
     const next = skill.status === 'paused' ? 'active' : 'paused';
+    // Optimistic update — change UI immediately, don't wait for server
+    skill.status = next;
     setPending(skill.id);
-    try {
-      await fetch('/api/brain/skills', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: skill.id, status: next }),
-      });
-    } finally {
-      setPending(null);
-    }
+    fetch('/api/brain/skills', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: skill.id, status: next }),
+    }).finally(() => setPending(null));
   }
 
   return (

@@ -59,6 +59,12 @@ export default function Home() {
     return () => clearInterval(id);
   }, [fetchState]);
 
+  // Skill-based visibility: when a skill is paused, hide its panels
+  const liveSkill = state.skills.find((s: any) => s.id === 'basketball');
+  const preSkill = state.skills.find((s: any) => s.id === 'basketball-edge');
+  const liveOn = !liveSkill || liveSkill.status !== 'paused';
+  const preOn = !preSkill || preSkill.status !== 'paused';
+
   return (
     <AccessGate>
     <div style={{
@@ -103,46 +109,61 @@ export default function Home() {
         minHeight: 0,
         overflow: 'hidden',
       }}>
-        {/* LEFT — Game Schedule + Odds Ranker (equal 50/50 split) */}
+        {/* LEFT — Game Schedule + Pre-Game Odds (equal 50/50 split) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 0, overflow: 'hidden' }}>
-          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-            <div style={{ height: '100%', overflowY: 'auto' }}>
-              <GameSchedule games={state.gameSchedule} />
+          {liveOn && (
+            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+              <div style={{ height: '100%', overflowY: 'auto' }}>
+                <GameSchedule games={state.gameSchedule} />
+              </div>
             </div>
-          </div>
-          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-            <div style={{ height: '100%', overflowY: 'auto' }}>
-              <OddsRanker predictions={state.predictions ?? []} />
+          )}
+          {preOn && (
+            <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+              <div style={{ height: '100%', overflowY: 'auto' }}>
+                <OddsRanker predictions={state.predictions ?? []} />
+              </div>
             </div>
-          </div>
+          )}
+          {!liveOn && !preOn && (
+            <div className="panel" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ color: 'var(--text-dim)', fontSize: '0.7rem' }}>All skills paused</span>
+            </div>
+          )}
         </div>
 
         {/* CENTER — Markets + Trades + Positions (trades above positions) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 0, overflow: 'hidden' }}>
-          <div style={{ flex: '1 1 0%', minHeight: 60, overflow: 'hidden' }}>
-            <div style={{ height: '100%', overflowY: 'auto' }}>
-              <MarketsTable markets={state.watchedMarkets} />
+          {liveOn && (
+            <div style={{ flex: '1 1 0%', minHeight: 60, overflow: 'hidden' }}>
+              <div style={{ height: '100%', overflowY: 'auto' }}>
+                <MarketsTable markets={state.watchedMarkets} />
+              </div>
             </div>
-          </div>
+          )}
           <div style={{ flex: '1 1 0%', minHeight: 60, overflow: 'hidden' }}>
             <div style={{ height: '100%', overflowY: 'auto' }}>
               <TradesPanel trades={state.trades} mode={state.account.mode} />
             </div>
           </div>
-          <div style={{ flex: '1 1 0%', minHeight: 60, overflow: 'hidden' }}>
-            <div style={{ height: '100%', overflowY: 'auto' }}>
-              <PositionsPanel orders={state.preGameOrders} summary={state.preGameSummary} />
+          {preOn && (
+            <div style={{ flex: '1 1 0%', minHeight: 60, overflow: 'hidden' }}>
+              <div style={{ height: '100%', overflowY: 'auto' }}>
+                <PositionsPanel orders={state.preGameOrders} summary={state.preGameSummary} />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* RIGHT — Score Feed (top) + Account + Skills */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minHeight: 0, overflow: 'hidden' }}>
-          <div style={{ flex: 1, minHeight: 60, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-              <ScoreFeed events={state.scoringEvents} />
+          {liveOn && (
+            <div style={{ flex: 1, minHeight: 60, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+                <ScoreFeed events={state.scoringEvents} />
+              </div>
             </div>
-          </div>
+          )}
           <div style={{ flexShrink: 0 }}>
             <AccountPanel
               account={state.account}

@@ -42,7 +42,7 @@ function calculateTargetPrice(
  *   q = 1 - p
  *   b = NET payout after taker fee = ((1 - TAKER_FEE) - targetPrice) / targetPrice
  *
- * Quarter Kelly (0.25x) for safety. Capped at 15% of bankroll per bet.
+ * Half Kelly (0.50x) for safety. Capped at 15% of bankroll per bet.
  */
 export function calculateKellySize(
   fairValue: number,
