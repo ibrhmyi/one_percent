@@ -165,6 +165,39 @@ export class BasketballSkill implements Skill {
         }
       );
 
+      // Detect shooting fouls → log to Live Scores with FT count
+      const playDesc = (play.description ?? '').toLowerCase();
+      const isShootingFoul = playDesc.includes('shooting foul') || playDesc.includes('personal foul') ||
+        playDesc.includes('flagrant') || (play.type ?? '').toLowerCase().includes('foul');
+
+      if (isShootingFoul) {
+        // Estimate FT count
+        let ftCount = 2;
+        if (playDesc.includes('3-point') || playDesc.includes('three point')) ftCount = 3;
+        if (playDesc.includes('technical')) ftCount = 1;
+        if (playDesc.includes('and-1') || playDesc.includes('and one')) ftCount = 1;
+
+        addCycleLog({
+          timestamp: new Date().toISOString(),
+          gameId: game.id,
+          homeTeam: game.homeTeam,
+          awayTeam: game.awayTeam,
+          homeScore: game.homeScore,
+          awayScore: game.awayScore,
+          period: `Q${game.period}`,
+          clock: game.clock,
+          secondsRemaining: secsLeft,
+          modelProbability: market.yesPrice,
+          marketPrice: market.yesPrice,
+          edge: 0,
+          ev: 0,
+          fee: 0,
+          kellySize: 0,
+          action: 'skip',
+          reason: `[${league.name}] FOUL (${ftCount}) | Q${game.period} ${game.clock}`
+        });
+      }
+
       if (isCrunchTime) {
         addMessage({
           text: `[${league.name}] CRUNCH FOUL: ${play.description} | Q${game.period} ${game.clock} | ${game.awayTeam} ${game.awayScore}-${game.homeScore} ${game.homeTeam}`,
