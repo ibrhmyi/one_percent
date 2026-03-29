@@ -168,11 +168,11 @@ export function OddsRanker({ predictions }: Props) {
                 <Countdown target={pred.gameStartTime} />
               </div>
 
-              {/* Row 2: Team names — short Polymarket-style names */}
+              {/* Row 2: Team names — as listed on Polymarket */}
               <div style={{ fontSize: '0.73rem', fontWeight: 600, marginBottom: 4 }}>
-                <span style={{ color: 'rgba(255,255,255,0.9)' }}>{shortName(pred.awayTeam)}</span>
+                <span style={{ color: 'rgba(255,255,255,0.9)' }}>{pred.awayTeam}</span>
                 <span style={{ color: 'var(--text-dim)', margin: '0 4px' }}>vs</span>
-                <span style={{ color: 'rgba(255,255,255,0.9)' }}>{shortName(pred.homeTeam)}</span>
+                <span style={{ color: 'rgba(255,255,255,0.9)' }}>{pred.homeTeam}</span>
               </div>
 
               {/* Row 3: YES / NO / SPRD / VOL — exact same style as Game Schedule */}

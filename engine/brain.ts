@@ -385,23 +385,23 @@ async function simulateDryRunFills(): Promise<void> {
       }
     }
 
-    // Simulate entry fill: resting order fills when market price drops to our limit
+    // Simulate entry fill: taker orders fill immediately at market price
     if (order.status === 'resting' && order.orderId.startsWith('sim-')) {
       if (!market) continue;
       const currentPrice = order.tokenSide === 'YES' ? market.yesPrice : market.noPrice;
-      if (currentPrice <= order.price) {
-        await updateOrder(order.orderId, {
-          status: 'filled',
-          filledSize: order.size,
-          avgFillPrice: order.price,
-          exitOrderStatus: 'resting',
-        });
+      // Taker: fill immediately at current market price (not waiting for limit)
+      const fillPrice = currentPrice > 0 ? currentPrice : order.price;
+      await updateOrder(order.orderId, {
+        status: 'filled',
+        filledSize: order.size,
+        avgFillPrice: fillPrice,
+        exitOrderStatus: 'resting',
+      });
 
-        addMessage({
-          text: `[DRY-RUN FILL] ${order.awayTeam} @ ${order.homeTeam} | ${order.tokenSide} filled @ ${(currentPrice * 100).toFixed(0)}¢ ($${order.size.toFixed(0)}) | Exit order @ ${(order.fairValue * 100).toFixed(0)}¢`,
-          type: 'success',
-        });
-      }
+      addMessage({
+        text: `[DRY-RUN FILL] ${order.homeTeam} vs ${order.awayTeam} | ${order.tokenSide} filled @ ${(fillPrice * 100).toFixed(1)}¢ ($${order.size.toFixed(0)}) | Exit @ ${(order.fairValue * 100).toFixed(0)}¢`,
+        type: 'success',
+      });
     }
 
     // Simulate exit fill: filled position exits when price reaches fair value
