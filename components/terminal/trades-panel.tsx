@@ -32,8 +32,9 @@ export function TradesPanel({ trades, mode }: Props) {
           {recent.map(t => {
             const pnl = t.pnl ?? 0;
             const isOpen = t.status === 'open';
-            const isProfit = pnl >= 0 && !isOpen;
+            const isProfit = pnl > 0 && !isOpen;
             const isLoss = pnl < 0;
+            const isFlat = !isOpen && pnl === 0;
             const nowPrice = t.exitPrice ?? t.currentPrice ?? t.entryPrice;
             const tokens = t.tokens ?? (t.entryAmount > 0 && t.entryPrice > 0 ? Math.round(t.entryAmount / t.entryPrice) : 0);
             const pnlStr = pnl >= 0 ? `+$${pnl.toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`;
@@ -42,7 +43,7 @@ export function TradesPanel({ trades, mode }: Props) {
               <div key={t.id} className="card-interactive" style={{
                 background: 'rgba(255,255,255,0.02)',
                 border: '1px solid var(--border-default)',
-                borderLeft: `3px solid ${isOpen ? 'var(--cyan)' : isProfit ? 'var(--green)' : isLoss ? 'var(--red)' : 'var(--border-default)'}`,
+                borderLeft: `3px solid ${isOpen ? 'var(--cyan)' : isProfit ? 'var(--green)' : isLoss ? 'var(--red)' : isFlat ? 'var(--border-default)' : 'var(--border-default)'}`,
                 borderRadius: 6,
                 padding: '10px 12px',
               }}>

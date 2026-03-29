@@ -82,7 +82,7 @@ export function PositionsPanel({ orders, summary }: Props) {
               <div className="card-interactive" style={{
                 background: 'rgba(255,255,255,0.02)',
                 border: '1px solid var(--border-default)',
-                borderLeft: `3px solid ${unrealizedPnl > 0 ? 'var(--green)' : unrealizedPnl < 0 ? 'var(--red)' : 'var(--border-default)'}`,
+                borderLeft: `3px solid ${unrealizedPnl > 0 ? 'var(--green)' : unrealizedPnl < 0 ? 'var(--red)' : 'rgba(255,255,255,0.06)'}`,
                 borderRadius: 6,
                 padding: '10px 12px',
               }}>
@@ -121,7 +121,7 @@ export function PositionsPanel({ orders, summary }: Props) {
                     <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>+{edgePct}%</span>
                   </span>
                   <span style={{ marginLeft: 'auto' }}>
-                    <span style={{ color: unrealizedPnl >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600 }}>{pnlStr}</span>
+                    <span style={{ color: unrealizedPnl > 0 ? 'var(--green)' : unrealizedPnl < 0 ? 'var(--red)' : DIM, fontWeight: 600 }}>{pnlStr}</span>
                   </span>
                 </div>
               </div>
