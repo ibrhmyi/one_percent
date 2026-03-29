@@ -12,7 +12,7 @@ export function Sparkline({ data, width = 120, height = 24 }: Props) {
   }).join(' ');
   const last = data[data.length - 1];
   const first = data[0];
-  const color = last > first ? '#22c55e' : last < first ? '#ef4444' : '#06b6d4';
+  const color = last > first ? '#22c55e' : last < first ? '#ef4444' : 'rgba(255,255,255,0.3)';
   return (
     <svg width={width} height={height} style={{ display: 'inline-block', verticalAlign: 'middle' }}>
       <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
