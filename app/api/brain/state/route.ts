@@ -111,7 +111,7 @@ export async function GET() {
       reason: l.reason,
     })),
     gameSchedule: engineState.watchedMarkets
-      .filter(m => m.gameStartTime)
+      .filter(m => m.gameStartTime && !(m as any).gameFinished)
       .map(m => ({
         espnGameId: m.id,
         homeTeam: m.homeTeam,

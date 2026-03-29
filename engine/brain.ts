@@ -331,8 +331,22 @@ export async function refreshMarkets(): Promise<void> {
         });
         if (game?.scheduledStart) {
           market.gameStartTime = game.scheduledStart;
-          if (game.state === 'in') market.status = 'live';
-          if (game.state === 'post') market.status = 'upcoming';
+          if (game.state === 'in') {
+            market.status = 'live';
+            market.gameData = {
+              homeTeam: game.homeTeam,
+              awayTeam: game.awayTeam,
+              homeScore: game.homeScore,
+              awayScore: game.awayScore,
+              period: `Q${game.period}`,
+              clock: game.clock,
+              league: game.league,
+            };
+          }
+          // Mark finished games so they can be filtered out
+          if (game.state === 'post') {
+            (market as any).gameFinished = true;
+          }
         }
       }
     } catch { /* ESPN errors don't block market discovery */ }
