@@ -5,6 +5,7 @@ import { calcPolymarketFee } from './win-probability';
 import { matchGameToMarket } from './market-matcher';
 import { addMessage, engineState, addCycleLog } from '@/engine/state';
 import { logScoreEvent, logPriceSnapshot, logFoulEvent, scheduleReactionSnapshots } from '@/engine/data-logger';
+import { fetchPinnacleLiveOdds, matchPinnacleLive } from '@/engine/predictions/pinnacle-live';
 import { NBA_CONFIG } from './leagues/nba';
 import { NCAA_CONFIG } from './leagues/ncaa';
 import { WNBA_CONFIG } from './leagues/wnba';
@@ -266,6 +267,9 @@ export class BasketballSkill implements Skill {
     const liveGames = getLiveGames(allGames);
     const upcomingGames = getUpcomingGames(allGames);
 
+    // Fetch Pinnacle live odds — sharpest real-time probability source
+    const pinnacleLiveOdds = liveGames.length > 0 ? await fetchPinnacleLiveOdds() : [];
+
     // Only update status if not paused (user toggle takes priority)
     if (this.status !== 'paused') {
       this.status = liveGames.length > 0 ? 'active' : 'idle';
@@ -381,6 +385,32 @@ export class BasketballSkill implements Skill {
         scoringTeamPrice = market.yesPrice;
       }
 
+      // Use Pinnacle live odds as the "true" probability (replaces logistic model)
+      // Pinnacle is the sharpest book — their live line IS the true probability
+      const pinnacleMatch = matchPinnacleLive(pinnacleLiveOdds, game.homeTeam, game.awayTeam);
+
+      let trueScoringTeamProb: number;
+      let trueSource: string;
+
+      if (pinnacleMatch) {
+        // Pinnacle available — use their de-vigged probability
+        trueScoringTeamProb = scoringTeam === 'home'
+          ? (espnHomeIsYes ? pinnacleMatch.homeWinProb : pinnacleMatch.awayWinProb)
+          : (espnHomeIsYes ? pinnacleMatch.awayWinProb : pinnacleMatch.homeWinProb);
+        trueSource = 'Pinnacle';
+      } else {
+        // No Pinnacle live odds — fall back to logistic model
+        const modelInfo = this.calculateInformationValue(scoringTeamPrice, secondsRemaining, league.modelParams);
+        trueScoringTeamProb = modelInfo.fairPriceAfter;
+        trueSource = 'Model';
+      }
+
+      // Edge = Pinnacle (or model) probability - Polymarket price - fees
+      const TAKER_FEE = 0.0075;
+      const liveEdge = trueScoringTeamProb - scoringTeamPrice - TAKER_FEE;
+      const isTradeable = liveEdge >= 0.02; // 2% minimum edge after fees
+
+      // Also compute model info for logging (even when using Pinnacle)
       const info = this.calculateInformationValue(scoringTeamPrice, secondsRemaining, league.modelParams);
 
       // Log cycle on every scoring event
@@ -398,14 +428,14 @@ export class BasketballSkill implements Skill {
           period: `Q${game.period}`,
           clock: game.clock,
           secondsRemaining,
-          modelProbability: info.fairPriceAfter,
+          modelProbability: trueScoringTeamProb,
           marketPrice: scoringTeamPrice,
-          edge: info.netProfit,
-          ev: info.netProfit,
-          fee: info.tradingCost,
-          kellySize: info.sizing,
-          action: 'enter',
-          reason: `[${league.name}] ${scoringTeam === 'home' ? game.homeTeam : game.awayTeam} scored +${pointsScored} | Price: ${(scoringTeamPrice * 100).toFixed(1)}c -> Fair: ${(info.fairPriceAfter * 100).toFixed(1)}c | InfoValue: ${(info.informationValue * 100).toFixed(1)}%`
+          edge: liveEdge,
+          ev: liveEdge,
+          fee: TAKER_FEE,
+          kellySize: isTradeable ? 0.5 : 0,
+          action: isTradeable ? 'enter' : 'skip',
+          reason: `[${league.name}] ${scoringTeam === 'home' ? game.homeTeam : game.awayTeam} scored +${pointsScored} | ${trueSource}: ${(trueScoringTeamProb * 100).toFixed(1)}% | Market: ${(scoringTeamPrice * 100).toFixed(1)}c | Edge: ${(liveEdge * 100).toFixed(1)}%`
         });
 
         // Log the scoring event to disk
@@ -479,10 +509,10 @@ export class BasketballSkill implements Skill {
         continue;
       }
 
-      // SCORING EVENT DETECTED — but is the information valuable enough to trade?
-      if (!info.tradeable) {
+      // SCORING EVENT DETECTED — is there a real edge between Pinnacle and Polymarket?
+      if (!isTradeable) {
         addMessage({
-          text: `[${league.name}] ${scoringTeam === 'home' ? game.homeTeam : game.awayTeam} scored +${pointsScored} — price ${(scoringTeamPrice * 100).toFixed(0)}c, info value ${(info.informationValue * 100).toFixed(1)}%, net ${(info.netProfit * 100).toFixed(1)}% (need >=2%). Skipping.`,
+          text: `[${league.name}] ${scoringTeam === 'home' ? game.homeTeam : game.awayTeam} scored +${pointsScored} — ${trueSource}: ${(trueScoringTeamProb * 100).toFixed(1)}%, Market: ${(scoringTeamPrice * 100).toFixed(0)}c, Edge: ${(liveEdge * 100).toFixed(1)}% (need >=2%). Skipping.`,
           type: 'info'
         });
         continue;

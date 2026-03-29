@@ -167,17 +167,20 @@ Sources are dynamically weighted based on availability and credibility:
       // Skip settled markets (price at extremes = game already decided)
       if (market.yesPrice >= 0.95 || market.yesPrice <= 0.05) continue;
 
-      // Get fair value from aggregator (BPI + Torvik + DK/FD combined)
-      // Pass game date to prevent cross-game team name collisions
+      // Get fair value from aggregator (Pinnacle + BPI + Torvik combined)
       const gameDate = market.gameStartTime ? new Date(market.gameStartTime).toISOString().slice(0, 10) : undefined;
       const prediction = getFairValue(market.homeTeam, market.awayTeam, gameDate);
       if (!prediction) continue;
       if (prediction.sourcesAvailable.length === 0) continue;
 
-      // Determine confidence from number of sources
+      // ONLY auto-trade when Pinnacle data is available
+      // Model-only predictions (BPI/Torvik without sportsbook) are not reliable enough
+      const hasPinnacle = prediction.sourcesAvailable.some(s => s === 'Pinnacle');
+
+      // Determine confidence
       const confidence: 'high' | 'medium' | 'low' =
-        prediction.sourcesAvailable.length >= 3 ? 'high' :
-        prediction.sourcesAvailable.length >= 2 ? 'medium' : 'low';
+        hasPinnacle && prediction.sourcesAvailable.length >= 3 ? 'high' :
+        hasPinnacle ? 'medium' : 'low';
 
       const yesFair = prediction.fairHomeWinProb;
       const noFair = prediction.fairAwayWinProb;

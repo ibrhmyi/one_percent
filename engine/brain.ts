@@ -631,8 +631,9 @@ export async function startBrain() {
   // Start Kambi/Unibet poller — second independent book source
   startKambiPoller();
 
-  // Start sportsbook odds poller (DK/FD via Vercel — may fail due to geo-blocking)
-  startSportsbookPoller();
+  // DK/FD scraper disabled — geo-blocked from all IPs
+  // Pinnacle + Kambi provide better data anyway
+  // startSportsbookPoller();
 
   // Start injury monitor (polls ESPN every 2 min, triggers edge recalc on status changes)
   startInjuryMonitor();
