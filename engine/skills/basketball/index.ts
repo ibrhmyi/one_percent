@@ -504,11 +504,6 @@ export class BasketballSkill implements Skill {
       // NO SCORING EVENT? Skip opportunity generation.
       if (!scoringTeam) continue;
 
-      // Skip markets at extreme prices — outcome is essentially decided, no real edge
-      if (market.yesPrice >= 0.93 || market.yesPrice <= 0.07) {
-        continue;
-      }
-
       // SCORING EVENT DETECTED — is there a real edge between Pinnacle and Polymarket?
       if (!isTradeable) {
         addMessage({

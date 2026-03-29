@@ -34,27 +34,36 @@ export async function fetchPinnacleLiveOdds(): Promise<PinnacleLiveOdds[]> {
   const results: PinnacleLiveOdds[] = [];
 
   try {
-    // Fetch matchups and markets in parallel
-    const [matchupsRes, marketsRes] = await Promise.all([
-      fetch(`${PINNACLE_BASE}/sports/4/matchups?withSpecials=false`, {
-        signal: AbortSignal.timeout(5000),
-      }),
-      fetch(`${PINNACLE_BASE}/sports/4/markets/straight`, {
-        signal: AbortSignal.timeout(5000),
-      }),
+    // Fetch from league-specific endpoints (sports/4 returns 401)
+    const NBA_LEAGUE = 487;
+    const NCAAB_LEAGUE = 493;
+
+    const [nbaMatchups, nbaMarkets, ncaabMatchups, ncaabMarkets] = await Promise.all([
+      fetch(`${PINNACLE_BASE}/leagues/${NBA_LEAGUE}/matchups`, { signal: AbortSignal.timeout(5000) }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${PINNACLE_BASE}/leagues/${NBA_LEAGUE}/markets/straight`, { signal: AbortSignal.timeout(5000) }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${PINNACLE_BASE}/leagues/${NCAAB_LEAGUE}/matchups`, { signal: AbortSignal.timeout(5000) }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${PINNACLE_BASE}/leagues/${NCAAB_LEAGUE}/markets/straight`, { signal: AbortSignal.timeout(5000) }).then(r => r.ok ? r.json() : []).catch(() => []),
     ]);
 
-    if (!matchupsRes.ok || !marketsRes.ok) return results;
+    const matchupsArr = [...(Array.isArray(nbaMatchups) ? nbaMatchups : []), ...(Array.isArray(ncaabMatchups) ? ncaabMatchups : [])];
+    const marketsArr = [...(Array.isArray(nbaMarkets) ? nbaMarkets : []), ...(Array.isArray(ncaabMarkets) ? ncaabMarkets : [])];
 
-    const matchups = await matchupsRes.json();
-    const markets = await marketsRes.json();
+    const matchupsRes = { ok: true };
+    const marketsRes = { ok: true };
+    const matchups = matchupsArr;
+    const markets = marketsArr;
 
-    // Find live matchups
+    if (matchups.length === 0 && markets.length === 0) return results;
+
+    // Find live matchups — league endpoints use isLive=true for live games
+    // Only match entries with exactly 2 participants (home/away), not totals/combos
     const liveMatchups = new Map<number, { home: string; away: string }>();
     for (const m of matchups) {
-      if (!m.isLive || !m.participants || m.participants.length < 2) continue;
-      const home = m.participants.find((p: any) => p.alignment === 'home');
-      const away = m.participants.find((p: any) => p.alignment === 'away');
+      if (!m.isLive) continue;
+      const parts = m.participants ?? [];
+      if (parts.length !== 2) continue;
+      const home = parts.find((p: any) => p.alignment === 'home');
+      const away = parts.find((p: any) => p.alignment === 'away');
       if (home && away) {
         liveMatchups.set(m.id, { home: home.name, away: away.name });
       }
