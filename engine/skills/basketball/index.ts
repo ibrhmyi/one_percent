@@ -165,14 +165,40 @@ export class BasketballSkill implements Skill {
         }
       );
 
-      // Log ALL fouls that lead to free throws in Live Scores
+      // Detect fouls that lead to free throws — these are predictive scoring events
+      const desc = (play.description ?? '').toLowerCase();
       const isFreeThrowFoul = play.type?.toLowerCase().includes('foul') ||
-        play.description?.toLowerCase().includes('free throw') ||
-        play.description?.toLowerCase().includes('foul');
+        desc.includes('free throw') || desc.includes('shooting foul') ||
+        desc.includes('personal foul') || desc.includes('flagrant');
 
       if (isFreeThrowFoul) {
-        // Determine which team fouled (the OTHER team shoots free throws)
-        const foulingTeamDesc = play.description ?? '';
+        // Estimate free throws awarded from description
+        let ftCount = 2; // default shooting foul
+        if (desc.includes('3-point') || desc.includes('three point')) ftCount = 3;
+        if (desc.includes('1 free throw') || desc.includes('technical')) ftCount = 1;
+        if (desc.includes('flagrant')) ftCount = 2;
+        if (desc.includes('and-1') || desc.includes('and one') || desc.includes('and 1')) ftCount = 1;
+
+        // Expected points from free throws (NBA FT rate ~77%)
+        const expectedPts = ftCount * 0.77;
+
+        // Determine which team SHOOTS the free throws (opposite of the fouling team)
+        // If the play mentions the home team name, they committed the foul → away shoots
+        const homeLower = game.homeTeam.toLowerCase();
+        const awayLower = game.awayTeam.toLowerCase();
+        const homeCommittedFoul = desc.includes(homeLower) || desc.includes(homeLower.split(' ').pop() ?? '___');
+        const shootingTeamIsHome = !homeCommittedFoul;
+
+        // Get the shooting team's market price
+        const shootingTeamPrice = shootingTeamIsHome
+          ? (espnHomeIsYes ? market.yesPrice : market.noPrice)
+          : (espnHomeIsYes ? market.noPrice : market.yesPrice);
+
+        // Calculate edge using the model with expected points from FTs
+        const foulInfo = this.calculateInformationValue(shootingTeamPrice, secsLeft, league.modelParams);
+        // Scale information value by expected points (FTs are fractional baskets)
+        const ftEdge = foulInfo.informationValue * (expectedPts / 2);
+        const ftNetEdge = ftEdge - 0.0075; // minus taker fee
 
         addCycleLog({
           timestamp: new Date().toISOString(),
@@ -184,14 +210,14 @@ export class BasketballSkill implements Skill {
           period: `Q${game.period}`,
           clock: game.clock,
           secondsRemaining: secsLeft,
-          modelProbability: market.yesPrice, // current price as reference
-          marketPrice: market.yesPrice,
-          edge: 0,
-          ev: 0,
-          fee: 0,
+          modelProbability: shootingTeamPrice + ftEdge,
+          marketPrice: shootingTeamPrice,
+          edge: ftNetEdge,
+          ev: ftNetEdge,
+          fee: 0.0075,
           kellySize: 0,
           action: 'skip',
-          reason: `[${league.name}] FOUL: ${foulingTeamDesc.slice(0, 60)} | Q${game.period} ${game.clock}${isCrunchTime ? ' [CRUNCH]' : ''}`
+          reason: `[${league.name}] FOUL ${ftCount}FT | ${shootingTeamIsHome ? game.homeTeam : game.awayTeam} shoots | Spike: ${(ftEdge * 100).toFixed(1)}% | Edge: ${(ftNetEdge * 100).toFixed(1)}% | Q${game.period} ${game.clock}`
         });
       }
 

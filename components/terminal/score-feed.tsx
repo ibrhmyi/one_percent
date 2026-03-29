@@ -68,8 +68,8 @@ export function ScoreFeed({ events }: Props) {
                     <span style={{ marginLeft: 6 }}>{ev.period} {ev.clock}</span>
                   </span>
                   {isFoul ? (
-                    <span style={{ color: 'rgba(255,200,100,0.7)', fontSize: '0.55rem', fontWeight: 600 }}>
-                      FOUL
+                    <span style={{ color: DIM, fontSize: '0.55rem', fontWeight: 600 }}>
+                      Foul {ev.reason?.match(/(\d)FT/)?.[0] ?? ''}
                     </span>
                   ) : scorer && pts > 0 ? (
                     <span style={{ color: DIM, fontSize: '0.55rem', fontWeight: 600 }}>
@@ -83,23 +83,17 @@ export function ScoreFeed({ events }: Props) {
                   {team1} {score1} — {score2} {team2}
                 </div>
 
-                {/* Model · Market · Edge (or foul description) */}
-                {isFoul ? (
-                  <div style={{ fontSize: '0.55rem', color: 'rgba(255,200,100,0.5)' }}>
-                    {ev.reason?.replace(/^\[.*?\]\s*FOUL:\s*/, '').slice(0, 80)}
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: 8, fontSize: '0.6rem', flexWrap: 'wrap' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Model {(ev.modelProb * 100).toFixed(1)}%</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>Market {(ev.marketPrice * 100).toFixed(0)}¢</span>
-                    <span style={{
-                      color: isSignificant ? 'var(--cyan)' : 'var(--text-dim)',
-                      fontWeight: isSignificant ? 600 : 400,
-                    }}>
-                      Edge {isPositive ? '+' : ''}{edgePct}%
-                    </span>
-                  </div>
-                )}
+                {/* Model · Market · Edge */}
+                <div style={{ display: 'flex', gap: 8, fontSize: '0.6rem', flexWrap: 'wrap' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Model {(ev.modelProb * 100).toFixed(1)}%</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>Market {(ev.marketPrice * 100).toFixed(0)}¢</span>
+                  <span style={{
+                    color: isSignificant ? 'var(--cyan)' : 'var(--text-dim)',
+                    fontWeight: isSignificant ? 600 : 400,
+                  }}>
+                    Edge {isPositive ? '+' : ''}{edgePct}%
+                  </span>
+                </div>
               </div>
             );
           })}
