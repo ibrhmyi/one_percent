@@ -94,12 +94,17 @@ export function PositionsPanel({ orders, summary }: Props) {
                   </span>
                 </div>
 
-                {/* Position — gray, taker style */}
-                <div style={{ fontSize: '0.6rem', color: DIM, marginBottom: 4 }}>
-                  Bought {side} ${dollarAmount.toFixed(0)} · {tokens} shares
+                {/* Position + current price on same row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.6rem', marginBottom: 4 }}>
+                  <span style={{ color: DIM }}>
+                    Bought {side} ${dollarAmount.toFixed(0)} · {tokens} shares
+                  </span>
+                  <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                    {(currentPrice * 100).toFixed(1)}¢
+                  </span>
                 </div>
 
-                {/* Entry · Limit Exit · Edge · Current price + P&L — all one row */}
+                {/* Entry · Limit Exit · Edge · P&L — all one row */}
                 <div style={{ display: 'flex', gap: 12, fontSize: '0.6rem', fontFamily: 'var(--font-mono)', alignItems: 'center' }}>
                   <span>
                     <span style={{ color: DIM, fontSize: '0.5rem' }}>Entry </span>
@@ -113,8 +118,7 @@ export function PositionsPanel({ orders, summary }: Props) {
                     <span style={{ color: DIM, fontSize: '0.5rem' }}>Edge </span>
                     <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>+{edgePct}%</span>
                   </span>
-                  <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>{(currentPrice * 100).toFixed(1)}¢</span>
+                  <span style={{ marginLeft: 'auto' }}>
                     <span style={{ color: unrealizedPnl >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600 }}>{pnlStr}</span>
                   </span>
                 </div>
