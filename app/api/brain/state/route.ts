@@ -95,21 +95,27 @@ export async function GET() {
     uptimeSeconds: 0,
     liveGames: engineState.watchedMarkets.filter(m => m.gameData).length,
     totalGames: engineState.watchedMarkets.length,
-    scoringEvents: engineState.cycleLogs.filter(l => l.action !== 'skip').map(l => ({
-      timestamp: l.timestamp,
-      homeTeam: l.homeTeam,
-      awayTeam: l.awayTeam,
-      homeScore: l.homeScore,
-      awayScore: l.awayScore,
-      period: l.period,
-      clock: l.clock,
-      modelProb: l.modelProbability,
-      marketPrice: l.marketPrice,
-      edge: l.edge,
-      ev: l.ev,
-      action: l.action,
-      reason: l.reason,
-    })),
+    scoringEvents: engineState.cycleLogs.map(l => {
+      // Extract scoring team from reason: "[NBA] Suns scored +2 | ..."
+      const scoringMatch = l.reason.match(/\] (.+?) scored \+(\d+)/);
+      return {
+        timestamp: l.timestamp,
+        homeTeam: l.homeTeam,
+        awayTeam: l.awayTeam,
+        homeScore: l.homeScore,
+        awayScore: l.awayScore,
+        period: l.period,
+        clock: l.clock,
+        modelProb: l.modelProbability,
+        marketPrice: l.marketPrice,
+        edge: l.edge,
+        ev: l.ev,
+        action: l.action,
+        reason: l.reason,
+        scoringTeam: scoringMatch?.[1] ?? '',
+        pointsScored: parseInt(scoringMatch?.[2] ?? '0'),
+      };
+    }),
     gameSchedule: engineState.watchedMarkets
       .filter(m => m.gameStartTime && !(m as any).gameFinished)
       .map(m => ({

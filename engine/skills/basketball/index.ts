@@ -174,21 +174,65 @@ export class BasketballSkill implements Skill {
   }
 
   /**
-   * Fetch games from all configured leagues, returning combined results tagged with league.
+   * Fetch TODAY's games from all configured leagues (fast — 1 request per league).
+   * Only fetches today's scoreboard, not 7 days. This runs every 1 second
+   * so it must be fast.
    */
   private async fetchAllGames(): Promise<{ games: ESPNGame[]; leagueForGame: Map<string, LeagueConfig> }> {
     const allGames: ESPNGame[] = [];
     const leagueForGame = new Map<string, LeagueConfig>();
+    const ESPN_BASE = 'https://site.api.espn.com/apis/site/v2/sports';
 
     const results = await Promise.allSettled(
       this.leagues.map(async (league) => {
-        const games = await fetchScoreboard(
-          league.sportPath,
-          league.name,
-          league.modelParams.QUARTER_SECONDS,
-          league.modelParams.TOTAL_PERIODS
-        );
-        return { league, games };
+        try {
+          const res = await fetch(`${ESPN_BASE}/${league.sportPath}/scoreboard`, {
+            signal: AbortSignal.timeout(5000),
+            cache: 'no-store',
+          });
+          if (!res.ok) return { league, games: [] as ESPNGame[] };
+          const data = await res.json();
+          const games: ESPNGame[] = [];
+
+          for (const event of data?.events ?? []) {
+            const comp = event.competitions?.[0];
+            if (!comp) continue;
+            const home = comp.competitors?.find((c: any) => c.homeAway === 'home');
+            const away = comp.competitors?.find((c: any) => c.homeAway === 'away');
+            if (!home || !away) continue;
+
+            const state = (event.status?.type?.state ?? 'pre') as 'pre' | 'in' | 'post';
+            const period = event.status?.period ?? 1;
+            const clock = event.status?.displayClock ?? '';
+            const homeScore = parseInt(home.score ?? '0', 10);
+            const awayScore = parseInt(away.score ?? '0', 10);
+
+            const qs = league.modelParams.QUARTER_SECONDS;
+            const tp = league.modelParams.TOTAL_PERIODS;
+            let secondsRemaining = 0;
+            if (state === 'in') {
+              const clockParts = clock.split(':');
+              const clockSecs = (parseInt(clockParts[0] ?? '0') * 60) + parseInt(clockParts[1] ?? '0');
+              const remainingPeriods = tp - period;
+              secondsRemaining = clockSecs + (remainingPeriods * qs);
+            }
+
+            games.push({
+              id: String(event.id),
+              name: String(event.name ?? ''),
+              homeTeam: String(home.team?.shortDisplayName || home.team?.displayName || ''),
+              awayTeam: String(away.team?.shortDisplayName || away.team?.displayName || ''),
+              homeAbbr: String(home.team?.abbreviation ?? '').toLowerCase(),
+              awayAbbr: String(away.team?.abbreviation ?? '').toLowerCase(),
+              homeScore, awayScore, period, clock, state, secondsRemaining,
+              scheduledStart: String(event.date ?? ''),
+              league: league.name,
+            });
+          }
+          return { league, games };
+        } catch {
+          return { league, games: [] as ESPNGame[] };
+        }
       })
     );
 
@@ -200,14 +244,13 @@ export class BasketballSkill implements Skill {
           leagueForGame.set(game.id, league);
         }
 
-        // Update league stats
         const live = getLiveGames(games);
         const upcoming = getUpcomingGames(games);
         this.leagueStats.set(league.id, {
           league: league.name,
           liveGames: live.length,
           upcomingGames: upcoming.length,
-          matchedMarkets: 0, // updated below during matching
+          matchedMarkets: 0,
           lastScoringEvent: this.leagueStats.get(league.id)?.lastScoringEvent ?? null,
         });
       }
