@@ -91,8 +91,12 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
 
         <form onSubmit={handleSubmit} style={{
           display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
+          gap: 0,
+          background: 'rgba(255,255,255,0.04)',
+          border: `1px solid ${error ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
+          borderRadius: 100,
+          padding: 4,
+          transition: 'border-color 0.2s',
         }}>
           <input
             type="text"
@@ -101,36 +105,33 @@ export function AccessGate({ children }: { children: React.ReactNode }) {
             placeholder="Access code"
             autoFocus
             style={{
-              width: '100%',
-              boxSizing: 'border-box',
-              background: 'rgba(255,255,255,0.04)',
-              border: `1px solid ${error ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
-              padding: '12px 16px',
+              flex: 1,
+              background: 'transparent',
+              border: 'none',
+              padding: '10px 16px',
               color: '#fff',
               fontSize: 14,
               outline: 'none',
-              borderRadius: 8,
+              borderRadius: 100,
               fontFamily: 'inherit',
-              transition: 'border-color 0.2s',
-              textAlign: 'center',
-              letterSpacing: 1,
+              letterSpacing: 0.5,
+              minWidth: 0,
             }}
           />
           <button type="submit" style={{
-            width: '100%',
             background: 'linear-gradient(135deg, #0e7490, #0891b2, #06a5c7, #0891b2, #0e7490)',
             backgroundSize: '300% 300%',
             animation: 'gradientShift 4s ease infinite',
             border: 'none',
-            borderRadius: 8,
-            padding: '12px 24px',
+            borderRadius: 100,
+            padding: '10px 24px',
             color: '#fff',
             fontSize: 14,
             fontWeight: 500,
             cursor: 'pointer',
+            whiteSpace: 'nowrap',
             fontFamily: 'inherit',
             letterSpacing: 0.5,
-            transition: 'opacity 0.2s',
           }}>
             Enter
           </button>

@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import styles from './blog.module.css';
 
 export default function BlogPage() {
   const sectionsRef = useRef<HTMLDivElement>(null);
+  const [blogEmail, setBlogEmail] = useState('');
+  const [blogMsg, setBlogMsg] = useState('');
 
   useEffect(() => {
     if (!sectionsRef.current) return;
@@ -75,10 +77,29 @@ export default function BlogPage() {
         {/* CTA */}
         <div className={styles.ctaSection}>
           <h2>Get early access</h2>
-          <form className={styles.ctaEmailRow} onSubmit={e => e.preventDefault()}>
-            <input type="email" placeholder="your@email.com" />
+          <form className={styles.ctaEmailRow} onSubmit={async (e) => {
+            e.preventDefault();
+            if (!blogEmail) return;
+            try {
+              const res = await fetch('/api/waitlist', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: blogEmail }),
+              });
+              const data = await res.json();
+              setBlogMsg(data.message || data.error || 'Done!');
+              if (!data.error) setBlogEmail('');
+            } catch { setBlogMsg('Network error'); }
+          }}>
+            <input
+              type="email"
+              placeholder="your@email.com"
+              value={blogEmail}
+              onChange={e => { setBlogEmail(e.target.value); setBlogMsg(''); }}
+            />
             <button type="submit">Join waitlist</button>
           </form>
+          {blogMsg && <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginTop: 8 }}>{blogMsg}</p>}
         </div>
       </div>
 
