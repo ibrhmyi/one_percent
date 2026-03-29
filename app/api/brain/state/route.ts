@@ -202,8 +202,14 @@ function enrichPredictionsWithMarkets(predictions: any[], markets: any[]): any[]
       const yesEdge = skipEdge ? 0 : yesFair - (market.yesPrice || 0.5);
       const noEdge = skipEdge ? 0 : noFair - (market.noPrice || 0.5);
 
+      // Use Polymarket's short team names for display
+      const displayHome = homeIsYes ? (market.homeTeam || pred.homeTeam) : (market.awayTeam || pred.awayTeam);
+      const displayAway = homeIsYes ? (market.awayTeam || pred.awayTeam) : (market.homeTeam || pred.homeTeam);
+
       return {
         ...pred,
+        homeTeam: displayHome,
+        awayTeam: displayAway,
         polymarketMatched: true,
         polymarketUrl: market.url || `https://polymarket.com/event/${market.slug}`,
         yesPrice: market.yesPrice,

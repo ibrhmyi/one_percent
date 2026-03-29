@@ -65,11 +65,9 @@ export function TradesPanel({ trades, mode }: Props) {
                     {isOpen ? '● OPEN' : isProfit ? '✓ CLOSED' : '✗ CLOSED'}
                     {!isOpen && ` · ${isProfit ? '+' : ''}$${(Math.abs(pnl) < 0.005 ? 0 : pnl).toFixed(2)}`}
                   </span>
-                  <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                    {(mode !== 'live' || t.isDryRun) && (
-                      <span style={{ fontSize: '0.5rem', color: DIM, padding: '1px 4px', border: '1px solid var(--border-default)', borderRadius: 2 }}>DRY</span>
-                    )}
-                  </div>
+                  <span style={{ fontSize: '0.5rem', color: DIM, fontFamily: 'var(--font-mono)' }}>
+                    {new Date(t.enteredAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                  </span>
                 </div>
 
                 {/* Teams */}

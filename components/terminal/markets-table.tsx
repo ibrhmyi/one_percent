@@ -199,7 +199,7 @@ export function MarketsTable({ markets }: Props) {
                   {m.awayTeam && m.homeTeam ? `${m.awayTeam} vs ${m.homeTeam}` : m.title}
                 </div>
                 {m.gameData && (
-                  <div style={{ fontSize: '0.6rem', color: 'var(--green)', fontWeight: 600 }}>
+                  <div style={{ fontSize: '0.6rem', color: 'var(--text-dim)', fontWeight: 500 }}>
                     {m.gameData.awayTeam} {m.gameData.awayScore}–{m.gameData.homeScore} {m.gameData.homeTeam} · {m.gameData.period} {m.gameData.clock}
                   </div>
                 )}
