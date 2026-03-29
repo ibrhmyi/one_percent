@@ -10,8 +10,12 @@ const supabase = SUPABASE_URL && SUPABASE_KEY
   : null;
 
 export async function GET() {
-  // Try Supabase first
-  if (supabase) {
+  // When running locally (not Vercel), always use the local engine state
+  // Supabase path is only for when the bot runs elsewhere and the frontend is on Vercel
+  const isLocal = !process.env.VERCEL;
+
+  // Try Supabase only when NOT running locally (e.g., Vercel frontend reading remote bot state)
+  if (supabase && !isLocal) {
     const { data, error } = await supabase
       .from('engine_state')
       .select('*')

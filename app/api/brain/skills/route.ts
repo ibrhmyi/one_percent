@@ -20,5 +20,8 @@ export async function PATCH(req: Request) {
   if (displaySkill) displaySkill.status = newStatus;
   if (actualSkill) actualSkill.status = newStatus;
 
+  // Log to verify it persisted
+  console.log(`[SkillToggle] Set ${id} → ${newStatus}. Display: ${displaySkill?.status}, Actual: ${actualSkill?.status}, Same ref: ${displaySkill === actualSkill}`);
+
   return Response.json({ ok: true, id, status: newStatus });
 }
