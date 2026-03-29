@@ -43,7 +43,7 @@ export function TradesPanel({ trades, mode }: Props) {
               <div key={t.id} className="card-interactive" style={{
                 background: 'rgba(255,255,255,0.02)',
                 border: '1px solid var(--border-default)',
-                borderLeft: `3px solid ${isOpen ? 'var(--cyan)' : isProfit ? 'var(--green)' : isLoss ? 'var(--red)' : isFlat ? 'var(--border-default)' : 'var(--border-default)'}`,
+                borderLeft: `3px solid ${isOpen ? 'rgba(255,255,255,0.06)' : isProfit ? 'var(--green)' : isLoss ? 'var(--red)' : 'rgba(255,255,255,0.06)'}`,
                 borderRadius: 6,
                 padding: '10px 12px',
               }}>
