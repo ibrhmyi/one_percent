@@ -20,16 +20,8 @@ interface Props { trades: Trade[]; mode: string; }
 
 const DIM = 'rgba(255,255,255,0.4)';
 
-function formatDuration(ms: number): string {
-  if (ms <= 0) return '0m';
-  const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
-}
-
 export function TradesPanel({ trades, mode }: Props) {
-  const recent = [...trades].reverse().slice(0, 10);
+  const recent = [...trades].reverse().slice(0, 15);
   return (
     <div className="panel" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="panel-header">Live Trades</div>
@@ -42,70 +34,57 @@ export function TradesPanel({ trades, mode }: Props) {
             const isOpen = t.status === 'open';
             const isProfit = pnl > 0;
             const isLoss = pnl < 0;
-            const borderColor = isOpen ? 'var(--cyan)' : isProfit ? 'var(--green)' : isLoss ? 'var(--red)' : 'var(--border-accent)';
             const nowPrice = t.exitPrice ?? t.currentPrice ?? t.entryPrice;
             const tokens = t.tokens ?? (t.entryAmount > 0 && t.entryPrice > 0 ? Math.round(t.entryAmount / t.entryPrice) : 0);
-
-            // Hold duration
-            const holdMs = t.exitedAt
-              ? new Date(t.exitedAt).getTime() - new Date(t.enteredAt).getTime()
-              : Date.now() - new Date(t.enteredAt).getTime();
+            const pnlStr = pnl >= 0 ? `+$${pnl.toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`;
 
             return (
               <div key={t.id} className="card-interactive" style={{
-                background: 'var(--bg-card-elevated)',
                 border: '1px solid var(--border-default)',
-                borderLeft: `3px solid ${borderColor}`,
                 borderRadius: 6,
                 padding: '10px 12px',
               }}>
-                {/* Header: Status + P&L */}
+                {/* Teams + time/closed status */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <span style={{ fontSize: '0.6rem', fontWeight: 600, color: isOpen ? 'var(--cyan)' : isProfit ? 'var(--green)' : isLoss ? 'var(--red)' : DIM }}>
-                    {isOpen ? '● OPEN' : isProfit ? '✓ CLOSED' : '✗ CLOSED'}
-                    {!isOpen && ` · ${isProfit ? '+' : ''}$${(Math.abs(pnl) < 0.005 ? 0 : pnl).toFixed(2)}`}
+                  <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
+                    {t.marketTitle ?? '—'}
                   </span>
-                  <span style={{ fontSize: '0.5rem', color: DIM, fontFamily: 'var(--font-mono)' }}>
-                    {new Date(t.enteredAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                  <span style={{ fontSize: '0.5rem', color: !isOpen ? (isLoss ? 'var(--red)' : isProfit ? 'var(--green)' : DIM) : DIM, fontFamily: 'var(--font-mono)', fontWeight: !isOpen ? 600 : 400 }}>
+                    {isOpen
+                      ? new Date(t.enteredAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+                      : `CLOSED ${t.exitedAt ? new Date(t.exitedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : ''}`
+                    }
                   </span>
                 </div>
 
-                {/* Teams */}
-                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.9)', fontWeight: 600, marginBottom: 2 }}>
-                  {t.marketTitle ?? '—'}
-                </div>
-                <div style={{ fontSize: '0.55rem', color: DIM, marginBottom: 6 }}>
-                  Bought {t.side?.toUpperCase()} ${t.entryAmount.toFixed(0)} · {Math.round(tokens)} shares
+                {/* Position + current/exit price */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.6rem', marginBottom: 4 }}>
+                  <span style={{ color: DIM }}>
+                    Bought {t.side?.toUpperCase()} ${t.entryAmount.toFixed(0)} · {Math.round(tokens)} shares
+                  </span>
+                  <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                    {(nowPrice * 100).toFixed(1)}¢
+                  </span>
                 </div>
 
-                {/* Price row */}
-                <div style={{ display: 'flex', gap: 16, fontSize: '0.65rem', fontFamily: 'var(--font-mono)' }}>
-                  <div>
-                    <span style={{ color: DIM, fontSize: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Entry </span>
-                    <span style={{ color: 'rgba(255,255,255,0.9)' }}>{(t.entryPrice * 100).toFixed(0)}¢</span>
-                  </div>
-                  <div>
-                    <span style={{ color: DIM, fontSize: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isOpen ? 'Now ' : 'Exit '}</span>
-                    <span style={{ color: 'rgba(255,255,255,0.9)' }}>{(nowPrice * 100).toFixed(0)}¢</span>
-                  </div>
-                  {isOpen && (
-                    <div>
-                      <span style={{ color: DIM, fontSize: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>P&L </span>
-                      <span style={{ color: DIM }}>$0.00</span>
-                    </div>
+                {/* Entry + P&L */}
+                <div style={{ display: 'flex', gap: 12, fontSize: '0.6rem', fontFamily: 'var(--font-mono)', alignItems: 'center' }}>
+                  <span>
+                    <span style={{ color: DIM, fontSize: '0.5rem' }}>Entry </span>
+                    <span style={{ color: 'rgba(255,255,255,0.9)' }}>{(t.entryPrice * 100).toFixed(1)}¢</span>
+                  </span>
+                  {!isOpen && (
+                    <span>
+                      <span style={{ color: DIM, fontSize: '0.5rem' }}>Exit </span>
+                      <span style={{ color: 'rgba(255,255,255,0.9)' }}>{(nowPrice * 100).toFixed(1)}¢</span>
+                    </span>
                   )}
-                  <div style={{ marginLeft: 'auto' }}>
-                    <span style={{ color: DIM, fontSize: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hold </span>
-                    <span style={{ color: DIM }}>{formatDuration(holdMs)}</span>
-                  </div>
+                  <span style={{ marginLeft: 'auto' }}>
+                    <span style={{ color: isLoss ? 'var(--red)' : isProfit ? 'var(--green)' : DIM, fontWeight: 600 }}>
+                      {isOpen ? '$0.00' : pnlStr}
+                    </span>
+                  </span>
                 </div>
-
-                {/* Exit reason for closed trades */}
-                {!isOpen && t.exitReason && (
-                  <div style={{ fontSize: '0.5rem', color: DIM, marginTop: 4 }}>
-                    Reason: {t.exitReason.replace(/_/g, ' ')}
-                  </div>
-                )}
               </div>
             );
           })}
