@@ -340,7 +340,7 @@ export async function refreshMarkets(): Promise<void> {
               awayScore: game.awayScore,
               period: `Q${game.period}`,
               clock: game.clock,
-              league: game.league,
+              league: game.league ?? 'NBA',
             };
           }
           // Mark finished games so they can be filtered out
