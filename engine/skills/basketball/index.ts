@@ -497,7 +497,7 @@ export class BasketballSkill implements Skill {
           fee: TAKER_FEE,
           kellySize: isTradeable ? 0.5 : 0,
           action: isTradeable ? 'enter' : 'skip',
-          reason: `[${league.name}] ${scoringTeam === 'home' ? game.homeTeam : game.awayTeam} scored +${pointsScored} | ${trueSource}: ${(trueScoringTeamProb * 100).toFixed(1)}% | Market: ${(scoringTeamPrice * 100).toFixed(1)}c | Spike: ${(info.informationValue * 100).toFixed(1)}% | Edge: ${(liveEdge * 100).toFixed(1)}%`
+          reason: `[${league.name}] ${scoringTeam === 'home' ? game.homeTeam : game.awayTeam} +${pointsScored}${pointsScored === 1 ? ' FT' : ''} | ${trueSource}: ${(trueScoringTeamProb * 100).toFixed(1)}% | Market: ${(scoringTeamPrice * 100).toFixed(1)}c | Spike: ${(info.informationValue * 100).toFixed(1)}% | Edge: ${(liveEdge * 100).toFixed(1)}%`
         });
 
         // Log the scoring event to disk

@@ -15,6 +15,9 @@ interface ScoringEvent {
   reason: string;
   scoringTeam?: string;
   pointsScored?: number;
+  isFreeThrow?: boolean;
+  isFoul?: boolean;
+  foulFTs?: number;
 }
 interface Props { events: ScoringEvent[]; }
 
@@ -37,8 +40,9 @@ export function ScoreFeed({ events }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {reversed.map((ev, i) => {
             const edgePct = (ev.edge * 100).toFixed(1);
-            const isFoul = ev.reason?.includes('FOUL:');
-            const isSignificant = !isFoul && Math.abs(ev.edge) > 0.015;
+            const isFoul = ev.isFoul || ev.reason?.includes('FOUL');
+            const isFT = ev.isFreeThrow || ev.pointsScored === 1;
+            const isSignificant = Math.abs(ev.edge) > 0.015;
             const isPositive = ev.edge > 0;
 
             // Determine who scored — use scoringTeam if available, otherwise infer
@@ -69,11 +73,11 @@ export function ScoreFeed({ events }: Props) {
                   </span>
                   {isFoul ? (
                     <span style={{ color: DIM, fontSize: '0.55rem', fontWeight: 600 }}>
-                      Foul {ev.reason?.match(/(\d)FT/)?.[0] ?? ''}
+                      Foul ({ev.foulFTs || ev.reason?.match(/(\d)FT/)?.[1] || '2'})
                     </span>
                   ) : scorer && pts > 0 ? (
                     <span style={{ color: DIM, fontSize: '0.55rem', fontWeight: 600 }}>
-                      {scorer} +{pts}
+                      {scorer} +{pts}{isFT ? ' FT' : ''}
                     </span>
                   ) : null}
                 </div>

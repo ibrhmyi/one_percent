@@ -96,8 +96,9 @@ export async function GET() {
     liveGames: engineState.watchedMarkets.filter(m => m.gameData).length,
     totalGames: engineState.watchedMarkets.length,
     scoringEvents: engineState.cycleLogs.map(l => {
-      // Extract scoring team from reason: "[NBA] Suns scored +2 | ..."
-      const scoringMatch = l.reason.match(/\] (.+?) scored \+(\d+)/);
+      // Extract scoring team: "[NBA] Suns +2" or "[NBA] Jazz +1 FT" or "[NBA] FOUL 2FT"
+      const scoreMatch = l.reason.match(/\] (.+?) \+(\d+)( FT)?/);
+      const foulMatch = l.reason.match(/\] FOUL (\d+)FT \| (.+?) shoots/);
       return {
         timestamp: l.timestamp,
         homeTeam: l.homeTeam,
@@ -112,8 +113,11 @@ export async function GET() {
         ev: l.ev,
         action: l.action,
         reason: l.reason,
-        scoringTeam: scoringMatch?.[1] ?? '',
-        pointsScored: parseInt(scoringMatch?.[2] ?? '0'),
+        scoringTeam: scoreMatch?.[1] ?? foulMatch?.[2] ?? '',
+        pointsScored: parseInt(scoreMatch?.[2] ?? '0'),
+        isFreeThrow: !!scoreMatch?.[3],
+        isFoul: !!foulMatch,
+        foulFTs: parseInt(foulMatch?.[1] ?? '0'),
       };
     }),
     gameSchedule: engineState.watchedMarkets
