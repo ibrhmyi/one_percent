@@ -14,6 +14,7 @@ import { startPolling as startSportsbookPoller } from './predictions/sportsbook-
 import { startInjuryMonitor, onInjuryUpdate } from './predictions/injury-monitor';
 import { startPinnaclePoller } from './predictions/pinnacle';
 import { startKambiPoller } from './predictions/kambi';
+import { loadState, saveState } from './local-persistence';
 
 const GAMMA_EVENTS_API = 'https://gamma-api.polymarket.com/events';
 
@@ -515,6 +516,7 @@ export async function runCycle(): Promise<void> {
     // Still count this as a cycle even when no live games
     engineState.lastCycleAt = new Date().toISOString();
     await syncToSupabase();
+    saveState();
     return;
   }
 
@@ -617,6 +619,10 @@ let initialLoadPromise: Promise<void> | null = null;
 export async function startBrain() {
   if (started) return;
   started = true;
+
+  // Load persisted state (bankroll, trades, P&L) from last session
+  loadState();
+
   engineState.isRunning = true;
 
   registerSkill(new BasketballSkill());
