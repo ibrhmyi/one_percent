@@ -32,6 +32,38 @@ interface Props {
   predictions: Prediction[];
 }
 
+// NBA: "San Antonio Spurs" → "Spurs", "LA Clippers" → "Clippers"
+// NCAAB: "Arizona Wildcats" → "Arizona", "Duke Blue Devils" → "Duke"
+const NBA_CITY_NAMES: Record<string, string> = {
+  'hawks': 'Hawks', 'celtics': 'Celtics', 'nets': 'Nets', 'hornets': 'Hornets',
+  'bulls': 'Bulls', 'cavaliers': 'Cavaliers', 'mavericks': 'Mavericks', 'nuggets': 'Nuggets',
+  'pistons': 'Pistons', 'warriors': 'Warriors', 'rockets': 'Rockets', 'pacers': 'Pacers',
+  'clippers': 'Clippers', 'lakers': 'Lakers', 'grizzlies': 'Grizzlies', 'heat': 'Heat',
+  'bucks': 'Bucks', 'timberwolves': 'Timberwolves', 'pelicans': 'Pelicans', 'knicks': 'Knicks',
+  'thunder': 'Thunder', 'magic': 'Magic', '76ers': '76ers', 'suns': 'Suns',
+  'trail blazers': 'Trail Blazers', 'blazers': 'Blazers', 'kings': 'Kings',
+  'spurs': 'Spurs', 'raptors': 'Raptors', 'jazz': 'Jazz', 'wizards': 'Wizards',
+};
+
+function shortName(name: string): string {
+  const lower = name.toLowerCase();
+  // Check if last word is an NBA team name
+  const lastWord = lower.split(' ').pop() ?? '';
+  if (NBA_CITY_NAMES[lastWord]) return NBA_CITY_NAMES[lastWord];
+  // For NCAAB, use first word (school name): "Arizona Wildcats" → "Arizona"
+  const words = name.split(' ');
+  if (words.length > 1) {
+    // Check if it's a well-known multi-word school
+    if (lower.startsWith('san ') || lower.startsWith('los ') || lower.startsWith('new ') ||
+        lower.startsWith('la ') || lower.startsWith('oklahoma city') || lower.startsWith('golden state') ||
+        lower.startsWith('portland trail')) {
+      return NBA_CITY_NAMES[lastWord] ?? name;
+    }
+    return words[0]; // First word = school name for NCAAB
+  }
+  return name;
+}
+
 function formatCountdown(iso: string | null | undefined): string {
   if (!iso) return '';
   const diff = Math.floor((new Date(iso).getTime() - Date.now()) / 1000);
@@ -136,11 +168,11 @@ export function OddsRanker({ predictions }: Props) {
                 <Countdown target={pred.gameStartTime} />
               </div>
 
-              {/* Row 2: Team names — flows as one line, wraps naturally */}
+              {/* Row 2: Team names — short Polymarket-style names */}
               <div style={{ fontSize: '0.73rem', fontWeight: 600, marginBottom: 4 }}>
-                <span style={{ color: 'rgba(255,255,255,0.9)' }}>{pred.awayTeam}</span>
+                <span style={{ color: 'rgba(255,255,255,0.9)' }}>{shortName(pred.awayTeam)}</span>
                 <span style={{ color: 'var(--text-dim)', margin: '0 4px' }}>vs</span>
-                <span style={{ color: 'rgba(255,255,255,0.9)' }}>{pred.homeTeam}</span>
+                <span style={{ color: 'rgba(255,255,255,0.9)' }}>{shortName(pred.homeTeam)}</span>
               </div>
 
               {/* Row 3: YES / NO / SPRD / VOL — exact same style as Game Schedule */}
