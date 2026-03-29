@@ -189,10 +189,16 @@ export class BasketballSkill implements Skill {
         const homeCommittedFoul = desc.includes(homeLower) || desc.includes(homeLower.split(' ').pop() ?? '___');
         const shootingTeamIsHome = !homeCommittedFoul;
 
+        // Determine which Polymarket side corresponds to ESPN home team
+        const espnHomeLowerFoul = game.homeTeam.toLowerCase();
+        const marketHomeLowerFoul = market.homeTeam.toLowerCase();
+        const espnHomeIsYesFoul = marketHomeLowerFoul.includes(espnHomeLowerFoul.split(' ').pop() ?? '') ||
+                                  espnHomeLowerFoul.includes(marketHomeLowerFoul.split(' ').pop() ?? '');
+
         // Get the shooting team's market price
         const shootingTeamPrice = shootingTeamIsHome
-          ? (espnHomeIsYes ? market.yesPrice : market.noPrice)
-          : (espnHomeIsYes ? market.noPrice : market.yesPrice);
+          ? (espnHomeIsYesFoul ? market.yesPrice : market.noPrice)
+          : (espnHomeIsYesFoul ? market.noPrice : market.yesPrice);
 
         // Calculate edge using the model with expected points from FTs
         const foulInfo = this.calculateInformationValue(shootingTeamPrice, secsLeft, league.modelParams);
