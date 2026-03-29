@@ -66,8 +66,6 @@ export async function GET() {
 
   // Ensure brain is started (idempotent — returns immediately if already running)
   await startBrain();
-
-  await startBrain();
   await waitForInitialLoad();
 
   const edgeSkill = getSkill('basketball-edge') as any;

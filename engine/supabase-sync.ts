@@ -16,7 +16,7 @@ let cycleCount = 0;
 let lastCycleAt = '';
 let brainStartedAt = 0;
 let lastSyncAt = 0;
-const SYNC_INTERVAL_MS = 2000; // Sync every 2 seconds
+const SYNC_INTERVAL_MS = 30_000; // Sync every 30 seconds (saves Supabase disk IO)
 
 /**
  * Push current engine state to Supabase.

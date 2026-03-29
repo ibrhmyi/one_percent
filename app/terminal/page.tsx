@@ -55,7 +55,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchState();
-    const id = setInterval(fetchState, 2000);
+    const id = setInterval(fetchState, 10000); // 10s poll to save Vercel/Supabase free tier
     return () => clearInterval(id);
   }, [fetchState]);
 
