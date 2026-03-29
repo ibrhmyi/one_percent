@@ -99,8 +99,8 @@ export function PositionsPanel({ orders, summary }: Props) {
                   Bought {side} ${dollarAmount.toFixed(0)} · {tokens} shares
                 </div>
 
-                {/* Entry · Limit Exit · Edge in one row */}
-                <div style={{ display: 'flex', gap: 12, fontSize: '0.6rem', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
+                {/* Entry · Limit Exit · Edge · Current price + P&L — all one row */}
+                <div style={{ display: 'flex', gap: 12, fontSize: '0.6rem', fontFamily: 'var(--font-mono)', alignItems: 'center' }}>
                   <span>
                     <span style={{ color: DIM, fontSize: '0.5rem' }}>Entry </span>
                     <span style={{ color: 'rgba(255,255,255,0.9)' }}>{(fillPrice * 100).toFixed(1)}¢</span>
@@ -113,18 +113,9 @@ export function PositionsPanel({ orders, summary }: Props) {
                     <span style={{ color: DIM, fontSize: '0.5rem' }}>Edge </span>
                     <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>+{edgePct}%</span>
                   </span>
-                </div>
-
-                {/* Now price (dominant) + P&L */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.6rem' }}>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 700, fontFamily: 'var(--font-mono)', fontSize: '0.7rem' }}>
-                      Now {(currentPrice * 100).toFixed(1)}¢
-                    </span>
-                    <span style={{ color: unrealizedPnl >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600, fontSize: '0.55rem' }}>{pnlStr}</span>
-                  </div>
-                  <span style={{ color: DIM, fontSize: '0.5rem' }}>
-                    {isFilled ? 'Filled' : `Pending · ${((order.filledSize / order.size) * 100).toFixed(0)}%`}
+                  <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ color: 'rgba(255,255,255,0.9)', fontWeight: 700 }}>{(currentPrice * 100).toFixed(1)}¢</span>
+                    <span style={{ color: unrealizedPnl >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 600 }}>{pnlStr}</span>
                   </span>
                 </div>
               </div>
