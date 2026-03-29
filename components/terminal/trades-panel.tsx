@@ -32,7 +32,7 @@ export function TradesPanel({ trades, mode }: Props) {
           {recent.map(t => {
             const pnl = t.pnl ?? 0;
             const isOpen = t.status === 'open';
-            const isProfit = pnl > 0;
+            const isProfit = pnl >= 0 && !isOpen;
             const isLoss = pnl < 0;
             const nowPrice = t.exitPrice ?? t.currentPrice ?? t.entryPrice;
             const tokens = t.tokens ?? (t.entryAmount > 0 && t.entryPrice > 0 ? Math.round(t.entryAmount / t.entryPrice) : 0);
@@ -40,7 +40,9 @@ export function TradesPanel({ trades, mode }: Props) {
 
             return (
               <div key={t.id} className="card-interactive" style={{
+                background: 'rgba(255,255,255,0.02)',
                 border: '1px solid var(--border-default)',
+                borderLeft: `3px solid ${isOpen ? 'var(--cyan)' : isProfit ? 'var(--green)' : isLoss ? 'var(--red)' : 'var(--border-default)'}`,
                 borderRadius: 6,
                 padding: '10px 12px',
               }}>
@@ -49,9 +51,9 @@ export function TradesPanel({ trades, mode }: Props) {
                   <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.9)', fontWeight: 600 }}>
                     {t.marketTitle ?? '—'}
                   </span>
-                  <span style={{ fontSize: '0.5rem', color: !isOpen ? (isLoss ? 'var(--red)' : isProfit ? 'var(--green)' : DIM) : DIM, fontFamily: 'var(--font-mono)', fontWeight: !isOpen ? 600 : 400 }}>
+                  <span style={{ fontSize: '0.5rem', color: isOpen ? 'var(--cyan)' : isLoss ? 'var(--red)' : isProfit ? 'var(--green)' : DIM, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
                     {isOpen
-                      ? new Date(t.enteredAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+                      ? `OPEN ${new Date(t.enteredAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`
                       : `CLOSED ${t.exitedAt ? new Date(t.exitedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }) : ''}`
                     }
                   </span>
