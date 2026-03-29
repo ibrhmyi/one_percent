@@ -57,12 +57,15 @@ export async function GET() {
     }
   }
 
-  // Fallback: start local brain
+  // Local brain — instrumentation.ts starts it on boot, we just read state
   const { engineState, getPriceHistory } = await import('@/engine/state');
   const { startBrain, waitForInitialLoad } = await import('@/engine/brain');
   const { isPriceFeedConnected } = await import('@/engine/price-feed');
   const { getSkill } = await import('@/engine/skill-registry');
   const { getAllPredictions } = await import('@/engine/predictions/aggregator');
+
+  // Ensure brain is started (idempotent — returns immediately if already running)
+  await startBrain();
 
   await startBrain();
   await waitForInitialLoad();

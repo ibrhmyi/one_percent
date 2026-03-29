@@ -7,7 +7,7 @@ export const engineState: EngineState = {
   trades: [],
   skills: [],
   account: {
-    bankroll: Number(process.env.BANKROLL) || 400,
+    bankroll: Number(process.env.BANKROLL) || 10000,
     pnlToday: 0,
     pnlTotal: 0,
     openPositions: 0,
@@ -54,9 +54,9 @@ export function addMessage(msg: Omit<BrainMessage, 'id' | 'timestamp'>) {
 
 export function addCycleLog(log: CycleLog) {
   engineState.cycleLogs.push(log);
-  // Keep last 10,000 logs in memory
-  if (engineState.cycleLogs.length > 10_000) {
-    engineState.cycleLogs = engineState.cycleLogs.slice(-10_000);
+  // Keep last 500 logs in memory (sufficient for 30 min of Live Scores)
+  if (engineState.cycleLogs.length > 500) {
+    engineState.cycleLogs = engineState.cycleLogs.slice(-500);
   }
 }
 
