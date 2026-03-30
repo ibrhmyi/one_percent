@@ -379,7 +379,15 @@ export async function refreshMarkets(): Promise<void> {
     // Keep live games + games starting within 7 days
     const now = Date.now();
     const H36 = 7 * 24 * 60 * 60 * 1000;
+    // Keep track of markets we have open trades on — NEVER remove these
+    const openTradeMarketIds = new Set(
+      engineState.trades
+        .filter(t => t.status === 'open')
+        .map(t => t.marketId)
+    );
     const relevant = markets.filter(m => {
+      // Always keep markets with open trades (need to track resolution)
+      if (openTradeMarketIds.has(m.id) || openTradeMarketIds.has(m.conditionId)) return true;
       if (m.status === 'live' || m.status === 'edge_detected' || m.status === 'position_open') return true;
       if (!m.gameStartTime) return false;
       const diff = new Date(m.gameStartTime).getTime() - now;
