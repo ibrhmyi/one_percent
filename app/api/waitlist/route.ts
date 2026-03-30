@@ -3,8 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(req: Request) {
   try {
     const { email } = await req.json();
-    if (!email || !email.includes('@')) {
-      return Response.json({ error: 'Invalid email' }, { status: 400 });
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!email || !emailRegex.test(email)) {
+      return Response.json({ error: 'Please enter a valid email' }, { status: 400 });
     }
 
     const supabase = createClient(

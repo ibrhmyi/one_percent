@@ -122,17 +122,19 @@ export default function LandingPage() {
         {waitlistMsg ? (
           <div style={{
             marginBottom: 30,
-            padding: '14px 28px',
-            background: 'rgba(8,145,178,0.08)',
-            border: '1px solid rgba(8,145,178,0.2)',
+            padding: '16px 32px',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
             borderRadius: 100,
-            backdropFilter: 'blur(20px)',
-            fontSize: 14,
-            color: 'rgba(8,145,178,0.9)',
+            backdropFilter: 'blur(40px)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)',
+            fontSize: 16,
+            color: '#fff',
             letterSpacing: 0.5,
             fontWeight: 500,
+            textAlign: 'center' as const,
           }}>
-            {waitlistMsg}
+            ✓ {waitlistMsg}
           </div>
         ) : (
           <form className={styles.emailRow} onSubmit={handleWaitlist}>
