@@ -15,10 +15,41 @@ export async function checkExits(): Promise<void> {
   if (openTrades.length === 0) return;
 
   for (const trade of openTrades) {
-    // Skip pre-game trades — they have their own exit logic (exit before game starts)
+    const market = engineState.watchedMarkets.find(m => m.id === trade.marketId);
+
+    // ── Auto-close trades on settled/ended markets ──
+    // Applies to ALL skills including basketball-edge
+    if (market) {
+      const yesPrice = market.yesPrice;
+      // Market settled: price at 99c+ or 1c- means the outcome is decided
+      if (yesPrice >= 0.99 || yesPrice <= 0.01) {
+        const settledPrice = trade.side === 'yes' ? yesPrice : (1 - yesPrice);
+        await closePosition(trade, settledPrice, 'settled');
+        priceHistory.delete(trade.id);
+        continue;
+      }
+      // Game finished (marked by refreshMarkets) — close at current price
+      if ((market as any).gameFinished) {
+        const currentPrice = trade.side === 'yes' ? market.yesPrice : market.noPrice;
+        await closePosition(trade, currentPrice, 'game_over');
+        priceHistory.delete(trade.id);
+        continue;
+      }
+    } else {
+      // Market no longer in watchedMarkets (game ended, removed from Gamma API)
+      // Close at entry price (no current price available since market is gone)
+      const lastPrice = (trade.currentPrice && trade.currentPrice > 0)
+        ? trade.currentPrice
+        : trade.entryPrice;
+      await closePosition(trade, lastPrice, 'game_over');
+      priceHistory.delete(trade.id);
+      continue;
+    }
+
+    // Skip remaining exit logic for pre-game trades — they have their own exit timing
+    // (the basketball-edge skill cancels orders before game start in detect())
     if (trade.skillId === 'basketball-edge') continue;
 
-    const market = engineState.watchedMarkets.find(m => m.id === trade.marketId);
     const currentPrice = getCurrentPrice(trade, market);
     if (currentPrice === null) continue;
 

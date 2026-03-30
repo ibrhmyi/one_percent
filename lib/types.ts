@@ -14,6 +14,7 @@ export interface AccountState {
   pnlToday: number;
   pnlTotal: number;
   openPositions: number;
+  kellyFraction: number;            // 0.5 = Half-Kelly (default)
   mode: 'dry_run' | 'live';
   polymarketId: string;
 }
@@ -79,12 +80,13 @@ export interface Trade {
   exitPrice: number | null;
   exitAmount: number | null;
   pnl: number | null;
+  currentPrice?: number;           // updated every cycle for open trades
   tokens: number;
   skillId: string;
   skillIcon: string;
   enteredAt: string;
   exitedAt: string | null;
-  exitReason: 'target' | 'reversal' | 'stall' | 'timeout' | 'game_over' | 'rejected' | null;
+  exitReason: 'target' | 'reversal' | 'stall' | 'timeout' | 'game_over' | 'settled' | 'rejected' | null;
   status: 'open' | 'closed';
   peakPrice: number;
   yesTokenId: string;

@@ -11,6 +11,7 @@ export const engineState: EngineState = {
     pnlToday: 0,
     pnlTotal: 0,
     openPositions: 0,
+    kellyFraction: 0.5,
     mode: process.env.DRY_RUN === 'false' ? 'live' : 'dry_run',
     polymarketId: process.env.POLYMARKET_ADDRESS || '0x...',
   },

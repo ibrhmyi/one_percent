@@ -205,12 +205,23 @@ Sources are dynamically weighted based on availability and credibility:
         continue;
       }
 
-      // Dedup: skip if we already have an order for this game
+      // Dedup: skip if we already have an order OR an open trade for this market
       const existingOrders = getOrders();
       const alreadyOrdered = existingOrders.some(
         o => o.conditionId === market.conditionId && o.status !== 'cancelled'
       );
       if (alreadyOrdered) continue;
+
+      // Also check existing trades (orders may not exist if trade was placed directly)
+      const marketTitle = `${market.homeTeam} vs ${market.awayTeam}`;
+      const alreadyTraded = engineState.trades.some(
+        t => t.status === 'open' && (
+          t.marketId === market.id ||
+          t.marketId === market.conditionId ||
+          t.marketTitle === marketTitle
+        )
+      );
+      if (alreadyTraded) continue;
 
       // Min edge thresholds (after fees)
       const minEdges: Record<string, number> = { high: 0.015, medium: 0.025, low: 0.04 };
@@ -359,6 +370,12 @@ Sources are dynamically weighted based on availability and credibility:
     // ── Step 5: Execute decision ──
     if (decision.action === 'ENTER' && decision.targets) {
       for (const target of decision.targets) {
+        // Dedup: skip if we already have an open trade for this market
+        const alreadyTraded = engineState.trades.some(
+          t => t.status === 'open' && (t.marketId === target.conditionId)
+        );
+        if (alreadyTraded) continue;
+
         const order = await placeOrder({
           conditionId: target.conditionId,
           tokenId: target.tokenId,

@@ -1,1 +1,53 @@
-[]
+[
+  {
+    "id": "sim-1774793812875-jr4js",
+    "marketTitle": "Clippers vs Bucks",
+    "side": "no",
+    "entryPrice": 0.1,
+    "exitPrice": null,
+    "entryAmount": 136.41,
+    "exitAmount": null,
+    "tokens": 1186.1739130434783,
+    "pnl": null,
+    "status": "open",
+    "skillId": "basketball-edge",
+    "enteredAt": "2026-03-29T14:17:31.910Z",
+    "exitedAt": null,
+    "exitReason": null,
+    "isDryRun": true
+  },
+  {
+    "id": "sim-1774793816630-83d4o",
+    "marketTitle": "Heat vs Pacers",
+    "side": "no",
+    "entryPrice": 0.2,
+    "exitPrice": null,
+    "entryAmount": 162.26,
+    "exitAmount": null,
+    "tokens": 772.6666666666666,
+    "pnl": null,
+    "status": "open",
+    "skillId": "basketball-edge",
+    "enteredAt": "2026-03-29T14:17:35.508Z",
+    "exitedAt": null,
+    "exitReason": null,
+    "isDryRun": true
+  },
+  {
+    "id": "sim-1774793826319-qc6v0",
+    "marketTitle": "Bulls vs Spurs",
+    "side": "yes",
+    "entryPrice": 0.04,
+    "exitPrice": null,
+    "entryAmount": 275.58,
+    "exitAmount": null,
+    "tokens": 5010.545454545454,
+    "pnl": null,
+    "status": "open",
+    "skillId": "basketball-edge",
+    "enteredAt": "2026-03-29T14:17:45.512Z",
+    "exitedAt": null,
+    "exitReason": null,
+    "isDryRun": true
+  }
+]

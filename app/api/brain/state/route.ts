@@ -36,7 +36,7 @@ export async function GET() {
         isRunning: data.is_running,
         lastCycleAt: data.last_cycle_at,
         wsConnected: data.ws_connected,
-        account: data.account ?? { bankroll: 10000, pnlToday: 0, pnlTotal: 0, openPositions: 0, mode: 'dry_run', polymarketId: '0x...' },
+        account: data.account ?? { bankroll: 10000, pnlToday: 0, pnlTotal: 0, openPositions: 0, kellyFraction: 0.5, mode: 'dry_run', polymarketId: '0x...' },
         watchedMarkets: (data.watched_markets ?? []).map((m: any) => ({ ...m, priceHistory: [] })),
         trades: data.trades ?? [],
         messages: data.messages ?? [],

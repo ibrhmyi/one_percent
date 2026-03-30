@@ -17,7 +17,7 @@ const DEFAULT_STATE = {
   isRunning: false,
   lastCycleAt: null as string | null,
   wsConnected: false,
-  account: { bankroll: 400, pnlToday: 0, pnlTotal: 0, openPositions: 0, mode: 'dry_run' as const, polymarketId: '0x...' },
+  account: { bankroll: 400, pnlToday: 0, pnlTotal: 0, openPositions: 0, kellyFraction: 0.5, mode: 'dry_run' as const, polymarketId: '0x...' },
   watchedMarkets: [] as any[],
   trades: [] as any[],
   messages: [] as any[],

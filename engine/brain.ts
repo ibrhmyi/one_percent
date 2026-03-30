@@ -467,6 +467,35 @@ async function simulateDryRunFills(): Promise<void> {
 }
 
 // ─────────────────────────────────────────────
+// Update open trades — current price + unrealized P&L
+// ─────────────────────────────────────────────
+
+function updateOpenTradesPnL(): void {
+  const openTrades = engineState.trades.filter(t => t.status === 'open');
+  const markets = engineState.watchedMarkets;
+
+  for (const trade of openTrades) {
+    const market = markets.find(m => m.id === trade.marketId);
+    const currentPrice = market
+      ? (trade.side === 'yes' ? market.yesPrice : market.noPrice)
+      : 0;
+
+    trade.currentPrice = currentPrice;
+
+    // Unrealized P&L: (currentPrice - entryPrice) * tokens
+    if (currentPrice > 0) {
+      const exitValue = trade.tokens * currentPrice;
+      trade.pnl = exitValue - trade.entryAmount;
+    }
+
+    // Update peak price for trailing stop logic
+    if (currentPrice > trade.peakPrice) {
+      trade.peakPrice = currentPrice;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
 // Main brain cycle — runs every 1s
 // ─────────────────────────────────────────────
 
@@ -483,6 +512,12 @@ export async function runCycle(): Promise<void> {
 
   // Simulate fills for dry-run orders
   await simulateDryRunFills();
+
+  // Update current price and unrealized P&L for ALL open trades every cycle
+  updateOpenTradesPnL();
+
+  // Keep openPositions count in sync every cycle
+  updateAccount();
 
   const markets = engineState.watchedMarkets;
   const liveMarkets = markets.filter(m =>
