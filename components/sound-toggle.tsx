@@ -34,12 +34,15 @@ export function SoundToggle({ src }: Props) {
     // Autoplay after 5 seconds (requires user interaction first on most browsers)
     const autoplayTimer = setTimeout(() => {
       audio.play().then(() => setPlaying(true)).catch(() => {
-        // Browser blocked autoplay — wait for first user click anywhere
-        const startOnClick = () => {
+        // Browser blocked autoplay — wait for user click on non-interactive elements
+        const startOnClick = (e: MouseEvent) => {
+          const target = e.target as HTMLElement;
+          // Don't hijack clicks on forms, buttons, inputs, or links
+          if (target.closest('form') || target.closest('button') || target.closest('a') || target.closest('input')) return;
           audio.play().then(() => setPlaying(true)).catch(() => {});
           document.removeEventListener('click', startOnClick);
         };
-        document.addEventListener('click', startOnClick, { once: true });
+        document.addEventListener('click', startOnClick);
       });
     }, 5000);
 
