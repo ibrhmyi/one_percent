@@ -77,29 +77,45 @@ export default function BlogPage() {
         {/* CTA */}
         <div className={styles.ctaSection}>
           <h2>Get early access</h2>
-          <form className={styles.ctaEmailRow} onSubmit={async (e) => {
-            e.preventDefault();
-            if (!blogEmail) return;
-            try {
-              const res = await fetch('/api/waitlist', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: blogEmail }),
-              });
-              const data = await res.json();
-              setBlogMsg(data.message || data.error || 'Done!');
-              if (!data.error) setBlogEmail('');
-            } catch { setBlogMsg('Network error'); }
-          }}>
-            <input
-              type="email"
-              placeholder="your@email.com"
-              value={blogEmail}
-              onChange={e => { setBlogEmail(e.target.value); setBlogMsg(''); }}
-            />
-            <button type="submit">Join waitlist</button>
-          </form>
-          {blogMsg && <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, marginTop: 8 }}>{blogMsg}</p>}
+          {blogMsg ? (
+            <div style={{
+              padding: '14px 28px',
+              background: 'rgba(8,145,178,0.08)',
+              border: '1px solid rgba(8,145,178,0.2)',
+              borderRadius: 100,
+              backdropFilter: 'blur(20px)',
+              fontSize: 14,
+              color: 'rgba(8,145,178,0.9)',
+              letterSpacing: 0.5,
+              fontWeight: 500,
+              textAlign: 'center',
+            }}>
+              {blogMsg}
+            </div>
+          ) : (
+            <form className={styles.ctaEmailRow} onSubmit={async (e) => {
+              e.preventDefault();
+              if (!blogEmail) return;
+              try {
+                const res = await fetch('/api/waitlist', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email: blogEmail }),
+                });
+                const data = await res.json();
+                setBlogMsg(data.message || data.error || 'Done!');
+                if (!data.error) setBlogEmail('');
+              } catch { setBlogMsg('Network error'); }
+            }}>
+              <input
+                type="email"
+                placeholder="your@email.com"
+                value={blogEmail}
+                onChange={e => { setBlogEmail(e.target.value); setBlogMsg(''); }}
+              />
+              <button type="submit">Join waitlist</button>
+            </form>
+          )}
         </div>
       </div>
 

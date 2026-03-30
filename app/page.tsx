@@ -119,14 +119,26 @@ export default function LandingPage() {
         <p className={styles.description}>
           Watches every sports market 24/7, detects momentum shifts and mispriced odds before the crowd reacts, AI trades real-time.
         </p>
-        <form className={styles.emailRow} onSubmit={handleWaitlist}>
-          <input type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} />
-          <button type="submit" className={styles.btnWaitlist}>Join waitlist</button>
-        </form>
-        {waitlistMsg && (
-          <div style={{ fontSize: '12px', color: 'rgba(8,145,178,0.8)', marginTop: -20, marginBottom: 20 }}>
+        {waitlistMsg ? (
+          <div style={{
+            marginBottom: 30,
+            padding: '14px 28px',
+            background: 'rgba(8,145,178,0.08)',
+            border: '1px solid rgba(8,145,178,0.2)',
+            borderRadius: 100,
+            backdropFilter: 'blur(20px)',
+            fontSize: 14,
+            color: 'rgba(8,145,178,0.9)',
+            letterSpacing: 0.5,
+            fontWeight: 500,
+          }}>
             {waitlistMsg}
           </div>
+        ) : (
+          <form className={styles.emailRow} onSubmit={handleWaitlist}>
+            <input type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} />
+            <button type="submit" className={styles.btnWaitlist}>Join waitlist</button>
+          </form>
         )}
         <div className={styles.skillsSection}>
           <div className={styles.skillLive}>
