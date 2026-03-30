@@ -82,9 +82,9 @@
       "tokenSide": "NO",
       "price": 0.6,
       "size": 326.3599999999997,
-      "filledSize": 0,
-      "avgFillPrice": 0,
-      "status": "resting",
+      "filledSize": 326.3599999999997,
+      "avgFillPrice": 0.61,
+      "status": "cancelled",
       "strategy": "pre-game-edge",
       "sportKey": "basketball_nba",
       "homeTeam": "Raptors",
@@ -93,12 +93,12 @@
       "fairValue": 0.6556000000000001,
       "edge": 0.04010000000000009,
       "exitPrice": 0.6556000000000001,
-      "exitOrderStatus": "pending",
-      "currentPrice": 0.6,
+      "exitOrderStatus": "resting",
+      "currentPrice": 0.61,
       "spread": 0,
       "slug": "nba-tor-det-2026-03-31",
       "createdAt": "2026-03-30T12:59:40.136+00:00",
-      "updatedAt": "2026-03-30T12:59:40.136+00:00"
+      "updatedAt": "2026-03-30T13:21:14.461Z"
     },
     {
       "orderId": "sim-1774875579690-8u0qy",
@@ -110,7 +110,7 @@
       "size": 170.01,
       "filledSize": 170.01,
       "avgFillPrice": 0.095,
-      "status": "filled",
+      "status": "cancelled",
       "strategy": "pre-game-edge",
       "sportKey": "basketball_nba",
       "homeTeam": "Hornets",
@@ -124,7 +124,7 @@
       "spread": 2.7755575615628914e-15,
       "slug": "nba-cha-bkn-2026-03-31",
       "createdAt": "2026-03-30T12:59:39.69+00:00",
-      "updatedAt": "2026-03-30T12:59:40.327+00:00"
+      "updatedAt": "2026-03-30T13:27:59.572Z"
     },
     {
       "orderId": "sim-1774875579361-shreu",
@@ -136,7 +136,7 @@
       "size": 160.94,
       "filledSize": 160.94,
       "avgFillPrice": 0.135,
-      "status": "filled",
+      "status": "cancelled",
       "strategy": "pre-game-edge",
       "sportKey": "basketball_nba",
       "homeTeam": "Pistons",
@@ -146,11 +146,11 @@
       "edge": 0.03511479249618105,
       "exitPrice": 0.17561479249618106,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-30T12:59:39.361+00:00",
-      "updatedAt": "2026-03-30T12:59:40.134+00:00"
+      "updatedAt": "2026-03-30T13:29:00.696Z"
     },
     {
       "orderId": "sim-1774875578836-i1cy4",
@@ -162,7 +162,7 @@
       "size": 143.52,
       "filledSize": 143.52,
       "avgFillPrice": 0.055,
-      "status": "filled",
+      "status": "cancelled",
       "strategy": "pre-game-edge",
       "sportKey": "basketball_nba",
       "homeTeam": "Bulls",
@@ -176,7 +176,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-30T12:59:38.836+00:00",
-      "updatedAt": "2026-03-30T12:59:39.918+00:00"
+      "updatedAt": "2026-03-30T13:12:29.069Z"
     },
     {
       "orderId": "sim-1774875578410-119br",
@@ -188,7 +188,7 @@
       "size": 207.98,
       "filledSize": 207.98,
       "avgFillPrice": 0.125,
-      "status": "filled",
+      "status": "cancelled",
       "strategy": "pre-game-edge",
       "sportKey": "basketball_nba",
       "homeTeam": "Suns",
@@ -198,11 +198,11 @@
       "edge": 0.05245703263778071,
       "exitPrice": 0.1829570326377807,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 0,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-30T12:59:38.41+00:00",
-      "updatedAt": "2026-03-30T12:59:39.153+00:00"
+      "updatedAt": "2026-03-30T13:31:36.030Z"
     },
     {
       "orderId": "sim-1774875578057-4z0oz",
@@ -250,11 +250,11 @@
       "edge": 0.061389446821795986,
       "exitPrice": 0.801889446821796,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.735,
+      "currentPrice": 0.73,
       "spread": 0,
       "slug": "cbb-illst-aubrn-2026-04-02",
       "createdAt": "2026-03-30T12:59:37.707+00:00",
-      "updatedAt": "2026-03-30T12:59:38.388+00:00"
+      "updatedAt": "2026-03-30T13:25:59.173Z"
     },
     {
       "orderId": "sim-1774875577325-z3ri1",
@@ -276,11 +276,11 @@
       "edge": 0.05373956306834055,
       "exitPrice": 0.4592395630683406,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.4,
+      "currentPrice": 0.38,
       "spread": 0,
       "slug": "cbb-nmx-tulsa-2026-04-02",
       "createdAt": "2026-03-30T12:59:37.325+00:00",
-      "updatedAt": "2026-03-30T12:59:38.123+00:00"
+      "updatedAt": "2026-03-30T13:25:59.307Z"
     },
     {
       "orderId": "sim-1774875576990-3xfp8",
@@ -332,7 +332,7 @@
       "spread": 0,
       "slug": "cbb-arz-mich-2026-04-04",
       "createdAt": "2026-03-30T12:59:36.466+00:00",
-      "updatedAt": "2026-03-30T12:59:40.249+00:00"
+      "updatedAt": "2026-03-30T13:12:59.087Z"
     },
     {
       "orderId": "sim-1774875542659-5leih",
@@ -358,7 +358,7 @@
       "spread": 0,
       "slug": "",
       "createdAt": "2026-03-30T12:59:02.659+00:00",
-      "updatedAt": "2026-03-30T12:59:03.38+00:00"
+      "updatedAt": "2026-03-30T13:12:59.180Z"
     },
     {
       "orderId": "sim-1774875541533-exuv2",
@@ -384,7 +384,7 @@
       "spread": 0,
       "slug": "",
       "createdAt": "2026-03-30T12:59:01.533+00:00",
-      "updatedAt": "2026-03-30T12:59:02.38+00:00"
+      "updatedAt": "2026-03-30T13:12:59.276Z"
     },
     {
       "orderId": "sim-1774875429482-4nqtr",
@@ -406,11 +406,11 @@
       "edge": 0.05373956306834055,
       "exitPrice": 0.4592395630683406,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.4,
+      "currentPrice": 0.38,
       "spread": 0,
       "slug": "cbb-nmx-tulsa-2026-04-02",
       "createdAt": "2026-03-30T12:57:09.482+00:00",
-      "updatedAt": "2026-03-30T12:57:10.33+00:00"
+      "updatedAt": "2026-03-30T13:25:59.401Z"
     },
     {
       "orderId": "sim-1774875411488-291ii",
@@ -436,7 +436,7 @@
       "spread": 2.7755575615628914e-15,
       "slug": "nba-cha-bkn-2026-03-31",
       "createdAt": "2026-03-30T12:56:51.488+00:00",
-      "updatedAt": "2026-03-30T12:57:09.583+00:00"
+      "updatedAt": "2026-03-30T13:27:59.715Z"
     },
     {
       "orderId": "sim-1774875411119-wji28",
@@ -458,11 +458,11 @@
       "edge": 0.03511479249618105,
       "exitPrice": 0.17561479249618106,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-30T12:56:51.119+00:00",
-      "updatedAt": "2026-03-30T12:59:01.396+00:00"
+      "updatedAt": "2026-03-30T13:29:00.919Z"
     },
     {
       "orderId": "sim-1774874849937-wctw9",
@@ -484,11 +484,11 @@
       "edge": 0.0537395631171071,
       "exitPrice": 0.4592395631171071,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.4,
+      "currentPrice": 0.38,
       "spread": 0,
       "slug": "cbb-nmx-tulsa-2026-04-02",
       "createdAt": "2026-03-30T12:47:29.937+00:00",
-      "updatedAt": "2026-03-30T12:56:51.608+00:00"
+      "updatedAt": "2026-03-30T13:25:59.470Z"
     },
     {
       "orderId": "sim-1774874712971-mwuym",
@@ -510,11 +510,11 @@
       "edge": 0.06138944685631104,
       "exitPrice": 0.801889446856311,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.735,
+      "currentPrice": 0.73,
       "spread": 0,
       "slug": "cbb-illst-aubrn-2026-04-02",
       "createdAt": "2026-03-30T12:45:12.971+00:00",
-      "updatedAt": "2026-03-30T12:59:02.487+00:00"
+      "updatedAt": "2026-03-30T13:25:59.571Z"
     },
     {
       "orderId": "sim-1774874712406-sfwut",
@@ -540,7 +540,7 @@
       "spread": 0,
       "slug": "cbb-arz-mich-2026-04-04",
       "createdAt": "2026-03-30T12:45:12.406+00:00",
-      "updatedAt": "2026-03-30T12:47:31.248+00:00"
+      "updatedAt": "2026-03-30T13:12:59.352Z"
     },
     {
       "orderId": "sim-1774870314694-lhywe",
@@ -562,11 +562,11 @@
       "edge": 0.033619343535705344,
       "exitPrice": 0.17411934353570535,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-30T11:31:54.694+00:00",
-      "updatedAt": "2026-03-30T12:57:11.859+00:00"
+      "updatedAt": "2026-03-30T13:29:00.994Z"
     },
     {
       "orderId": "sim-1774870314327-psi5b",
@@ -592,7 +592,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-30T11:31:54.327+00:00",
-      "updatedAt": "2026-03-30T12:47:30.793+00:00"
+      "updatedAt": "2026-03-30T13:12:29.139Z"
     },
     {
       "orderId": "sim-1774870313968-e8nn0",
@@ -604,7 +604,7 @@
       "size": 399.2,
       "filledSize": 399.2,
       "avgFillPrice": 0.125,
-      "status": "filled",
+      "status": "cancelled",
       "strategy": "pre-game-edge",
       "sportKey": "basketball_nba",
       "homeTeam": "Suns",
@@ -614,11 +614,11 @@
       "edge": 0.04946739081819846,
       "exitPrice": 0.17996739081819846,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 0,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-30T11:31:53.968+00:00",
-      "updatedAt": "2026-03-30T12:58:56.937+00:00"
+      "updatedAt": "2026-03-30T13:31:36.295Z"
     },
     {
       "orderId": "sim-1774870313612-n5487",
@@ -696,7 +696,7 @@
       "spread": 0,
       "slug": "",
       "createdAt": "2026-03-30T11:20:57.337+00:00",
-      "updatedAt": "2026-03-30T12:45:12.503+00:00"
+      "updatedAt": "2026-03-30T13:27:44.529Z"
     },
     {
       "orderId": "sim-1774869639509-ei48k",
@@ -722,7 +722,7 @@
       "spread": 0,
       "slug": "",
       "createdAt": "2026-03-30T11:20:39.509+00:00",
-      "updatedAt": "2026-03-30T12:45:13.281+00:00"
+      "updatedAt": "2026-03-30T13:27:44.689Z"
     },
     {
       "orderId": "sim-1774869639481-a88ll",
@@ -748,7 +748,7 @@
       "spread": 0,
       "slug": "",
       "createdAt": "2026-03-30T11:20:39.481+00:00",
-      "updatedAt": "2026-03-30T12:45:13.503+00:00"
+      "updatedAt": "2026-03-30T13:27:44.809Z"
     },
     {
       "orderId": "sim-1774869598423-yiisk",
@@ -826,7 +826,7 @@
       "spread": 5.551115123125783e-15,
       "slug": "cbb-okl-col-2026-04-01",
       "createdAt": "2026-03-30T11:19:55.489+00:00",
-      "updatedAt": "2026-03-30T11:31:53.243+00:00"
+      "updatedAt": "2026-03-30T13:09:14.481Z"
     },
     {
       "orderId": "sim-1774869566778-han7x",
@@ -852,7 +852,7 @@
       "spread": 0,
       "slug": "",
       "createdAt": "2026-03-30T11:19:26.778+00:00",
-      "updatedAt": "2026-03-30T12:45:13.791+00:00"
+      "updatedAt": "2026-03-30T13:27:44.878Z"
     },
     {
       "orderId": "sim-1774869566710-avbgq",
@@ -904,7 +904,7 @@
       "spread": 0,
       "slug": "",
       "createdAt": "2026-03-30T11:19:26.609+00:00",
-      "updatedAt": "2026-03-30T12:45:14.08+00:00"
+      "updatedAt": "2026-03-30T13:27:44.946Z"
     },
     {
       "orderId": "sim-1774869566377-652dr",
@@ -930,7 +930,7 @@
       "spread": 0,
       "slug": "",
       "createdAt": "2026-03-30T11:19:26.377+00:00",
-      "updatedAt": "2026-03-30T12:45:14.368+00:00"
+      "updatedAt": "2026-03-30T13:27:45.022Z"
     },
     {
       "orderId": "sim-1774869566356-03i5r",
@@ -956,7 +956,7 @@
       "spread": 0,
       "slug": "",
       "createdAt": "2026-03-30T11:19:26.356+00:00",
-      "updatedAt": "2026-03-30T12:45:14.503+00:00"
+      "updatedAt": "2026-03-30T13:27:45.135Z"
     },
     {
       "orderId": "sim-1774869566297-53zah",
@@ -982,7 +982,7 @@
       "spread": 0,
       "slug": "",
       "createdAt": "2026-03-30T11:19:26.297+00:00",
-      "updatedAt": "2026-03-30T12:45:28.337+00:00"
+      "updatedAt": "2026-03-30T13:27:45.211Z"
     },
     {
       "orderId": "sim-1774869565910-1543e",
@@ -1008,7 +1008,7 @@
       "spread": 0,
       "slug": "",
       "createdAt": "2026-03-30T11:19:25.91+00:00",
-      "updatedAt": "2026-03-30T12:45:28.346+00:00"
+      "updatedAt": "2026-03-30T13:27:45.331Z"
     },
     {
       "orderId": "sim-1774850801934-yxqwt",
@@ -1034,7 +1034,7 @@
       "spread": 0,
       "slug": "",
       "createdAt": "2026-03-30T06:06:41.934+00:00",
-      "updatedAt": "2026-03-30T12:54:10.647+00:00"
+      "updatedAt": "2026-03-30T13:27:45.414Z"
     },
     {
       "orderId": "sim-1774850801681-6j5s2",
@@ -1060,7 +1060,7 @@
       "spread": 0,
       "slug": "",
       "createdAt": "2026-03-30T06:06:41.681+00:00",
-      "updatedAt": "2026-03-30T12:54:09.68+00:00"
+      "updatedAt": "2026-03-30T13:27:45.478Z"
     },
     {
       "orderId": "sim-1774838231250-ahse0",
@@ -1684,7 +1684,7 @@
       "spread": 5.551115123125783e-15,
       "slug": "nba-bos-mia-2026-04-01",
       "createdAt": "2026-03-29T14:18:44.848+00:00",
-      "updatedAt": "2026-03-30T12:46:03.362+00:00"
+      "updatedAt": "2026-03-30T13:25:14.072Z"
     },
     {
       "orderId": "sim-1774793923246-f3l4p",
@@ -1706,11 +1706,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T14:18:43.246+00:00",
-      "updatedAt": "2026-03-30T12:57:11.939+00:00"
+      "updatedAt": "2026-03-30T13:29:01.229Z"
     },
     {
       "orderId": "sim-1774793922546-otq1k",
@@ -1736,7 +1736,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T14:18:42.546+00:00",
-      "updatedAt": "2026-03-30T12:54:24.621+00:00"
+      "updatedAt": "2026-03-30T13:30:43.902Z"
     },
     {
       "orderId": "sim-1774793921991-gqqwt",
@@ -1758,11 +1758,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T14:18:41.991+00:00",
-      "updatedAt": "2026-03-30T12:58:57.005+00:00"
+      "updatedAt": "2026-03-30T13:31:36.493Z"
     },
     {
       "orderId": "sim-1774793921340-5pmhs",
@@ -1788,7 +1788,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T14:18:41.34+00:00",
-      "updatedAt": "2026-03-30T12:55:09.706+00:00"
+      "updatedAt": "2026-03-30T13:12:29.236Z"
     },
     {
       "orderId": "sim-1774793920996-ke0li",
@@ -1918,7 +1918,7 @@
       "spread": 5.551115123125783e-15,
       "slug": "nba-bos-mia-2026-04-01",
       "createdAt": "2026-03-29T14:17:46.776+00:00",
-      "updatedAt": "2026-03-30T12:46:03.366+00:00"
+      "updatedAt": "2026-03-30T13:25:14.227Z"
     },
     {
       "orderId": "sim-1774793855761-kj6ch",
@@ -1940,11 +1940,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T14:17:35.761+00:00",
-      "updatedAt": "2026-03-30T12:57:12.01+00:00"
+      "updatedAt": "2026-03-30T13:29:01.423Z"
     },
     {
       "orderId": "sim-1774793852194-xv9dr",
@@ -1970,7 +1970,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T14:17:32.194+00:00",
-      "updatedAt": "2026-03-30T12:54:24.623+00:00"
+      "updatedAt": "2026-03-30T13:30:43.970Z"
     },
     {
       "orderId": "sim-1774793846299-hsh2s",
@@ -1992,11 +1992,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T14:17:26.299+00:00",
-      "updatedAt": "2026-03-30T12:58:57.144+00:00"
+      "updatedAt": "2026-03-30T13:31:36.565Z"
     },
     {
       "orderId": "sim-1774793836236-7kgxt",
@@ -2048,7 +2048,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T14:17:06.319+00:00",
-      "updatedAt": "2026-03-30T12:55:09.716+00:00"
+      "updatedAt": "2026-03-30T13:12:29.305Z"
     },
     {
       "orderId": "sim-1774793816630-83d4o",
@@ -2126,7 +2126,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:13:13.67+00:00",
-      "updatedAt": "2026-03-30T11:02:22.659+00:00"
+      "updatedAt": "2026-03-30T13:12:29.431Z"
     },
     {
       "orderId": "sim-1774782787609-lafts",
@@ -2148,11 +2148,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T11:13:07.609+00:00",
-      "updatedAt": "2026-03-30T12:58:57.213+00:00"
+      "updatedAt": "2026-03-30T13:31:36.637Z"
     },
     {
       "orderId": "sim-1774782783657-15rgh",
@@ -2230,7 +2230,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:11:50.412+00:00",
-      "updatedAt": "2026-03-30T11:02:23.76+00:00"
+      "updatedAt": "2026-03-30T13:12:29.505Z"
     },
     {
       "orderId": "sim-1774782707214-8ulji",
@@ -2278,11 +2278,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T11:11:43.651+00:00",
-      "updatedAt": "2026-03-30T12:57:12.098+00:00"
+      "updatedAt": "2026-03-30T13:29:01.678Z"
     },
     {
       "orderId": "sim-1774782697422-l3d1b",
@@ -2334,7 +2334,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T11:11:33.632+00:00",
-      "updatedAt": "2026-03-30T11:19:24.674+00:00"
+      "updatedAt": "2026-03-30T13:30:44.051Z"
     },
     {
       "orderId": "sim-1774782687610-ngxxk",
@@ -2356,11 +2356,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T11:11:27.61+00:00",
-      "updatedAt": "2026-03-30T12:57:12.172+00:00"
+      "updatedAt": "2026-03-30T13:29:01.698Z"
     },
     {
       "orderId": "sim-1774782684626-371dq",
@@ -2382,11 +2382,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T11:11:24.626+00:00",
-      "updatedAt": "2026-03-30T12:57:12.255+00:00"
+      "updatedAt": "2026-03-30T13:29:01.745Z"
     },
     {
       "orderId": "sim-1774782677579-m219p",
@@ -2412,7 +2412,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T11:11:17.579+00:00",
-      "updatedAt": "2026-03-30T11:19:24.791+00:00"
+      "updatedAt": "2026-03-30T13:30:44.116Z"
     },
     {
       "orderId": "sim-1774782673598-g0xd6",
@@ -2438,7 +2438,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:11:13.598+00:00",
-      "updatedAt": "2026-03-30T11:09:29.424+00:00"
+      "updatedAt": "2026-03-30T13:12:29.571Z"
     },
     {
       "orderId": "sim-1774782671958-foxuo",
@@ -2464,7 +2464,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:11:11.958+00:00",
-      "updatedAt": "2026-03-30T11:09:29.67+00:00"
+      "updatedAt": "2026-03-30T13:12:29.642Z"
     },
     {
       "orderId": "sim-1774782667570-0g9qh",
@@ -2512,11 +2512,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T11:11:07.216+00:00",
-      "updatedAt": "2026-03-30T12:58:57.344+00:00"
+      "updatedAt": "2026-03-30T13:31:36.726Z"
     },
     {
       "orderId": "sim-1774782657606-vrarc",
@@ -2542,7 +2542,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:10:57.606+00:00",
-      "updatedAt": "2026-03-30T11:09:29.935+00:00"
+      "updatedAt": "2026-03-30T13:12:29.765Z"
     },
     {
       "orderId": "sim-1774782651886-du24n",
@@ -2590,11 +2590,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T11:10:06.595+00:00",
-      "updatedAt": "2026-03-30T12:58:57.409+00:00"
+      "updatedAt": "2026-03-30T13:31:36.882Z"
     },
     {
       "orderId": "sim-1774782592192-tuw1n",
@@ -2646,7 +2646,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:09:13.605+00:00",
-      "updatedAt": "2026-03-30T11:15:51.988+00:00"
+      "updatedAt": "2026-03-30T13:12:29.833Z"
     },
     {
       "orderId": "sim-1774782543589-2ibme",
@@ -2694,11 +2694,11 @@
       "edge": 0.10401002105858942,
       "exitPrice": 0.7995100210585894,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.735,
+      "currentPrice": 0.73,
       "spread": 0,
       "slug": "cbb-illst-aubrn-2026-04-02",
       "createdAt": "2026-03-29T11:08:48.181+00:00",
-      "updatedAt": "2026-03-30T11:19:24.796+00:00"
+      "updatedAt": "2026-03-30T13:25:59.999Z"
     },
     {
       "orderId": "sim-1774782519595-fo8yt",
@@ -2720,11 +2720,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T11:08:39.595+00:00",
-      "updatedAt": "2026-03-30T12:57:12.325+00:00"
+      "updatedAt": "2026-03-30T13:29:01.879Z"
     },
     {
       "orderId": "sim-1774782499574-za88r",
@@ -2746,11 +2746,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T11:08:19.574+00:00",
-      "updatedAt": "2026-03-30T12:58:57.485+00:00"
+      "updatedAt": "2026-03-30T13:31:37.024Z"
     },
     {
       "orderId": "sim-1774782489552-w0ig5",
@@ -2776,7 +2776,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:08:09.552+00:00",
-      "updatedAt": "2026-03-30T11:19:17.669+00:00"
+      "updatedAt": "2026-03-30T13:12:29.960Z"
     },
     {
       "orderId": "sim-1774782483297-xxpnh",
@@ -2876,11 +2876,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T11:07:43.678+00:00",
-      "updatedAt": "2026-03-30T12:57:12.406+00:00"
+      "updatedAt": "2026-03-30T13:29:01.948Z"
     },
     {
       "orderId": "sim-1774782453665-ictli",
@@ -2906,7 +2906,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T11:07:33.665+00:00",
-      "updatedAt": "2026-03-30T11:19:18.285+00:00"
+      "updatedAt": "2026-03-30T13:30:44.189Z"
     },
     {
       "orderId": "sim-1774782443675-k179c",
@@ -2928,11 +2928,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T11:07:23.675+00:00",
-      "updatedAt": "2026-03-30T12:58:57.569+00:00"
+      "updatedAt": "2026-03-30T13:31:37.032Z"
     },
     {
       "orderId": "sim-1774782433663-vfdp5",
@@ -2958,7 +2958,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:07:13.663+00:00",
-      "updatedAt": "2026-03-30T11:19:18.562+00:00"
+      "updatedAt": "2026-03-30T13:12:29.999Z"
     },
     {
       "orderId": "sim-1774782427523-wygv1",
@@ -3006,11 +3006,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T11:05:19.027+00:00",
-      "updatedAt": "2026-03-30T12:58:57.666+00:00"
+      "updatedAt": "2026-03-30T13:31:37.095Z"
     },
     {
       "orderId": "sim-1774782268446-53ah6",
@@ -3032,11 +3032,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T11:04:28.446+00:00",
-      "updatedAt": "2026-03-30T12:58:57.731+00:00"
+      "updatedAt": "2026-03-30T13:31:37.104Z"
     },
     {
       "orderId": "sim-1774782265219-o84uy",
@@ -3088,7 +3088,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:04:18.836+00:00",
-      "updatedAt": "2026-03-30T11:19:18.843+00:00"
+      "updatedAt": "2026-03-30T13:12:30.031Z"
     },
     {
       "orderId": "sim-1774782258439-1sw7g",
@@ -3192,7 +3192,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:03:27.73+00:00",
-      "updatedAt": "2026-03-30T11:19:19.12+00:00"
+      "updatedAt": "2026-03-30T13:12:30.079Z"
     },
     {
       "orderId": "sim-1774782199336-l9rty",
@@ -3292,11 +3292,11 @@
       "edge": 0.10401002105858942,
       "exitPrice": 0.7995100210585894,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.735,
+      "currentPrice": 0.73,
       "spread": 0,
       "slug": "cbb-illst-aubrn-2026-04-02",
       "createdAt": "2026-03-29T11:03:00.437+00:00",
-      "updatedAt": "2026-03-30T11:19:19.415+00:00"
+      "updatedAt": "2026-03-30T13:26:00.161Z"
     },
     {
       "orderId": "sim-1774782177913-9n8y3",
@@ -3318,11 +3318,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T11:02:57.913+00:00",
-      "updatedAt": "2026-03-30T12:57:12.758+00:00"
+      "updatedAt": "2026-03-30T13:29:02.085Z"
     },
     {
       "orderId": "sim-1774782171825-2bjlt",
@@ -3344,11 +3344,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T11:02:51.825+00:00",
-      "updatedAt": "2026-03-30T12:57:12.832+00:00"
+      "updatedAt": "2026-03-30T13:29:02.203Z"
     },
     {
       "orderId": "sim-1774782167992-hjt90",
@@ -3374,7 +3374,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T11:02:47.992+00:00",
-      "updatedAt": "2026-03-30T11:19:24.94+00:00"
+      "updatedAt": "2026-03-30T13:30:44.264Z"
     },
     {
       "orderId": "sim-1774782161852-91g2x",
@@ -3400,7 +3400,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T11:02:41.852+00:00",
-      "updatedAt": "2026-03-30T11:19:25.065+00:00"
+      "updatedAt": "2026-03-30T13:30:44.399Z"
     },
     {
       "orderId": "sim-1774782157876-lrtcu",
@@ -3422,11 +3422,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T11:02:37.876+00:00",
-      "updatedAt": "2026-03-30T12:58:57.866+00:00"
+      "updatedAt": "2026-03-30T13:31:37.162Z"
     },
     {
       "orderId": "sim-1774782155197-0f90k",
@@ -3474,11 +3474,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T11:02:31.808+00:00",
-      "updatedAt": "2026-03-30T12:58:57.935+00:00"
+      "updatedAt": "2026-03-30T13:31:37.176Z"
     },
     {
       "orderId": "sim-1774782147886-qn8la",
@@ -3504,7 +3504,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:02:27.886+00:00",
-      "updatedAt": "2026-03-30T11:19:20.202+00:00"
+      "updatedAt": "2026-03-30T13:12:30.120Z"
     },
     {
       "orderId": "sim-1774782142273-o3ada",
@@ -3556,7 +3556,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:02:21.859+00:00",
-      "updatedAt": "2026-03-30T11:19:20.223+00:00"
+      "updatedAt": "2026-03-30T13:12:30.156Z"
     },
     {
       "orderId": "sim-1774782139224-9g8gm",
@@ -3682,11 +3682,11 @@
       "edge": 0.10401002105858942,
       "exitPrice": 0.7995100210585894,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.735,
+      "currentPrice": 0.73,
       "spread": 0,
       "slug": "cbb-illst-aubrn-2026-04-02",
       "createdAt": "2026-03-29T11:01:32.193+00:00",
-      "updatedAt": "2026-03-30T11:19:25.071+00:00"
+      "updatedAt": "2026-03-30T13:26:00.291Z"
     },
     {
       "orderId": "sim-1774782083603-2ghs6",
@@ -3708,11 +3708,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T11:01:23.603+00:00",
-      "updatedAt": "2026-03-30T12:57:12.859+00:00"
+      "updatedAt": "2026-03-30T13:29:02.274Z"
     },
     {
       "orderId": "sim-1774782076214-thea6",
@@ -3734,11 +3734,11 @@
       "edge": 0.10401002105858942,
       "exitPrice": 0.7995100210585894,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.735,
+      "currentPrice": 0.73,
       "spread": 0,
       "slug": "cbb-illst-aubrn-2026-04-02",
       "createdAt": "2026-03-29T11:01:16.214+00:00",
-      "updatedAt": "2026-03-30T11:19:25.347+00:00"
+      "updatedAt": "2026-03-30T13:26:00.361Z"
     },
     {
       "orderId": "sim-1774782073590-ei5rn",
@@ -3764,7 +3764,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T11:01:13.59+00:00",
-      "updatedAt": "2026-03-30T11:19:25.233+00:00"
+      "updatedAt": "2026-03-30T13:30:44.463Z"
     },
     {
       "orderId": "sim-1774782067606-z76kf",
@@ -3786,11 +3786,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T11:01:07.606+00:00",
-      "updatedAt": "2026-03-30T12:57:12.904+00:00"
+      "updatedAt": "2026-03-30T13:29:02.399Z"
     },
     {
       "orderId": "sim-1774782063571-bfnyy",
@@ -3812,11 +3812,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T11:01:03.571+00:00",
-      "updatedAt": "2026-03-30T12:58:57.936+00:00"
+      "updatedAt": "2026-03-30T13:31:37.236Z"
     },
     {
       "orderId": "sim-1774782057601-odki4",
@@ -3842,7 +3842,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T11:00:57.601+00:00",
-      "updatedAt": "2026-03-30T11:19:25.357+00:00"
+      "updatedAt": "2026-03-30T13:30:44.539Z"
     },
     {
       "orderId": "sim-1774782053598-8gazm",
@@ -3868,7 +3868,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:00:53.598+00:00",
-      "updatedAt": "2026-03-30T11:19:20.764+00:00"
+      "updatedAt": "2026-03-30T13:12:30.192Z"
     },
     {
       "orderId": "sim-1774782047580-vrkaa",
@@ -3890,11 +3890,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T11:00:47.58+00:00",
-      "updatedAt": "2026-03-30T12:58:57.997+00:00"
+      "updatedAt": "2026-03-30T13:31:37.244Z"
     },
     {
       "orderId": "sim-1774782043557-hg7pl",
@@ -3946,7 +3946,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T11:00:37.62+00:00",
-      "updatedAt": "2026-03-30T11:19:21.002+00:00"
+      "updatedAt": "2026-03-30T13:12:30.285Z"
     },
     {
       "orderId": "sim-1774782037466-d6eiu",
@@ -3998,7 +3998,7 @@
       "spread": 1.1102230246251565e-14,
       "slug": "nba-cle-lal-2026-03-31",
       "createdAt": "2026-03-29T11:00:35.509+00:00",
-      "updatedAt": "2026-03-30T11:19:25.692+00:00"
+      "updatedAt": "2026-03-30T13:07:30.246Z"
     },
     {
       "orderId": "sim-1774782027581-vvrxf",
@@ -4072,11 +4072,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T10:59:35.131+00:00",
-      "updatedAt": "2026-03-30T12:57:12.935+00:00"
+      "updatedAt": "2026-03-30T13:29:02.490Z"
     },
     {
       "orderId": "sim-1774781964194-14mej",
@@ -4098,11 +4098,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T10:59:24.194+00:00",
-      "updatedAt": "2026-03-30T12:57:12.975+00:00"
+      "updatedAt": "2026-03-30T13:29:02.528Z"
     },
     {
       "orderId": "sim-1774781954474-0umul",
@@ -4128,7 +4128,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T10:59:14.474+00:00",
-      "updatedAt": "2026-03-30T11:19:25.511+00:00"
+      "updatedAt": "2026-03-30T13:30:44.604Z"
     },
     {
       "orderId": "sim-1774781952037-dg00o",
@@ -4154,7 +4154,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T10:59:12.037+00:00",
-      "updatedAt": "2026-03-30T11:19:25.644+00:00"
+      "updatedAt": "2026-03-30T13:30:44.679Z"
     },
     {
       "orderId": "sim-1774781923037-jht8k",
@@ -4176,11 +4176,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T10:58:43.037+00:00",
-      "updatedAt": "2026-03-30T12:58:58.008+00:00"
+      "updatedAt": "2026-03-30T13:31:37.343Z"
     },
     {
       "orderId": "sim-1774781912908-v4jue",
@@ -4206,7 +4206,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T10:58:32.908+00:00",
-      "updatedAt": "2026-03-30T11:19:21.43+00:00"
+      "updatedAt": "2026-03-30T13:12:30.355Z"
     },
     {
       "orderId": "sim-1774781852675-tcpx9",
@@ -4258,7 +4258,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T10:57:15.918+00:00",
-      "updatedAt": "2026-03-30T11:19:21.558+00:00"
+      "updatedAt": "2026-03-30T13:12:30.357Z"
     },
     {
       "orderId": "sim-1774781792466-d407w",
@@ -4310,7 +4310,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T10:56:27.895+00:00",
-      "updatedAt": "2026-03-30T11:19:25.784+00:00"
+      "updatedAt": "2026-03-30T13:30:44.747Z"
     },
     {
       "orderId": "sim-1774781783047-klujl",
@@ -4336,7 +4336,7 @@
       "spread": 1.1102230246251565e-14,
       "slug": "nba-cle-lal-2026-03-31",
       "createdAt": "2026-03-29T10:56:23.047+00:00",
-      "updatedAt": "2026-03-30T11:19:25.958+00:00"
+      "updatedAt": "2026-03-30T13:07:30.405Z"
     },
     {
       "orderId": "sim-1774781777795-6kq8y",
@@ -4358,11 +4358,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T10:56:17.795+00:00",
-      "updatedAt": "2026-03-30T12:58:58.068+00:00"
+      "updatedAt": "2026-03-30T13:31:37.345Z"
     },
     {
       "orderId": "sim-1774781775478-g1n05",
@@ -4410,11 +4410,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T10:56:12.847+00:00",
-      "updatedAt": "2026-03-30T12:57:13.001+00:00"
+      "updatedAt": "2026-03-30T13:29:02.622Z"
     },
     {
       "orderId": "sim-1774781769490-6yryb",
@@ -4466,7 +4466,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T10:56:07.745+00:00",
-      "updatedAt": "2026-03-30T11:19:21.892+00:00"
+      "updatedAt": "2026-03-30T13:12:30.481Z"
     },
     {
       "orderId": "sim-1774781765678-11669",
@@ -4518,7 +4518,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T10:56:02.885+00:00",
-      "updatedAt": "2026-03-30T11:19:21.948+00:00"
+      "updatedAt": "2026-03-30T13:30:44.822Z"
     },
     {
       "orderId": "sim-1774781761497-0nzb0",
@@ -4592,11 +4592,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T10:55:55.852+00:00",
-      "updatedAt": "2026-03-30T12:57:13.046+00:00"
+      "updatedAt": "2026-03-30T13:29:02.700Z"
     },
     {
       "orderId": "sim-1774781751841-ete7a",
@@ -4618,11 +4618,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T10:55:51.841+00:00",
-      "updatedAt": "2026-03-30T12:58:58.08+00:00"
+      "updatedAt": "2026-03-30T13:31:37.416Z"
     },
     {
       "orderId": "sim-1774781749891-6mhho",
@@ -4644,11 +4644,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T10:55:49.891+00:00",
-      "updatedAt": "2026-03-30T12:57:13.068+00:00"
+      "updatedAt": "2026-03-30T13:29:02.728Z"
     },
     {
       "orderId": "sim-1774781745826-wkl65",
@@ -4674,7 +4674,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T10:55:45.826+00:00",
-      "updatedAt": "2026-03-30T11:19:22.448+00:00"
+      "updatedAt": "2026-03-30T13:30:44.903Z"
     },
     {
       "orderId": "sim-1774781744124-3q4co",
@@ -4700,7 +4700,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T10:55:44.124+00:00",
-      "updatedAt": "2026-03-30T11:19:26.045+00:00"
+      "updatedAt": "2026-03-30T13:30:44.916Z"
     },
     {
       "orderId": "sim-1774781741815-z3vwg",
@@ -4726,7 +4726,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T10:55:41.815+00:00",
-      "updatedAt": "2026-03-30T11:19:22.509+00:00"
+      "updatedAt": "2026-03-30T13:12:30.483Z"
     },
     {
       "orderId": "sim-1774781739866-oozim",
@@ -4752,7 +4752,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T10:55:39.866+00:00",
-      "updatedAt": "2026-03-30T11:19:26.052+00:00"
+      "updatedAt": "2026-03-30T13:30:44.987Z"
     },
     {
       "orderId": "sim-1774781736009-iw40w",
@@ -4800,11 +4800,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T10:55:35.83+00:00",
-      "updatedAt": "2026-03-30T12:58:58.19+00:00"
+      "updatedAt": "2026-03-30T13:31:37.427Z"
     },
     {
       "orderId": "sim-1774781729883-urr03",
@@ -4826,11 +4826,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T10:55:29.883+00:00",
-      "updatedAt": "2026-03-30T12:58:58.192+00:00"
+      "updatedAt": "2026-03-30T13:31:37.539Z"
     },
     {
       "orderId": "sim-1774781725850-y3q59",
@@ -4856,7 +4856,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T10:55:25.85+00:00",
-      "updatedAt": "2026-03-30T11:19:22.721+00:00"
+      "updatedAt": "2026-03-30T13:12:30.549Z"
     },
     {
       "orderId": "sim-1774781720312-026bv",
@@ -4908,7 +4908,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T10:55:19.857+00:00",
-      "updatedAt": "2026-03-30T11:19:22.73+00:00"
+      "updatedAt": "2026-03-30T13:12:30.553Z"
     },
     {
       "orderId": "sim-1774781714137-5idr7",
@@ -4956,11 +4956,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T10:54:44.113+00:00",
-      "updatedAt": "2026-03-30T12:58:58.262+00:00"
+      "updatedAt": "2026-03-30T13:31:37.541Z"
     },
     {
       "orderId": "sim-1774781619088-vea6x",
@@ -4986,7 +4986,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T10:53:39.088+00:00",
-      "updatedAt": "2026-03-30T11:19:22.964+00:00"
+      "updatedAt": "2026-03-30T13:12:30.628Z"
     },
     {
       "orderId": "sim-1774781563108-6apm3",
@@ -5060,11 +5060,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T10:50:41.1+00:00",
-      "updatedAt": "2026-03-30T12:57:13.111+00:00"
+      "updatedAt": "2026-03-30T13:29:02.924Z"
     },
     {
       "orderId": "sim-1774781391098-hwl8i",
@@ -5090,7 +5090,7 @@
       "spread": 1.1102230246251565e-14,
       "slug": "nba-cle-lal-2026-03-31",
       "createdAt": "2026-03-29T10:49:51.098+00:00",
-      "updatedAt": "2026-03-30T11:19:23.097+00:00"
+      "updatedAt": "2026-03-30T13:07:30.723Z"
     },
     {
       "orderId": "sim-1774781381087-uwzra",
@@ -5116,7 +5116,7 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T10:49:41.088+00:00",
-      "updatedAt": "2026-03-30T11:19:23.242+00:00"
+      "updatedAt": "2026-03-30T13:30:44.989Z"
     },
     {
       "orderId": "sim-1774781313443-4ps54",
@@ -5138,11 +5138,11 @@
       "edge": 0.17631000000000005,
       "exitPrice": 0.33681000000000005,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.125,
+      "currentPrice": 0.13,
       "spread": 2.7755575615628914e-15,
       "slug": "nba-phx-mem-2026-03-30",
       "createdAt": "2026-03-29T10:48:33.443+00:00",
-      "updatedAt": "2026-03-30T12:58:58.272+00:00"
+      "updatedAt": "2026-03-30T13:31:37.609Z"
     },
     {
       "orderId": "sim-1774781313075-34l31",
@@ -5168,7 +5168,7 @@
       "spread": 0,
       "slug": "nba-chi-sas-2026-03-30",
       "createdAt": "2026-03-29T10:48:33.075+00:00",
-      "updatedAt": "2026-03-29T10:53:34.843+00:00"
+      "updatedAt": "2026-03-30T13:12:30.630Z"
     },
     {
       "orderId": "sim-1774781255103-ilgf8",
@@ -5242,11 +5242,11 @@
       "edge": 0.12405,
       "exitPrice": 0.38455,
       "exitOrderStatus": "resting",
-      "currentPrice": 0.135,
+      "currentPrice": 0.145,
       "spread": 0,
       "slug": "nba-det-okc-2026-03-30",
       "createdAt": "2026-03-29T10:46:05.863+00:00",
-      "updatedAt": "2026-03-30T12:57:13.149+00:00"
+      "updatedAt": "2026-03-30T13:29:02.929Z"
     },
     {
       "orderId": "sim-1774781165256-09p2c",
@@ -5272,8 +5272,8 @@
       "spread": 0,
       "slug": "nba-min-dal-2026-03-30",
       "createdAt": "2026-03-29T10:46:05.256+00:00",
-      "updatedAt": "2026-03-30T11:19:23.363+00:00"
+      "updatedAt": "2026-03-30T13:30:45.053Z"
     }
   ],
-  "savedAt": "2026-03-30T12:59:45.277Z"
+  "savedAt": "2026-03-30T13:31:37.691Z"
 }
