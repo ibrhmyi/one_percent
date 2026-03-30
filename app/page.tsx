@@ -37,10 +37,13 @@ export default function LandingPage() {
   const scoresRef = useRef<Map<number, { a: number; b: number }>>(new Map());
   const [email, setEmail] = useState('');
   const [waitlistMsg, setWaitlistMsg] = useState('');
+  const [waitlistError, setWaitlistError] = useState('');
+  const [waitlistSuccess, setWaitlistSuccess] = useState(false);
 
   const handleWaitlist = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
+    setWaitlistError('');
     try {
       const res = await fetch('/api/waitlist', {
         method: 'POST',
@@ -48,10 +51,15 @@ export default function LandingPage() {
         body: JSON.stringify({ email }),
       });
       const data = await res.json();
-      setWaitlistMsg(data.message || data.error || 'Done!');
-      if (!data.error) setEmail('');
+      if (data.error) {
+        setWaitlistError(data.error);
+      } else {
+        setWaitlistMsg(data.message || 'Done!');
+        setWaitlistSuccess(true);
+        setEmail('');
+      }
     } catch {
-      setWaitlistMsg('Failed to join. Try again.');
+      setWaitlistError('Failed to join. Try again.');
     }
   };
 
@@ -119,7 +127,7 @@ export default function LandingPage() {
         <p className={styles.description}>
           Watches every sports market 24/7, detects momentum shifts and mispriced odds before the crowd reacts, AI trades real-time.
         </p>
-        {waitlistMsg ? (
+        {waitlistSuccess ? (
           <div style={{
             marginBottom: 30,
             padding: '16px 32px',
@@ -137,10 +145,17 @@ export default function LandingPage() {
             ✓ {waitlistMsg}
           </div>
         ) : (
-          <form className={styles.emailRow} onSubmit={handleWaitlist}>
-            <input type="email" placeholder="your@email.com" value={email} onChange={e => setEmail(e.target.value)} />
-            <button type="submit" className={styles.btnWaitlist}>Join waitlist</button>
-          </form>
+          <>
+            <form className={styles.emailRow} onSubmit={handleWaitlist}>
+              <input type="email" placeholder="your@email.com" value={email} onChange={e => { setEmail(e.target.value); setWaitlistError(''); }} />
+              <button type="submit" className={styles.btnWaitlist}>Join waitlist</button>
+            </form>
+            {waitlistError && (
+              <div style={{ fontSize: 12, color: 'rgba(239,68,68,0.8)', marginTop: -22, marginBottom: 22 }}>
+                {waitlistError}
+              </div>
+            )}
+          </>
         )}
         <div className={styles.skillsSection}>
           <div className={styles.skillLive}>
