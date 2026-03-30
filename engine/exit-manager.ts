@@ -28,21 +28,30 @@ export async function checkExits(): Promise<void> {
         priceHistory.delete(trade.id);
         continue;
       }
-      // Game finished (marked by refreshMarkets) — close at current price
+      // Game finished — DON'T close immediately. Wait for market to settle (99¢+ or 1¢-).
+      // Polymarket markets take a few minutes to hours after game end to fully resolve.
+      // The settled check above (yesPrice >= 0.99 || <= 0.01) will catch it.
+      // Just update the current price for P&L display.
       if ((market as any).gameFinished) {
-        const currentPrice = trade.side === 'yes' ? market.yesPrice : market.noPrice;
-        await closePosition(trade, currentPrice, 'game_over');
-        priceHistory.delete(trade.id);
+        trade.currentPrice = trade.side === 'yes' ? market.yesPrice : market.noPrice;
         continue;
       }
     } else {
-      // Market no longer in watchedMarkets (game ended, removed from Gamma API)
-      // Close at entry price (no current price available since market is gone)
-      const lastPrice = (trade.currentPrice && trade.currentPrice > 0)
-        ? trade.currentPrice
-        : trade.entryPrice;
-      await closePosition(trade, lastPrice, 'game_over');
-      priceHistory.delete(trade.id);
+      // Market no longer in watchedMarkets — DON'T exit immediately.
+      // Polymarket markets resolve to $1.00 (YES wins) or $0.00 (YES loses).
+      // We should hold through resolution to capture the actual edge.
+      // Only close if the trade has been orphaned for >48 hours (safety net).
+      const enteredAt = new Date(trade.enteredAt).getTime();
+      const hoursOpen = (Date.now() - enteredAt) / (1000 * 60 * 60);
+      if (hoursOpen > 48) {
+        // Orphaned trade — close at last known price
+        const lastPrice = (trade.currentPrice && trade.currentPrice > 0)
+          ? trade.currentPrice
+          : trade.entryPrice;
+        await closePosition(trade, lastPrice, 'timeout');
+        priceHistory.delete(trade.id);
+      }
+      // Otherwise: keep holding — market will resolve to 0 or 1
       continue;
     }
 
