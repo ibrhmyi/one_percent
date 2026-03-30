@@ -1,6 +1,15 @@
-import type { BrainMessage, WatchedMarket, Trade, Skill, AccountState, CycleLog, EngineState } from '@/lib/types';
+/**
+ * STATE — Singleton in-memory state store for the entire engine.
+ *
+ * All engine components (brain, skills, trade-manager, exit-manager) read/write
+ * this shared object. It holds watched markets, trades, messages, account info,
+ * cycle logs, and per-market price history for sparkline display.
+ *
+ * Depends on: @/lib/types (type definitions only)
+ * Consumed by: every engine module, API routes (read-only via brain/state endpoint)
+ */
 
-// Singleton in-memory state — all engine components read/write here
+import type { BrainMessage, WatchedMarket, Trade, Skill, AccountState, CycleLog, EngineState } from '@/lib/types';
 export const engineState: EngineState = {
   messages: [],
   watchedMarkets: [],

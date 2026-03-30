@@ -1,3 +1,14 @@
+/**
+ * SKILL REGISTRY — Stores and retrieves registered trading skills.
+ *
+ * Skills are strategy modules (e.g., basketball live-edge, pre-game edge)
+ * that implement the Skill interface. The brain registers skills at boot
+ * and queries them each cycle for edge detection.
+ *
+ * Depends on: state (keeps engineState.skills in sync), @/lib/types
+ * Called from: brain.ts (register + query), trade-manager.ts (skill stats)
+ */
+
 import type { Skill } from '@/lib/types';
 import { engineState } from './state';
 

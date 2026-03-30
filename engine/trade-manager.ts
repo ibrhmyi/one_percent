@@ -1,3 +1,15 @@
+/**
+ * TRADE MANAGER — Handles position entry and exit lifecycle.
+ *
+ * enterPosition(): sizes the bet with Kelly criterion, creates a Trade record,
+ *   places the order (dry-run simulated or live CLOB), and updates account state.
+ * closePosition(): marks a trade as closed, calculates realized P&L, updates
+ *   bankroll and skill stats.
+ *
+ * Depends on: state, skill-registry, order-manager, skills/nba-live-edge/win-probability
+ * Called from: brain.ts (on positive-EV opportunity), exit-manager.ts (on exit trigger)
+ */
+
 import type { Opportunity, Trade } from '@/lib/types';
 import { engineState, addMessage, getOpenTrade, updateAccount } from './state';
 import { calcKellySize } from './skills/nba-live-edge/win-probability';

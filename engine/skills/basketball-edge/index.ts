@@ -1,3 +1,17 @@
+/**
+ * PRE-GAME EDGE SKILL — Finds pre-game betting edges using multi-source odds.
+ *
+ * Fetches odds from The Odds API, calculates consensus fair value, detects
+ * edges vs Polymarket prices, sizes positions with Kelly criterion, and
+ * places/manages orders through the order-manager. Runs quickScan every 10s
+ * and full detect every 60s during idle periods.
+ *
+ * Depends on: odds-api, consensus, event-matcher, edge-detector, watchlist,
+ *   capital-allocator, market-watcher, orderbook, order-manager, state,
+ *   predictions/aggregator
+ * Called from: brain.ts (registered as 'basketball-edge' skill)
+ */
+
 import { fetchAllBasketballOdds, getRequestStats } from './odds-api';
 import { calculateConsensus } from './consensus';
 import { matchOddsGameToMarket, resolveTokenSides } from './event-matcher';

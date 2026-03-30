@@ -1,5 +1,12 @@
 /**
- * Fetch Polymarket CLOB orderbook and simulate fill prices.
+ * ORDERBOOK — Fetches Polymarket CLOB orderbook depth and simulates fill prices.
+ *
+ * Used to estimate slippage before placing orders: given a dollar amount,
+ * walks the ask side of the book and returns average fill price, total shares,
+ * slippage, and available liquidity within 3 cents of best ask.
+ *
+ * Depends on: Polymarket CLOB REST API (https://clob.polymarket.com/book)
+ * Called from: skills/basketball-edge (liquidity checks before order placement)
  */
 
 export interface OrderbookLevel {

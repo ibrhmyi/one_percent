@@ -1,3 +1,14 @@
+/**
+ * ORDER MANAGER — Places, tracks, and persists CLOB orders on Polymarket.
+ *
+ * Supports both dry-run (simulated sim-* IDs) and live mode (real ClobClient).
+ * Orders are stored in-memory (Map) with Supabase persistence for durability.
+ * Enforces a 40% bankroll deployment cap across all resting/filled orders.
+ *
+ * Depends on: supabase, skills/basketball-edge/types, @polymarket/clob-client (live only)
+ * Called from: brain.ts (dry-run fills), trade-manager.ts (entry), basketball-edge (pre-game)
+ */
+
 import { PreGameOrder } from './skills/basketball-edge/types';
 import { createClient } from '@supabase/supabase-js';
 

@@ -1,3 +1,20 @@
+/**
+ * BRAIN — The central orchestrator of the OnePercent trading engine.
+ *
+ * Responsibilities:
+ *   1. Market discovery: polls Gamma API for basketball events on Polymarket
+ *   2. Price enrichment: fetches CLOB spreads, ESPN start times, prediction fair values
+ *   3. Brain cycle (1s): runs skill detection, simulates dry-run fills, tracks P&L
+ *   4. Entry decisions: picks the best positive-EV opportunity and enters via trade-manager
+ *   5. Boot sequence: registers skills, starts pollers, loads persisted state
+ *
+ * Depends on: state, skill-registry, trade-manager, exit-manager, price-feed,
+ *   order-manager, supabase-sync, predictions/aggregator, local-persistence,
+ *   skills/basketball, skills/basketball-edge
+ *
+ * Called from: instrumentation.ts (Next.js server startup hook)
+ */
+
 import type { WatchedMarket, Opportunity, ESPNGame } from '@/lib/types';
 import { engineState, addMessage, getOpenTrade, updateAccount } from './state';
 import { registerSkill, getSkills } from './skill-registry';
@@ -9,8 +26,7 @@ import { parseTokenIds } from './skills/basketball/market-matcher';
 import { startPriceFeed, resubscribePriceFeed } from './price-feed';
 import { getOrders, placeExitOrder, updateOrder } from './order-manager';
 import { syncToSupabase } from './supabase-sync';
-import { refreshAllPredictions, getAllPredictions, getFairValue, updateBooksPrediction } from './predictions/aggregator';
-import { startPolling as startSportsbookPoller } from './predictions/sportsbook-poller';
+import { refreshAllPredictions, getAllPredictions, getFairValue } from './predictions/aggregator';
 import { startInjuryMonitor, onInjuryUpdate } from './predictions/injury-monitor';
 import { startPinnaclePoller } from './predictions/pinnacle';
 import { startKambiPoller } from './predictions/kambi';
@@ -680,9 +696,7 @@ export async function startBrain() {
   // Start Kambi/Unibet poller — second independent book source
   startKambiPoller();
 
-  // DK/FD scraper disabled — geo-blocked from all IPs
-  // Pinnacle + Kambi provide better data anyway
-  // startSportsbookPoller();
+  // DK/FD scraper disabled — geo-blocked from all IPs. Pinnacle + Kambi provide better data.
 
   // Start injury monitor (polls ESPN every 2 min, triggers edge recalc on status changes)
   startInjuryMonitor();

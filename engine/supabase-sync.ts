@@ -1,3 +1,15 @@
+/**
+ * SUPABASE SYNC — Pushes engine state to Supabase every 30 seconds.
+ *
+ * The Vercel-deployed frontend reads from Supabase (since it cannot access
+ * the local engine process). This module serializes watched markets, trades,
+ * predictions, pre-game orders, skills, scoring events, and account info
+ * into a single "singleton" row in the engine_state table.
+ *
+ * Depends on: state, price-feed, skill-registry, predictions/aggregator, supabase
+ * Called from: brain.ts (end of each brain cycle)
+ */
+
 import { createClient } from '@supabase/supabase-js';
 import { engineState } from './state';
 import { isPriceFeedConnected } from './price-feed';

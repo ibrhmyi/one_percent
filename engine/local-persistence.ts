@@ -1,3 +1,15 @@
+/**
+ * LOCAL PERSISTENCE — Saves and restores engine state to disk (data/ directory).
+ *
+ * On startup (loadState): reads bot-state.json to recover bankroll, trades,
+ *   and P&L from the last session. Also restores pre-game orders.
+ * On each brain cycle (saveState): writes bot-state.json every 30 seconds
+ *   and appends new trades to bot-trades.json as a permanent log.
+ *
+ * Depends on: state, skill-registry
+ * Called from: brain.ts (loadState at boot, saveState in cycle)
+ */
+
 import fs from 'fs';
 import path from 'path';
 import { engineState } from './state';

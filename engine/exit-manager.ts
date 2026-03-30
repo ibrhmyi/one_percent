@@ -1,3 +1,20 @@
+/**
+ * EXIT MANAGER — Monitors open trades and triggers exits based on rules.
+ *
+ * Exit conditions (checked every 2s):
+ *   - Target: price reaches EXIT_TARGET_PRICE (default 92c)
+ *   - Reversal: price drops EXIT_REVERSAL_CENTS from peak
+ *   - Stall: price moves < 2c over EXIT_STALL_MINUTES
+ *   - Timeout: position open > EXIT_TIMEOUT_HOURS
+ *   - Settled: market resolves (price hits 99c+ or 1c-)
+ *
+ * Pre-game trades (basketball-edge) are exempt from live exit rules since
+ * they have their own order management. Orphaned trades are closed after 48h.
+ *
+ * Depends on: state, trade-manager
+ * Called from: brain.ts (setInterval every 2s)
+ */
+
 import type { Trade, WatchedMarket } from '@/lib/types';
 import { engineState } from './state';
 import { closePosition } from './trade-manager';
