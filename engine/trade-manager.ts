@@ -15,6 +15,7 @@ import { engineState, addMessage, getOpenTrade, updateAccount } from './state';
 import { calcKellySize } from './skills/nba-live-edge/win-probability';
 import { getSkill } from './skill-registry';
 import { placeOrder, cancelOrder } from './order-manager';
+import { setTradeContext } from './exit-manager';
 
 const DRY_RUN = process.env.DRY_RUN !== 'false';
 
@@ -57,6 +58,15 @@ export async function enterPosition(opp: Opportunity): Promise<boolean> {
   };
 
   engineState.trades.push(trade);
+
+  // Store game context for adaptive exit logic
+  if (opp.skillId === 'nba-live-edge' && opp.gameData) {
+    setTradeContext(trade.id, {
+      fairValue: opp.modelProbability,
+      secondsRemaining: opp.gameData.secondsRemaining,
+      margin: Math.abs(opp.gameData.homeScore - opp.gameData.awayScore),
+    });
+  }
 
   if (DRY_RUN) {
     addMessage({
@@ -129,6 +139,11 @@ export async function closePosition(
   trade.exitReason = reason;
   trade.status = 'closed';
 
+  // CLV (Closing Line Value): compare entry price to the market price at close.
+  // Positive CLV means you bought cheaper than the closing price — a sign of real edge.
+  // This is the single best predictor of long-term betting profitability.
+  trade.clv = currentPrice - trade.entryPrice;
+
   // Update bankroll
   engineState.account.bankroll = engineState.account.bankroll - trade.entryAmount + exitAmount;
 
@@ -141,15 +156,16 @@ export async function closePosition(
   }
 
   const pnlStr = pnl >= 0 ? `+$${pnl.toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`;
+  const clvStr = trade.clv >= 0 ? `+${(trade.clv * 100).toFixed(1)}%` : `${(trade.clv * 100).toFixed(1)}%`;
 
   if (DRY_RUN) {
     addMessage({
-      text: `[DRY RUN] EXIT (${reason}): ${trade.marketTitle.substring(0, 35)} — ${pnlStr}`,
+      text: `[DRY RUN] EXIT (${reason}): ${trade.marketTitle.substring(0, 35)} — ${pnlStr} | CLV: ${clvStr}`,
       type: pnl >= 0 ? 'success' : 'warning',
     });
   } else {
     addMessage({
-      text: `EXIT (${reason}): ${trade.marketTitle.substring(0, 35)} — ${pnlStr}`,
+      text: `EXIT (${reason}): ${trade.marketTitle.substring(0, 35)} — ${pnlStr} | CLV: ${clvStr}`,
       type: pnl >= 0 ? 'success' : 'warning',
     });
   }

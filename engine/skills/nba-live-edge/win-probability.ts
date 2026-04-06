@@ -1,9 +1,16 @@
 // Logistic regression win probability model for NBA games.
-// Formula: P_home = 1 / (1 + exp(-0.7 * lead / (0.45 * sqrt(secondsRemaining))))
-// Based on established in-game win probability research.
+// Formula: P_home = 1 / (1 + exp(-K * lead / (TS * sqrt(secondsRemaining))))
+//
+// Calibrated from 8,690 scoring events across 104 NBA games (March 2026).
+// Backtest: backtest/calibrate_v3.py — optimized for Brier score vs game outcomes.
+//
+// K/TS ratio ≈ 3.0 matches established basketball win probability research.
+// IMPORTANT: The Polymarket market is very efficient — scoring events are priced
+// within 1-2 seconds. This model predicts FAIR VALUE, not exploitable edge.
+// Actual post-scoring price moves average 0.01¢ directionally (near zero).
 
-const MODEL_COEF = 0.7;
-const STD_SCALE = 0.45;
+const MODEL_COEF = 1.15;
+const STD_SCALE = 0.38;
 const MIN_SECONDS = 30; // avoid sqrt(0)
 
 export function calcWinProbability(
@@ -27,16 +34,19 @@ export function calcWinProbability(
   return Math.min(0.98, Math.max(0.02, pHome));
 }
 
-// Polymarket dynamic taker fee formula
-// fee = 0.25 * (p * (1-p))^2
-export function calcPolymarketFee(price: number): number {
-  return 0.25 * Math.pow(price * (1 - price), 2);
+// Polymarket fees (March 2026):
+//   Taker: 0.75% flat on trade value (sports markets)
+//   Maker: -0.20% rebate (limit orders)
+// The old dynamic formula (0.25 * (p*(1-p))^2) is outdated.
+const TAKER_FEE = 0.0075;
+
+export function calcPolymarketFee(_price: number): number {
+  return TAKER_FEE;
 }
 
 // Expected value: (modelProb * $1 payout) - cost - fee
 export function calcEV(modelProb: number, entryPrice: number): number {
-  const fee = calcPolymarketFee(entryPrice);
-  return modelProb * 1.0 - entryPrice - fee;
+  return modelProb * (1 - TAKER_FEE) - entryPrice;
 }
 
 // Half-Kelly position sizing
