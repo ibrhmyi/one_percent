@@ -20,8 +20,8 @@ export function SoundToggle({ src }: Props) {
     const handleTimeUpdate = () => {
       if (!audio) return;
       const timeLeft = audio.duration - audio.currentTime;
-      if (timeLeft < 3) {
-        audio.volume = Math.max(0, 0.35 * (timeLeft / 3));
+      if (timeLeft < 1) {
+        audio.volume = Math.max(0, 0.35 * timeLeft);
       } else if (audio.currentTime < 1) {
         audio.volume = 0.35 * Math.min(1, audio.currentTime);
       } else {
