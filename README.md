@@ -1,102 +1,98 @@
 # OnePercent
 
-OnePercent is an AI-powered intelligence layer for prediction markets. It identifies short-term market biases to surface tradeable signals with repeatable +1% returns. The platform scans markets approaching resolution, enriches them with AI-driven analysis, and ranks opportunities by confidence and expected resolution timing.
+AI-powered sports trading bot for [Polymarket](https://polymarket.com). Detects edges in NBA markets using sportsbook odds, ESPN data, and prediction models — then trades them automatically on the Polymarket CLOB.
 
-Built for the Rishi Hackathon.
+**Live at [onepercent.markets](https://onepercent.markets)**
 
-## Features
+## How It Works
 
-- **AI Signal Engine**: Near-resolution market analysis using Groq's LLaMA models to estimate resolution windows and confidence levels
-- **Multi-Platform Support**: Scans Polymarket with real-time price updates via WebSocket
-- **Smart Filtering**: Filters by volume, liquidity, spread, and tradeability scores
-- **Signal Sorting**: Rank opportunities by soonest resolution, liquidity, volume, or AI signal strength
-- **Live Updates**: Real-time price streaming for active monitoring
+The engine runs server-side inside a Next.js 15 app (via `instrumentation.ts`). It polls sportsbook odds, ESPN scores, and Polymarket prices on a 1-second loop, looking for two types of edge:
+
+**Pre-Game Edge (Primary)** — Compares Pinnacle and other sharp sportsbook odds to Polymarket pre-game prices. When the sportsbook consensus disagrees with Polymarket by more than the fee threshold, places maker limit orders and holds through resolution.
+
+**Live Scoring Edge (Bonus)** — Detects NBA scoring events via ESPN faster than Polymarket reprices. Taker-buys the scoring team's token during the lag window. Only trades in crunch time (Q4, close games) where the edge is statistically meaningful.
+
+## Architecture
+
+```
+Pinnacle / Kambi Odds ──┐
+ESPN BPI ────────────────┼──> Prediction Aggregator ──> Fair Value
+Bart Torvik ─────────────┘                                  │
+                                                            v
+Gamma API ──> Market Discovery                 Edge = Fair - Market Price
+CLOB WS ───> Real-time Prices                              │
+ESPN Scores ─> Live Score Detection                         v
+                                                   Kelly Sizing → Order → Trade
+```
+
+The frontend is a Bloomberg Terminal-style dashboard showing live games, brain decisions, open positions, and P&L.
 
 ## Tech Stack
 
 - Next.js 15 (App Router)
-- TypeScript
-- Tailwind CSS
-- Groq API (LLaMA 3.3 70B)
-- Supabase (signal caching)
-- Polymarket API & WebSocket
+- - TypeScript (strict)
+  - - Tailwind CSS
+    - - Polymarket CLOB API + WebSocket
+      - - The Odds API (sportsbook odds)
+        - - ESPN APIs (scores, injuries, BPI)
+          - - Supabase (state sync, order persistence)
+           
+            - ## Getting Started
+           
+            - ```bash
+              cp .env.example .env.local
+              # Fill in Supabase keys + Odds API keys
+              npm install
+              npm run build && npm start
+              ```
 
-## Getting Started
+              The engine boots via `instrumentation.ts`. Open [http://localhost:3000/terminal](http://localhost:3000/terminal) for the trading dashboard, or [http://localhost:3000](http://localhost:3000) for the landing page.
 
-1. Install dependencies:
+              ## Environment Variables
 
-```bash
-npm install
-```
+              | Variable | Required | Description |
+              |----------|----------|-------------|
+              | `SUPABASE_URL` | Yes | Supabase project URL |
+              | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key |
+              | `DRY_RUN` | No | `true` (default) = simulated, `false` = real money |
+              | `BANKROLL` | No | Starting capital (default: 400) |
+              | `POLY_PRIVATE_KEY` | Live only | Polymarket wallet private key |
+              | `ODDS_API_KEY_1` / `_2` / `_3` | Yes | The Odds API keys (3 keys, 500 req/month each) |
 
-2. Configure environment:
+              ## Project Structure
 
-```bash
-cp .env.example .env.local
-```
+              ```
+              engine/                     Trading engine (runs server-side)
+                brain.ts                  Central orchestrator (1s loop)
+                trade-manager.ts          Position entry, Kelly sizing
+                exit-manager.ts           Exit rules (target, reversal, stall, timeout)
+                order-manager.ts          CLOB order placement
+                price-feed.ts             WebSocket to Polymarket CLOB
+                state.ts                  Singleton state store
+                skills/
+                  basketball-edge/        Pre-game odds arbitrage strategy
+                  basketball/             Live scoring strategy
+                predictions/
+                  aggregator.ts           Combines all sources into fair value
+                  pinnacle.ts             Pinnacle odds
+                  kambi.ts                Kambi/Unibet odds
+                  espn-bpi.ts             ESPN BPI model
+                  injury-monitor.ts       ESPN injury tracking
 
-3. Add your API keys:
+              app/
+                page.tsx                  Landing page
+                terminal/page.tsx         Trading terminal UI
+                api/brain/state/          Engine state endpoint
+                api/trades/               Trade history endpoint
+                api/odds/scrape/          Odds scraper endpoint
 
-- `GROQ_API_KEY` - Get one at [groq.com](https://groq.com)
-- `SUPABASE_URL` & `SUPABASE_ANON_KEY` - Optional, for signal caching
+              components/terminal/        Bloomberg Terminal-style UI components
+              ```
 
-4. Start the server:
+              ## Deployment
 
-```bash
-npm run dev
-```
+              Frontend deploys to Vercel (reads from Supabase). The engine runs locally or on a VPS — it needs a persistent WebSocket connection and 1-second polling. State syncs to Supabase every 30 seconds so the Vercel frontend stays current.
 
-5. Open [http://localhost:3000](http://localhost:3000)
+              ## License
 
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `CACHE_TTL_SECONDS` | Cache freshness window | 45 |
-| `MARKET_SCAN_WINDOW_HOURS` | Scan window in hours | 1 |
-| `GROQ_API_KEY` | Groq API key for AI analysis | - |
-| `SUPABASE_URL` | Supabase project URL | - |
-| `SUPABASE_ANON_KEY` | Supabase anon key | - |
-| `AI_SIGNAL_CACHE_MINUTES` | AI signal cache threshold | 5 |
-| `AI_MAX_MARKETS_PER_SCAN` | Max AI analyses per refresh | 10 |
-| `AI_CONCURRENCY` | Parallel AI requests | 8 |
-
-## API
-
-`GET /api/markets/closing-soon`
-
-Query parameters:
-
-- `platform` - Filter by platform (polymarket, kalshi)
-- `maxHours` - Hours ahead to scan (default: 24)
-- `minVolume` - Minimum volume filter
-- `minYesPrice` - Minimum YES price
-- `sort` - Sort by: soonest, liquidity, volume, signal
-- `limit` - Result limit
-- `refresh` - Force cache refresh (1)
-
-## Supabase Setup
-
-Run the SQL migrations to enable AI signal caching:
-
-- `supabase/signals.sql` - AI signal cache table
-- `supabase/bot-trades.sql` - Bot trade history
-
-## How It Works
-
-1. **Market Discovery**: Fetches markets closing within the scan window from Polymarket
-2. **Filtering**: Applies volume, spread, and price filters
-3. **AI Enrichment**: Analyzes each market with Groq LLaMA to estimate:
-   - Resolution window (minutes from now)
-   - Confidence level (low/medium/high)
-   - Tradeability score
-4. **Ranking**: Sorts by AI signal strength or traditional metrics
-5. **Live Updates**: Streams real-time prices via WebSocket
-
-## Live Demo
-
-**https://onepercentmarkets.vercel.app**
-
-## Deploy
-
-Deploy to Vercel with the same environment variables. For production, replace the JSON cache with a KV store (Redis/Vercel KV).
+              Private. Not open source.
